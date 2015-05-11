@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 37: Hashmaps</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 37: Hashmaps</h1>
+            <p>Hash Maps (Hashmaps, Hashes, or sometimes Dictionaries) are used frequently in
+many dynamic programming for storing key/value data.  A Hashmap works by performing
+a &quot;hashing&quot; calculation on the keys to produce an integer, then uses that
+integer to find a bucket to get or set the value.  It is a very fast practical
+data structure since it works on nearly any data and they are easy to implement.</p>
+<p>Here's an example of using a Hashmap (aka dict) in Python:</p>
+<div class="highlight"><pre><a name="code--ex37.py-pyg.html-1"></a><span class="n">fruit_weights</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;Apples&#39;</span><span class="p">:</span> <span class="mi">10</span><span class="p">,</span> <span class="s">&#39;Oranges&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s">&#39;Grapes&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>
+<a name="code--ex37.py-pyg.html-2"></a>
+<a name="code--ex37.py-pyg.html-3"></a><span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">fruit_weights</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a name="code--ex37.py-pyg.html-4"></a>    <span class="k">print</span> <span class="n">key</span><span class="p">,</span> <span class="s">&quot;=&quot;</span><span class="p">,</span> <span class="n">value</span>
+</pre></div><p>Almost every modern language has something like this, so many people
+end up writing code and never understand how this actually works.
+By creating the <tt class="docutils literal">Hashmap</tt> data structure in C I'll show you how
+this works.  I'll start with the header file so I can talk about the
+data structure.</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-1"></a><span class="cp">#ifndef _lcthw_Hashmap_h</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-2"></a><span class="cp">#define _lcthw_Hashmap_h</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-3"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-4"></a><span class="cp">#include &lt;stdint.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-5"></a><span class="cp">#include &lt;lcthw/darray.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-6"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-7"></a><span class="cp">#define DEFAULT_NUMBER_OF_BUCKETS 100</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-8"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-9"></a><span class="k">typedef</span> <span class="nf">int</span> <span class="p">(</span><span class="o">*</span><span class="n">Hashmap_compare</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">b</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-10"></a><span class="k">typedef</span> <span class="nf">uint32_t</span> <span class="p">(</span><span class="o">*</span><span class="n">Hashmap_hash</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-11"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-12"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="n">Hashmap</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-13"></a>    <span class="n">DArray</span> <span class="o">*</span><span class="n">buckets</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-14"></a>    <span class="n">Hashmap_compare</span> <span class="n">compare</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-15"></a>    <span class="n">Hashmap_hash</span> <span class="n">hash</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-16"></a><span class="p">}</span> <span class="n">Hashmap</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-17"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-18"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="n">HashmapNode</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-19"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-20"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-21"></a>    <span class="kt">uint32_t</span> <span class="n">hash</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-22"></a><span class="p">}</span> <span class="n">HashmapNode</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-23"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-24"></a><span class="k">typedef</span> <span class="nf">int</span> <span class="p">(</span><span class="o">*</span><span class="n">Hashmap_traverse_cb</span><span class="p">)(</span><span class="n">HashmapNode</span> <span class="o">*</span><span class="n">node</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-25"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-26"></a><span class="n">Hashmap</span> <span class="o">*</span><span class="nf">Hashmap_create</span><span class="p">(</span><span class="n">Hashmap_compare</span> <span class="n">compare</span><span class="p">,</span> <span class="n">Hashmap_hash</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-27"></a><span class="kt">void</span> <span class="nf">Hashmap_destroy</span><span class="p">(</span><span class="n">Hashmap</span> <span class="o">*</span><span class="n">map</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-28"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-29"></a><span class="kt">int</span> <span class="nf">Hashmap_set</span><span class="p">(</span><span class="n">Hashmap</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-30"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">Hashmap_get</span><span class="p">(</span><span class="n">Hashmap</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-31"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-32"></a><span class="kt">int</span> <span class="nf">Hashmap_traverse</span><span class="p">(</span><span class="n">Hashmap</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="n">Hashmap_traverse_cb</span> <span class="n">traverse_cb</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-33"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-34"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">Hashmap_delete</span><span class="p">(</span><span class="n">Hashmap</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-35"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.h-pyg.html-36"></a><span class="cp">#endif</span>
+</pre></div><p>The structure consists of a <tt class="docutils literal">Hashmap</tt> that contains
+any number of <tt class="docutils literal">HashmapNode</tt> structs.  Looking at <tt class="docutils literal">Hashmap</tt>
+you can see that it is structured like this:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">DArray *buckets</tt></dt>
+<dd>A dynamic array that will be set to a fixed size of
+100 buckets.  Each bucket will in turn contain a <tt class="docutils literal">DArray</tt> that will
+actually hold <tt class="docutils literal">HashmapNode</tt> pairs.</dd>
+<dt><tt class="docutils literal">Hashmap_compare compare</tt></dt>
+<dd>This is a comparison function that the
+<tt class="docutils literal">Hashmap</tt> uses to actually find elements by their key.  It should
+work like all of the other compare functions, and defaults to using
+<tt class="docutils literal">bstrcmp</tt> so that keys are just bstrings.</dd>
+<dt><tt class="docutils literal">Hashmap_hash</tt>  hash</dt>
+<dd>This is the hashing function and it's responsible
+for taking a key, processing its contents, and producing a single
+<tt class="docutils literal">uint32_t</tt> index number.  You'll see the default one soon.</dd>
+</dl>
+<p>This almost tells you how the data is stored, but the <tt class="docutils literal">buckets</tt>
+<tt class="docutils literal">DArray</tt> isn't created yet.  Just remember that it's kind of a
+two level mapping:</p>
+<ul class="simple">
+<li>There are 100 buckets that make up the first level, and things are
+in these buckets based on their hash.</li>
+<li>Each bucket is a <tt class="docutils literal">DArray</tt> that then contains <tt class="docutils literal">HashmapNode</tt>
+structs simply appended to the end as they're added.</li>
+</ul>
+<p>The <tt class="docutils literal">HashmapNode</tt> is then composed of these three elements:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">void *key</tt></dt>
+<dd>The key for this key=value pair.</dd>
+<dt><tt class="docutils literal">void *value</tt></dt>
+<dd>The value.</dd>
+<dt><tt class="docutils literal">uint32_t hash</tt></dt>
+<dd><p class="first">The calculated hash, which makes finding this</p>
+<p class="last">node quicker since we can just check the hash and skip any that
+don't match, only checking they key if it's equal.</p>
+</dd>
+</dl>
+<p>The rest of the header file is nothing new, so now I can show you the
+implementation <tt class="docutils literal">hashmap.c</tt> file:</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-1"></a><span class="cp">#undef NDEBUG</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-2"></a><span class="cp">#include &lt;stdint.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-3"></a><span class="cp">#include &lt;lcthw/hashmap.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-4"></a><span class="cp">#include &lt;lcthw/dbg.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-5"></a><span class="cp">#include &lt;lcthw/bstrlib.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-6"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-7"></a><span class="k">static</span> <span class="kt">int</span> <span class="nf">default_compare</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">b</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-8"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-9"></a>    <span class="k">return</span> <span class="n">bstrcmp</span><span class="p">((</span><span class="n">bstring</span><span class="p">)</span><span class="n">a</span><span class="p">,</span> <span class="p">(</span><span class="n">bstring</span><span class="p">)</span><span class="n">b</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-10"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-11"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-12"></a><span class="cm">/** </span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-13"></a><span class="cm"> * Simple Bob Jenkins&#39;s hash algorithm taken from the</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-14"></a><span class="cm"> * wikipedia description.</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-15"></a><span class="cm"> */</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-16"></a><span class="k">static</span> <span class="kt">uint32_t</span> <span class="nf">default_hash</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">a</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-17"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-18"></a>    <span class="kt">size_t</span> <span class="n">len</span> <span class="o">=</span> <span class="n">blength</span><span class="p">((</span><span class="n">bstring</span><span class="p">)</span><span class="n">a</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-19"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">key</span> <span class="o">=</span> <span class="n">bdata</span><span class="p">((</span><span class="n">bstring</span><span class="p">)</span><span class="n">a</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-20"></a>    <span class="kt">uint32_t</span> <span class="n">hash</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-21"></a>    <span class="kt">uint32_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-22"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-23"></a>    <span class="k">for</span><span class="p">(</span><span class="n">hash</span> <span class="o">=</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">len</span><span class="p">;</span> <span class="o">++</span><span class="n">i</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-24"></a>    <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-25"></a>        <span class="n">hash</span> <span class="o">+=</span> <span class="n">key</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-26"></a>        <span class="n">hash</span> <span class="o">+=</span> <span class="p">(</span><span class="n">hash</span> <span class="o">&lt;&lt;</span> <span class="mi">10</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-27"></a>        <span class="n">hash</span> <span class="o">^=</span> <span class="p">(</span><span class="n">hash</span> <span class="o">&gt;&gt;</span> <span class="mi">6</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-28"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-29"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-30"></a>    <span class="n">hash</span> <span class="o">+=</span> <span class="p">(</span><span class="n">hash</span> <span class="o">&lt;&lt;</span> <span class="mi">3</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-31"></a>    <span class="n">hash</span> <span class="o">^=</span> <span class="p">(</span><span class="n">hash</span> <span class="o">&gt;&gt;</span> <span class="mi">11</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-32"></a>    <span class="n">hash</span> <span class="o">+=</span> <span class="p">(</span><span class="n">hash</span> <span class="o">&lt;&lt;</span> <span class="mi">15</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-33"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-34"></a>    <span class="k">return</span> <span class="n">hash</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-35"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-36"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-37"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-38"></a><span class="n">Hashmap</span> <span class="o">*</span><span class="nf">Hashmap_create</span><span class="p">(</span><span class="n">Hashmap_compare</span> <span class="n">compare</span><span class="p">,</span> <span class="n">Hashmap_hash</span> <span class="n">hash</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-39"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-40"></a>    <span class="n">Hashmap</span> <span class="o">*</span><span class="n">map</span> <span class="o">=</span> <span class="n">calloc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">Hashmap</span><span class="p">));</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-41"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">map</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-42"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-43"></a>    <span class="n">map</span><span class="o">-&gt;</span><span class="n">compare</span> <span class="o">=</span> <span class="n">compare</span> <span class="o">==</span> <span class="nb">NULL</span> <span class="o">?</span> <span class="n">default_compare</span> <span class="o">:</span> <span class="n">compare</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-44"></a>    <span class="n">map</span><span class="o">-&gt;</span><span class="n">hash</span> <span class="o">=</span> <span class="n">hash</span> <span class="o">==</span> <span class="nb">NULL</span> <span class="o">?</span> <span class="n">default_hash</span> <span class="o">:</span> <span class="n">hash</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-45"></a>    <span class="n">map</span><span class="o">-&gt;</span><span class="n">buckets</span> <span class="o">=</span> <span class="n">DArray_create</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="p">),</span> <span class="n">DEFAULT_NUMBER_OF_BUCKETS</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-46"></a>    <span class="n">map</span><span class="o">-&gt;</span><span class="n">buckets</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">=</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">buckets</span><span class="o">-&gt;</span><span class="n">max</span><span class="p">;</span> <span class="c1">// fake out expanding it</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-47"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">buckets</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-48"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-49"></a>    <span class="k">return</span> <span class="n">map</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-50"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-51"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-52"></a>    <span class="k">if</span><span class="p">(</span><span class="n">map</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-53"></a>        <span class="n">Hashmap_destroy</span><span class="p">(</span><span class="n">map</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-54"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-55"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-56"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-57"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-58"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-59"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-60"></a><span class="kt">void</span> <span class="nf">Hashmap_destroy</span><span class="p">(</span><span class="n">Hashmap</span> <span class="o">*</span><span class="n">map</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-61"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-62"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-63"></a>    <span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-64"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-65"></a>    <span class="k">if</span><span class="p">(</span><span class="n">map</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-66"></a>        <span class="k">if</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">buckets</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-67"></a>            <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">DArray_count</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">buckets</span><span class="p">);</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-68"></a>                <span class="n">DArray</span> <span class="o">*</span><span class="n">bucket</span> <span class="o">=</span> <span class="n">DArray_get</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">buckets</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-69"></a>                <span class="k">if</span><span class="p">(</span><span class="n">bucket</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-70"></a>                    <span class="k">for</span><span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">DArray_count</span><span class="p">(</span><span class="n">bucket</span><span class="p">);</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-71"></a>                        <span class="n">free</span><span class="p">(</span><span class="n">DArray_get</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">j</span><span class="p">));</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-72"></a>                    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-73"></a>                    <span class="n">DArray_destroy</span><span class="p">(</span><span class="n">bucket</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-74"></a>                <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-75"></a>            <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-76"></a>            <span class="n">DArray_destroy</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">buckets</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-77"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-78"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-79"></a>        <span class="n">free</span><span class="p">(</span><span class="n">map</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-80"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-81"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-82"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-83"></a><span class="k">static</span> <span class="kr">inline</span> <span class="n">HashmapNode</span> <span class="o">*</span><span class="nf">Hashmap_node_create</span><span class="p">(</span><span class="kt">int</span> <span class="n">hash</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-84"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-85"></a>    <span class="n">HashmapNode</span> <span class="o">*</span><span class="n">node</span> <span class="o">=</span> <span class="n">calloc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">HashmapNode</span><span class="p">));</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-86"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">node</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-87"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-88"></a>    <span class="n">node</span><span class="o">-&gt;</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-89"></a>    <span class="n">node</span><span class="o">-&gt;</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-90"></a>    <span class="n">node</span><span class="o">-&gt;</span><span class="n">hash</span> <span class="o">=</span> <span class="n">hash</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-91"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-92"></a>    <span class="k">return</span> <span class="n">node</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-93"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-94"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-95"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-96"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-97"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-98"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-99"></a><span class="k">static</span> <span class="kr">inline</span> <span class="n">DArray</span> <span class="o">*</span><span class="nf">Hashmap_find_bucket</span><span class="p">(</span><span class="n">Hashmap</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-100"></a>        <span class="kt">int</span> <span class="n">create</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="o">*</span><span class="n">hash_out</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-101"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-102"></a>    <span class="kt">uint32_t</span> <span class="n">hash</span> <span class="o">=</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">hash</span><span class="p">(</span><span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-103"></a>    <span class="kt">int</span> <span class="n">bucket_n</span> <span class="o">=</span> <span class="n">hash</span> <span class="o">%</span> <span class="n">DEFAULT_NUMBER_OF_BUCKETS</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-104"></a>    <span class="n">check</span><span class="p">(</span><span class="n">bucket_n</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Invalid bucket found: %d&quot;</span><span class="p">,</span> <span class="n">bucket_n</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-105"></a>    <span class="o">*</span><span class="n">hash_out</span> <span class="o">=</span> <span class="n">hash</span><span class="p">;</span> <span class="c1">// store it for the return so the caller can use it</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-106"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-107"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-108"></a>    <span class="n">DArray</span> <span class="o">*</span><span class="n">bucket</span> <span class="o">=</span> <span class="n">DArray_get</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">buckets</span><span class="p">,</span> <span class="n">bucket_n</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-109"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-110"></a>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">bucket</span> <span class="o">&amp;&amp;</span> <span class="n">create</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-111"></a>        <span class="c1">// new bucket, set it up</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-112"></a>        <span class="n">bucket</span> <span class="o">=</span> <span class="n">DArray_create</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">),</span> <span class="n">DEFAULT_NUMBER_OF_BUCKETS</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-113"></a>        <span class="n">check_mem</span><span class="p">(</span><span class="n">bucket</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-114"></a>        <span class="n">DArray_set</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">buckets</span><span class="p">,</span> <span class="n">bucket_n</span><span class="p">,</span> <span class="n">bucket</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-115"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-116"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-117"></a>    <span class="k">return</span> <span class="n">bucket</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-118"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-119"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-120"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-121"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-122"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-123"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-124"></a><span class="kt">int</span> <span class="nf">Hashmap_set</span><span class="p">(</span><span class="n">Hashmap</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-125"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-126"></a>    <span class="kt">uint32_t</span> <span class="n">hash</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-127"></a>    <span class="n">DArray</span> <span class="o">*</span><span class="n">bucket</span> <span class="o">=</span> <span class="n">Hashmap_find_bucket</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">hash</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-128"></a>    <span class="n">check</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="s">&quot;Error can&#39;t create bucket.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-129"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-130"></a>    <span class="n">HashmapNode</span> <span class="o">*</span><span class="n">node</span> <span class="o">=</span> <span class="n">Hashmap_node_create</span><span class="p">(</span><span class="n">hash</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-131"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">node</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-132"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-133"></a>    <span class="n">DArray_push</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">node</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-134"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-135"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-136"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-137"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-138"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-139"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-140"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-141"></a><span class="k">static</span> <span class="kr">inline</span> <span class="kt">int</span> <span class="nf">Hashmap_get_node</span><span class="p">(</span><span class="n">Hashmap</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">hash</span><span class="p">,</span> <span class="n">DArray</span> <span class="o">*</span><span class="n">bucket</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-142"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-143"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-144"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-145"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">DArray_end</span><span class="p">(</span><span class="n">bucket</span><span class="p">);</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-146"></a>        <span class="n">debug</span><span class="p">(</span><span class="s">&quot;TRY: %d&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-147"></a>        <span class="n">HashmapNode</span> <span class="o">*</span><span class="n">node</span> <span class="o">=</span> <span class="n">DArray_get</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-148"></a>        <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">hash</span> <span class="o">==</span> <span class="n">hash</span> <span class="o">&amp;&amp;</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">compare</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">key</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-149"></a>            <span class="k">return</span> <span class="n">i</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-150"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-151"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-152"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-153"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-154"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-155"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-156"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">Hashmap_get</span><span class="p">(</span><span class="n">Hashmap</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-157"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-158"></a>    <span class="kt">uint32_t</span> <span class="n">hash</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-159"></a>    <span class="n">DArray</span> <span class="o">*</span><span class="n">bucket</span> <span class="o">=</span> <span class="n">Hashmap_find_bucket</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">hash</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-160"></a>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">bucket</span><span class="p">)</span> <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-161"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-162"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">Hashmap_get_node</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">hash</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-163"></a>    <span class="k">if</span><span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-164"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-165"></a>    <span class="n">HashmapNode</span> <span class="o">*</span><span class="n">node</span> <span class="o">=</span> <span class="n">DArray_get</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-166"></a>    <span class="n">check</span><span class="p">(</span><span class="n">node</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to get node from bucket when it should exist.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-167"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-168"></a>    <span class="k">return</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-169"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-170"></a><span class="nl">error:</span> <span class="c1">// fallthrough</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-171"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-172"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-173"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-174"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-175"></a><span class="kt">int</span> <span class="nf">Hashmap_traverse</span><span class="p">(</span><span class="n">Hashmap</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="n">Hashmap_traverse_cb</span> <span class="n">traverse_cb</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-176"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-177"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-178"></a>    <span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-179"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-180"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-181"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">DArray_count</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">buckets</span><span class="p">);</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-182"></a>        <span class="n">DArray</span> <span class="o">*</span><span class="n">bucket</span> <span class="o">=</span> <span class="n">DArray_get</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">buckets</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-183"></a>        <span class="k">if</span><span class="p">(</span><span class="n">bucket</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-184"></a>            <span class="k">for</span><span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">DArray_count</span><span class="p">(</span><span class="n">bucket</span><span class="p">);</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-185"></a>                <span class="n">HashmapNode</span> <span class="o">*</span><span class="n">node</span> <span class="o">=</span> <span class="n">DArray_get</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">j</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-186"></a>                <span class="n">rc</span> <span class="o">=</span> <span class="n">traverse_cb</span><span class="p">(</span><span class="n">node</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-187"></a>                <span class="k">if</span><span class="p">(</span><span class="n">rc</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="k">return</span> <span class="n">rc</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-188"></a>            <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-189"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-190"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-191"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-192"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-193"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-194"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-195"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">Hashmap_delete</span><span class="p">(</span><span class="n">Hashmap</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-196"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-197"></a>    <span class="kt">uint32_t</span> <span class="n">hash</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-198"></a>    <span class="n">DArray</span> <span class="o">*</span><span class="n">bucket</span> <span class="o">=</span> <span class="n">Hashmap_find_bucket</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">hash</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-199"></a>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">bucket</span><span class="p">)</span> <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-200"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-201"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="n">Hashmap_get_node</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">hash</span><span class="p">,</span> <span class="n">bucket</span><span class="p">,</span> <span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-202"></a>    <span class="k">if</span><span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-203"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-204"></a>    <span class="n">HashmapNode</span> <span class="o">*</span><span class="n">node</span> <span class="o">=</span> <span class="n">DArray_get</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-205"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">data</span> <span class="o">=</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-206"></a>    <span class="n">free</span><span class="p">(</span><span class="n">node</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-207"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-208"></a>    <span class="n">HashmapNode</span> <span class="o">*</span><span class="n">ending</span> <span class="o">=</span> <span class="n">DArray_pop</span><span class="p">(</span><span class="n">bucket</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-209"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-210"></a>    <span class="k">if</span><span class="p">(</span><span class="n">ending</span> <span class="o">!=</span> <span class="n">node</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-211"></a>        <span class="c1">// alright looks like it&#39;s not the last one, swap it</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-212"></a>        <span class="n">DArray_set</span><span class="p">(</span><span class="n">bucket</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">ending</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-213"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-214"></a>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-215"></a>    <span class="k">return</span> <span class="n">data</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--hashmap.c-pyg.html-216"></a><span class="p">}</span>
+</pre></div><p>There's nothing very complicated in the implementation, but the
+<tt class="docutils literal">default_hash</tt> and <tt class="docutils literal">Hashmap_find_bucket</tt> functions will need
+some explanation.  When you use <tt class="docutils literal">Hashmap_create</tt> you can pass in any
+compare and hash functions you want, but if you don't it uses the
+<tt class="docutils literal">default_compare</tt> and <tt class="docutils literal">default_hash</tt> functions.</p>
+<p>The first thing to look at is how <tt class="docutils literal">default_hash</tt> does its thing.
+This is a simple hash function called a &quot;Jenkins hash&quot; after Bob Jenkins.
+I got if from the <a class="reference external" href="http://en.wikipedia.org/wiki/Jenkins_hash_function">Wikipedia page</a> for the algorithm.  It simply goes through each byte of the
+key to hash (a bstring) and works the bits so that the end result is
+a single <tt class="docutils literal">uint32_t</tt>.  It does this with some adding and xor operations.</p>
+<p>There are many different hash functions, all with different properties,
+but once you have one you need a way to use it to find the right buckets.
+The <tt class="docutils literal">Hashmap_find_bucket</tt> does it like this:</p>
+<ul class="simple">
+<li>First it calls <tt class="docutils literal"><span class="pre">map-&gt;hash(key)</span></tt> to get the hash for the key.</li>
+<li>It then finds the bucket using <tt class="docutils literal">hash % DEFAULT_NUMBER_OF_BUCKETS</tt>, that
+way every hash will always find some bucket no matter how big it is.</li>
+<li>It then gets the bucket, which is also a <tt class="docutils literal">DArray</tt>, and if it's
+not there it will create it.  That depends on if the <tt class="docutils literal">create</tt>
+variable says too.</li>
+<li>Once it has found the <tt class="docutils literal">DArray</tt> bucket for the right hash,
+it returns it, and also the <tt class="docutils literal">hash_out</tt> variable is used to
+give the caller the hash that was found.</li>
+</ul>
+<p>All of the other functions then use <tt class="docutils literal">Hashmap_find_bucket</tt> to do
+their work:</p>
+<ul class="simple">
+<li>Setting a key/value involves finding the bucket, then
+making a <tt class="docutils literal">HashmapNode</tt>, and then adding it to the bucket.</li>
+<li>Getting a key involves finding the bucket, then finding the HashmapNode
+that matches the <tt class="docutils literal">hash</tt> and <tt class="docutils literal">key</tt> you want.</li>
+<li>Deleting an item again finds the bucket, finds where the requested node
+is, and then removes it by swapping the last node into its place.</li>
+</ul>
+<p>The only other function that you should study is the <tt class="docutils literal">Hashmap_travers</tt>.
+This simply walks every bucket, and for any bucket that has possible
+values, it calls the <tt class="docutils literal">traverse_cb</tt> on each value.  This is how you
+scan a whole <tt class="docutils literal">Hashmap</tt> for its values.</p>
+<div class="section" id="the-unit-test">
+<h1>The Unit Test</h1>
+<p>Finally you have the unit test that is testing all of these operations:</p>
+<div class="highlight"><pre><a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-1"></a><span class="cp">#include &quot;minunit.h&quot;</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-2"></a><span class="cp">#include &lt;lcthw/hashmap.h&gt;</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-3"></a><span class="cp">#include &lt;assert.h&gt;</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-4"></a><span class="cp">#include &lt;lcthw/bstrlib.h&gt;</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-5"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-6"></a><span class="n">Hashmap</span> <span class="o">*</span><span class="n">map</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-7"></a><span class="k">static</span> <span class="kt">int</span> <span class="n">traverse_called</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-8"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">test1</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;test data 1&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-9"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">test2</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;test data 2&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-10"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">test3</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;xest data 3&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-11"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">expect1</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;THE VALUE 1&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-12"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">expect2</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;THE VALUE 2&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-13"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">expect3</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;THE VALUE 3&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-14"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-15"></a><span class="k">static</span> <span class="kt">int</span> <span class="nf">traverse_good_cb</span><span class="p">(</span><span class="n">HashmapNode</span> <span class="o">*</span><span class="n">node</span><span class="p">)</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-16"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-17"></a>    <span class="n">debug</span><span class="p">(</span><span class="s">&quot;KEY: %s&quot;</span><span class="p">,</span> <span class="n">bdata</span><span class="p">((</span><span class="n">bstring</span><span class="p">)</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">key</span><span class="p">));</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-18"></a>    <span class="n">traverse_called</span><span class="o">++</span><span class="p">;</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-19"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-20"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-21"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-22"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-23"></a><span class="k">static</span> <span class="kt">int</span> <span class="nf">traverse_fail_cb</span><span class="p">(</span><span class="n">HashmapNode</span> <span class="o">*</span><span class="n">node</span><span class="p">)</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-24"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-25"></a>    <span class="n">debug</span><span class="p">(</span><span class="s">&quot;KEY: %s&quot;</span><span class="p">,</span> <span class="n">bdata</span><span class="p">((</span><span class="n">bstring</span><span class="p">)</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">key</span><span class="p">));</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-26"></a>    <span class="n">traverse_called</span><span class="o">++</span><span class="p">;</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-27"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-28"></a>    <span class="k">if</span><span class="p">(</span><span class="n">traverse_called</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-29"></a>        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-30"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-31"></a>        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-32"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-33"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-34"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-35"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-36"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_create</span><span class="p">()</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-37"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-38"></a>    <span class="n">map</span> <span class="o">=</span> <span class="n">Hashmap_create</span><span class="p">(</span><span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-39"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">map</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to create map.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-40"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-41"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-42"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-43"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-44"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_destroy</span><span class="p">()</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-45"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-46"></a>    <span class="n">Hashmap_destroy</span><span class="p">(</span><span class="n">map</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-47"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-48"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-49"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-50"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-51"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-52"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_get_set</span><span class="p">()</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-53"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-54"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">Hashmap_set</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test1</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">expect1</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-55"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to set &amp;test1&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-56"></a>    <span class="n">bstring</span> <span class="n">result</span> <span class="o">=</span> <span class="n">Hashmap_get</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test1</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-57"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">expect1</span><span class="p">,</span> <span class="s">&quot;Wrong value for test1.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-58"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-59"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">Hashmap_set</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test2</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">expect2</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-60"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to set test2&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-61"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">Hashmap_get</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test2</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-62"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">expect2</span><span class="p">,</span> <span class="s">&quot;Wrong value for test2.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-63"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-64"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">Hashmap_set</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test3</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">expect3</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-65"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to set test3&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-66"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">Hashmap_get</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test3</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-67"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">expect3</span><span class="p">,</span> <span class="s">&quot;Wrong value for test3.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-68"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-69"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-70"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-71"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-72"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_traverse</span><span class="p">()</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-73"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-74"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">Hashmap_traverse</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">traverse_good_cb</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-75"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to traverse.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-76"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">traverse_called</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="s">&quot;Wrong count traverse.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-77"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-78"></a>    <span class="n">traverse_called</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-79"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">Hashmap_traverse</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">traverse_fail_cb</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-80"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&quot;Failed to traverse.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-81"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">traverse_called</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;Wrong count traverse for fail.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-82"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-83"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-84"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-85"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-86"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_delete</span><span class="p">()</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-87"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-88"></a>    <span class="n">bstring</span> <span class="n">deleted</span> <span class="o">=</span> <span class="p">(</span><span class="n">bstring</span><span class="p">)</span><span class="n">Hashmap_delete</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test1</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-89"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">deleted</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Got NULL on delete.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-90"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">deleted</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">expect1</span><span class="p">,</span> <span class="s">&quot;Should get test1&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-91"></a>    <span class="n">bstring</span> <span class="n">result</span> <span class="o">=</span> <span class="n">Hashmap_get</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test1</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-92"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Should delete.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-93"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-94"></a>    <span class="n">deleted</span> <span class="o">=</span> <span class="p">(</span><span class="n">bstring</span><span class="p">)</span><span class="n">Hashmap_delete</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test2</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-95"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">deleted</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Got NULL on delete.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-96"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">deleted</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">expect2</span><span class="p">,</span> <span class="s">&quot;Should get test2&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-97"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">Hashmap_get</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test2</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-98"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Should delete.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-99"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-100"></a>    <span class="n">deleted</span> <span class="o">=</span> <span class="p">(</span><span class="n">bstring</span><span class="p">)</span><span class="n">Hashmap_delete</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test3</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-101"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">deleted</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Got NULL on delete.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-102"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">deleted</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">expect3</span><span class="p">,</span> <span class="s">&quot;Should get test3&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-103"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">Hashmap_get</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test3</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-104"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Should delete.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-105"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-106"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-107"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-108"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-109"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">all_tests</span><span class="p">()</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-110"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-111"></a>    <span class="n">mu_suite_start</span><span class="p">();</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-112"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-113"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_create</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-114"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_get_set</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-115"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_traverse</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-116"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_delete</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-117"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_destroy</span><span class="p">);</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-118"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-119"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-120"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-121"></a>
+<a name="code--liblcthw--tests--hashmap_tests.c-pyg.html-122"></a><span class="n">RUN_TESTS</span><span class="p">(</span><span class="n">all_tests</span><span class="p">);</span>
+</pre></div><p>The only thing to learn about this unit test is that at the top I use
+a feature of <tt class="docutils literal">bstring</tt> to create static strings to work with
+in the tests.  I use the <tt class="docutils literal">tagbstring</tt> and <tt class="docutils literal">bsStatic</tt>
+to create them on lines 7-13.</p>
+</div>
+<div class="section" id="how-to-improve-it">
+<h1>How To Improve It</h1>
+<p>This is a very simple implementation of <tt class="docutils literal">Hashmap</tt> as are most of
+the other data structures in this book.  My goal isn't to give you
+insanely great hyper speed well tuned data structures.  Usually those
+are much too complicated to discuss and only distract you from the real
+basic data structure at work.  My goal is to give you an understandable
+starting point to then improve it or understand how they are implemented.</p>
+<p>In this case, there's some things you can do with this implementation:</p>
+<ul class="simple">
+<li>You can use a sort on each bucket so that they are always sorted.
+This increases your insert time, but decreases your find time because
+you can then use a binary search to find each node.  Right now
+it's looping through all of the nodes in a bucket just to find one.</li>
+<li>You can dynamically size the number of buckets, or let the caller
+specify the number for each <tt class="docutils literal">Hashmap</tt> created.</li>
+<li>You can use a better <tt class="docutils literal">default_hash</tt>.  There are tons of them.</li>
+<li>This (and nearly every <tt class="docutils literal">Hashmap</tt> is vulnerable to someone picking
+keys that will fill only one bucket, and then tricking your program
+into processing them.  This then makes your program run slower because
+it changes from processing a <tt class="docutils literal">Hashmap</tt> to effectively processing
+a single <tt class="docutils literal">DArray</tt>.  If you sort the nodes in the bucket this
+helps, but you can also use better hashing functions, and for
+the really paranoid add a random salt so that keys can't be predicted.</li>
+<li>You could have it delete buckets that are empty of nodes to save space,
+or put empty buckets into a cache so you save on creating and destroying
+them.</li>
+<li>Right now it just adds elements even if they already exist.  Write an
+alternative set method that only adds it if it isn't set already.</li>
+</ul>
+<p>As usual you should go through each function and make it bullet proof.  The
+<tt class="docutils literal">Hashmap</tt> could also use a debug setting for doing an invariant check.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Research the <tt class="docutils literal">Hashmap</tt> implementation of your favorite programming language to see what features they have.</li>
+<li>Find out what the major disadvantages of a <tt class="docutils literal">Hashmap</tt> are and how to avoid them.  For example, they
+do not preserve order without special changes and they don't work when you need to find things based on parts
+of keys.</li>
+<li>Write a unit test that demonstrates the defect of filling a <tt class="docutils literal">Hashmap</tt> with keys that land
+in the same bucket, then test how this impact performance.  A good way to do this is to just reduce
+the number of buckets to something stupid like 5.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

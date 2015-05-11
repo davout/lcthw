@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 10: Arrays Of Strings, Looping</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 10: Arrays Of Strings, Looping</h1>
+            <p>You can make an array of various types, and have the idea down that a
+&quot;string&quot; and an &quot;array of bytes&quot; are the same thing.  The next thing is
+to take this one step further and do an array that has strings in it.
+We'll also introduce your first looping construct, the <tt class="docutils literal"><span class="pre">for-loop</span></tt>
+to help print out this new data structure.</p>
+<p>The fun part of this is that there's been an array of strings hiding in
+your programs for a while now, the <tt class="docutils literal">char *argv[]</tt> in the <tt class="docutils literal">main</tt>
+function arguments.  Here's code that will print out any command line
+arguments you pass it:</p>
+<div class="highlight"><pre><a name="code--ex10.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex10.c-pyg.html-2"></a>
+<a name="code--ex10.c-pyg.html-3"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex10.c-pyg.html-4"></a><span class="p">{</span>
+<a name="code--ex10.c-pyg.html-5"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex10.c-pyg.html-6"></a>
+<a name="code--ex10.c-pyg.html-7"></a>    <span class="c1">// go through each string in argv</span>
+<a name="code--ex10.c-pyg.html-8"></a>    <span class="c1">// why am I skipping argv[0]?</span>
+<a name="code--ex10.c-pyg.html-9"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">argc</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex10.c-pyg.html-10"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;arg %d: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="code--ex10.c-pyg.html-11"></a>    <span class="p">}</span>
+<a name="code--ex10.c-pyg.html-12"></a>
+<a name="code--ex10.c-pyg.html-13"></a>    <span class="c1">// let&#39;s make our own array of strings</span>
+<a name="code--ex10.c-pyg.html-14"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">states</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+<a name="code--ex10.c-pyg.html-15"></a>        <span class="s">&quot;California&quot;</span><span class="p">,</span> <span class="s">&quot;Oregon&quot;</span><span class="p">,</span>
+<a name="code--ex10.c-pyg.html-16"></a>        <span class="s">&quot;Washington&quot;</span><span class="p">,</span> <span class="s">&quot;Texas&quot;</span>
+<a name="code--ex10.c-pyg.html-17"></a>    <span class="p">};</span>
+<a name="code--ex10.c-pyg.html-18"></a>    <span class="kt">int</span> <span class="n">num_states</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span>
+<a name="code--ex10.c-pyg.html-19"></a>
+<a name="code--ex10.c-pyg.html-20"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">num_states</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex10.c-pyg.html-21"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;state %d: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">states</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="code--ex10.c-pyg.html-22"></a>    <span class="p">}</span>
+<a name="code--ex10.c-pyg.html-23"></a>
+<a name="code--ex10.c-pyg.html-24"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex10.c-pyg.html-25"></a><span class="p">}</span>
+</pre></div><p>The format of a <tt class="docutils literal"><span class="pre">for-loop</span></tt> is this:</p>
+<pre class="literal-block">
+for(INITIALIZER; TEST; INCREMENTER) {
+    CODE;
+}
+</pre>
+<p>Here's how the <tt class="docutils literal"><span class="pre">for-loop</span></tt> works:</p>
+<ul class="simple">
+<li>The <tt class="docutils literal">INITIALIZER</tt> is code that is run to setup the loop, in this
+case <tt class="docutils literal">i = 0</tt>.</li>
+<li>Next the <tt class="docutils literal">TEST</tt> boolean expression is checked, and if it's false (0)
+then <tt class="docutils literal">CODE</tt> is skipped, doing nothing.</li>
+<li>The <tt class="docutils literal">CODE</tt> runs, does whatever it does.</li>
+<li>After the <tt class="docutils literal">CODE</tt> runs, the <tt class="docutils literal">INCREMENTER</tt> part is run, usually
+incrementing something, like in <tt class="docutils literal">i++</tt>.</li>
+<li>And it continues again with Step 2 until the <tt class="docutils literal">TEST</tt> is false (0).</li>
+</ul>
+<p>This <tt class="docutils literal"><span class="pre">for-loop</span></tt> is going through the command line arguments
+using <tt class="docutils literal">argc</tt> and <tt class="docutils literal">argv</tt> like this:</p>
+<ul class="simple">
+<li>The OS passes each command line argument as a string in the <tt class="docutils literal">argv</tt>
+array.  The program's name (./ex10) is at 0, with the rest coming after it.</li>
+<li>The OS also sets <tt class="docutils literal">argc</tt> to the number of arguments in the <tt class="docutils literal">argv</tt>
+array so you can process them without going past the end.  Remember that if you
+give one argument, the program's name is the first, so argc is 2.</li>
+<li>The <tt class="docutils literal"><span class="pre">for-loop</span></tt> sets up with <tt class="docutils literal">i = 1</tt> in the initializer.</li>
+<li>It then tests that <tt class="docutils literal">i</tt> is less than <tt class="docutils literal">argc</tt> with the
+test <tt class="docutils literal">i &lt; argc</tt>. Since initially $1 &lt; 2$ it will pass.</li>
+<li>It then runs the code which just prints out the <tt class="docutils literal">i</tt> and
+uses <tt class="docutils literal">i</tt> to index into <tt class="docutils literal">argv</tt>.</li>
+<li>The incrementer is then run using the <tt class="docutils literal">i++</tt> syntax, which is
+a handy way of writing <tt class="docutils literal">i = i + 1</tt>.</li>
+<li>This then repeats until <tt class="docutils literal">i &lt; argc</tt> is finally false (0) when
+the loop exits and the program continues on.</li>
+</ul>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>To play with this program you have to run it two ways.  The first way is to
+pass in some command line arguments so that <tt class="docutils literal">argc</tt> and <tt class="docutils literal">argv</tt>
+get set.  The second is to run it with no arguments so you can see that
+the first <tt class="docutils literal"><span class="pre">for-loop</span></tt> doesn't run since <tt class="docutils literal">i &lt; argc</tt> will be false.</p>
+<div class="highlight"><pre><a name="code--ex10.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex10
+<a name="code--ex10.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g    ex10.c   -o ex10</span>
+<a name="code--ex10.sh-session-pyg.html-3"></a><span class="gp">$</span> ./ex10 i am a bunch of arguments
+<a name="code--ex10.sh-session-pyg.html-4"></a><span class="go">arg 1: i</span>
+<a name="code--ex10.sh-session-pyg.html-5"></a><span class="go">arg 2: am</span>
+<a name="code--ex10.sh-session-pyg.html-6"></a><span class="go">arg 3: a</span>
+<a name="code--ex10.sh-session-pyg.html-7"></a><span class="go">arg 4: bunch</span>
+<a name="code--ex10.sh-session-pyg.html-8"></a><span class="go">arg 5: of</span>
+<a name="code--ex10.sh-session-pyg.html-9"></a><span class="go">arg 6: arguments</span>
+<a name="code--ex10.sh-session-pyg.html-10"></a><span class="go">state 0: California</span>
+<a name="code--ex10.sh-session-pyg.html-11"></a><span class="go">state 1: Oregon</span>
+<a name="code--ex10.sh-session-pyg.html-12"></a><span class="go">state 2: Washington</span>
+<a name="code--ex10.sh-session-pyg.html-13"></a><span class="go">state 3: Texas</span>
+<a name="code--ex10.sh-session-pyg.html-14"></a><span class="gp">$</span>
+<a name="code--ex10.sh-session-pyg.html-15"></a><span class="gp">$</span> ./ex10
+<a name="code--ex10.sh-session-pyg.html-16"></a><span class="go">state 0: California</span>
+<a name="code--ex10.sh-session-pyg.html-17"></a><span class="go">state 1: Oregon</span>
+<a name="code--ex10.sh-session-pyg.html-18"></a><span class="go">state 2: Washington</span>
+<a name="code--ex10.sh-session-pyg.html-19"></a><span class="go">state 3: Texas</span>
+<a name="code--ex10.sh-session-pyg.html-20"></a><span class="gp">$</span>
+</pre></div><div class="section" id="understanding-arrays-of-strings">
+<h2>Understanding Arrays Of Strings</h2>
+<p>From this you should be able to figure out that in C you make an &quot;array of
+strings&quot; by combining the <tt class="docutils literal">char *str = &quot;blah&quot;</tt> syntax with the
+<tt class="docutils literal">char str[] = <span class="pre">{'b','l','a','h'}</span></tt> syntax to construct a 2-dimensional
+array.  The syntax <tt class="docutils literal">char *states[] = <span class="pre">{...}</span></tt> on line 14 is this
+2-dimension combination, with each string being one element, and each
+character in the string being another.</p>
+<p>Confusing? The concept of multiple dimensions is something most
+people never think about so what you should do is build this
+array of strings on paper:</p>
+<ul class="simple">
+<li>Make a grid with the index of each <em>string</em> on the left.</li>
+<li>Then put the index of each <em>character</em> on the top.</li>
+<li>Then, fill in the squares in the middle with what single character
+goes in that cell.</li>
+<li>Once you have the grid, trace through the code manually
+using this grid of paper.</li>
+</ul>
+<p>Another way to figure this is out is to build the same structure
+in a programming language you are more familiar with like Python or
+Ruby.</p>
+</div>
+</div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<ul class="simple">
+<li>Take your favorite other language, and use it to run this program, but
+with as many command line arguments as possible.  See if you can bust it
+by giving it way too many arguments.</li>
+<li>Initialize <tt class="docutils literal">i</tt> to 0 and see what that does.  Do you have to adjust
+<tt class="docutils literal">argc</tt> as well or does it just work?  Why does 0-based indexing work
+here?</li>
+<li>Set <tt class="docutils literal">num_states</tt> wrong so that it's a higher value and see what
+it does.</li>
+</ul>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Figure out what kind of code you can put into the parts of a <tt class="docutils literal"><span class="pre">for-loop</span></tt>.</li>
+<li>Look up how to use the <tt class="docutils literal">','</tt> (comma) character to separate multiple
+statements in the parts of the <tt class="docutils literal"><span class="pre">for-loop</span></tt>, but between the <tt class="docutils literal">';'</tt> (semicolon) characters.</li>
+<li>Read what a <tt class="docutils literal">NULL</tt> is and try to use it in one of the elements of the
+<tt class="docutils literal">states</tt> array to see what it'll print.</li>
+<li>See if you can assign an element from the <tt class="docutils literal">states</tt> array to the
+<tt class="docutils literal">argv</tt> array before printing both.  Try the inverse.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 41: Using Cachegrind And Callgrind For Performance Tuning</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 41: Using Cachegrind And Callgrind For Performance Tuning</h1>
+            <p>In this exercise I'm going to give you a quick course in using two tools for <tt class="docutils literal">Valgrind</tt>
+called <tt class="docutils literal">callgrind</tt> and <tt class="docutils literal">cachegrind</tt>.  These two tools will analyze your program's
+execution and tell you what parts are running slow.  The results are accurate because of the way <tt class="docutils literal">Valgrind</tt> works
+and help you spot problems such as lines of code that execute too much, hot spots, memory access problems,
+and even CPU cache misses.</p>
+<p>To do this exercise I'm going to use the <tt class="docutils literal">bstree_tests</tt> unit tests you just did
+to look for places to improve the algorithms used.  Make sure your versions of these programs are running
+without any <tt class="docutils literal">valgrind</tt> errors and that it is exactly like my code.  I'll be using
+dumps of my code to talk about how <tt class="docutils literal">cachegrind</tt> and <tt class="docutils literal">callgrind</tt> work.</p>
+<div class="section" id="running-callgrind">
+<h1>Running Callgrind</h1>
+<p>To run callgrind you pass the <tt class="docutils literal"><span class="pre">--tool=callgrind</span></tt> option to <tt class="docutils literal">valgrind</tt> and it will
+produce a <tt class="docutils literal">callgrind.out.PID</tt> file (where PID is replace with the process ID of the program
+that ran).   Once you run it you can analyze this <tt class="docutils literal">callgrind.out</tt> file with a tool
+called <tt class="docutils literal">callgrind_annotate</tt> which will tell you which functions used the most
+instructions to run.  Here's an example of me running <tt class="docutils literal">callgrind</tt> on <tt class="docutils literal">bstree_tests</tt>
+and then getting its information:</p>
+<div class="highlight"><pre><a name="code--ex41.1.sh-session-pyg.html-1"></a><span class="gp">$</span> valgrind --dsymutil<span class="o">=</span>yes --tool<span class="o">=</span>callgrind tests/bstree_tests
+<a name="code--ex41.1.sh-session-pyg.html-2"></a><span class="go">...</span>
+<a name="code--ex41.1.sh-session-pyg.html-3"></a><span class="gp">$</span> callgrind_annotate callgrind.out.1232
+<a name="code--ex41.1.sh-session-pyg.html-4"></a><span class="go">--------------------------------------------------------------------------------</span>
+<a name="code--ex41.1.sh-session-pyg.html-5"></a><span class="go">Profile data file &#39;callgrind.out.1232&#39; (creator: callgrind-3.7.0.SVN)</span>
+<a name="code--ex41.1.sh-session-pyg.html-6"></a><span class="go">--------------------------------------------------------------------------------</span>
+<a name="code--ex41.1.sh-session-pyg.html-7"></a><span class="go">I1 cache: </span>
+<a name="code--ex41.1.sh-session-pyg.html-8"></a><span class="go">D1 cache: </span>
+<a name="code--ex41.1.sh-session-pyg.html-9"></a><span class="go">LL cache: </span>
+<a name="code--ex41.1.sh-session-pyg.html-10"></a><span class="go">Timerange: Basic block 0 - 1098689</span>
+<a name="code--ex41.1.sh-session-pyg.html-11"></a><span class="go">Trigger: Program termination</span>
+<a name="code--ex41.1.sh-session-pyg.html-12"></a><span class="go">Profiled target:  tests/bstree_tests (PID 1232, part 1)</span>
+<a name="code--ex41.1.sh-session-pyg.html-13"></a><span class="go">Events recorded:  Ir</span>
+<a name="code--ex41.1.sh-session-pyg.html-14"></a><span class="go">Events shown:     Ir</span>
+<a name="code--ex41.1.sh-session-pyg.html-15"></a><span class="go">Event sort order: Ir</span>
+<a name="code--ex41.1.sh-session-pyg.html-16"></a><span class="go">Thresholds:       99</span>
+<a name="code--ex41.1.sh-session-pyg.html-17"></a><span class="go">Include dirs:     </span>
+<a name="code--ex41.1.sh-session-pyg.html-18"></a><span class="go">User annotated:   </span>
+<a name="code--ex41.1.sh-session-pyg.html-19"></a><span class="go">Auto-annotation:  off</span>
+<a name="code--ex41.1.sh-session-pyg.html-20"></a>
+<a name="code--ex41.1.sh-session-pyg.html-21"></a><span class="go">--------------------------------------------------------------------------------</span>
+<a name="code--ex41.1.sh-session-pyg.html-22"></a><span class="go">       Ir </span>
+<a name="code--ex41.1.sh-session-pyg.html-23"></a><span class="go">--------------------------------------------------------------------------------</span>
+<a name="code--ex41.1.sh-session-pyg.html-24"></a><span class="go">4,605,808  PROGRAM TOTALS</span>
+<a name="code--ex41.1.sh-session-pyg.html-25"></a>
+<a name="code--ex41.1.sh-session-pyg.html-26"></a><span class="go">--------------------------------------------------------------------------------</span>
+<a name="code--ex41.1.sh-session-pyg.html-27"></a><span class="go">       Ir  file:function</span>
+<a name="code--ex41.1.sh-session-pyg.html-28"></a><span class="go">--------------------------------------------------------------------------------</span>
+<a name="code--ex41.1.sh-session-pyg.html-29"></a><span class="go">  670,486  src/lcthw/bstrlib.c:bstrcmp [tests/bstree_tests]</span>
+<a name="code--ex41.1.sh-session-pyg.html-30"></a><span class="go">  194,377  src/lcthw/bstree.c:BSTree_get [tests/bstree_tests]</span>
+<a name="code--ex41.1.sh-session-pyg.html-31"></a><span class="go">   65,580  src/lcthw/bstree.c:default_compare [tests/bstree_tests]</span>
+<a name="code--ex41.1.sh-session-pyg.html-32"></a><span class="go">   16,338  src/lcthw/bstree.c:BSTree_delete [tests/bstree_tests]</span>
+<a name="code--ex41.1.sh-session-pyg.html-33"></a><span class="go">   13,000  src/lcthw/bstrlib.c:bformat [tests/bstree_tests]</span>
+<a name="code--ex41.1.sh-session-pyg.html-34"></a><span class="go">   11,000  src/lcthw/bstrlib.c:bfromcstralloc [tests/bstree_tests]</span>
+<a name="code--ex41.1.sh-session-pyg.html-35"></a><span class="go">    7,774  src/lcthw/bstree.c:BSTree_set [tests/bstree_tests]</span>
+<a name="code--ex41.1.sh-session-pyg.html-36"></a><span class="go">    5,800  src/lcthw/bstrlib.c:bdestroy [tests/bstree_tests]</span>
+<a name="code--ex41.1.sh-session-pyg.html-37"></a><span class="go">    2,323  src/lcthw/bstree.c:BSTreeNode_create [tests/bstree_tests]</span>
+<a name="code--ex41.1.sh-session-pyg.html-38"></a><span class="go">    1,183  /private/tmp/pkg-build/coregrind//vg_preloaded.c:vg_cleanup_env [/usr/local/lib/valgrind/vgpreload_core-amd64-darwin.so]</span>
+<a name="code--ex41.1.sh-session-pyg.html-39"></a>
+<a name="code--ex41.1.sh-session-pyg.html-40"></a><span class="gp">$</span>
+</pre></div><p>I've removed the unit test run and the <tt class="docutils literal">valgrind</tt> output since it's not
+very useful for this exercise.  What you should look at is the
+<tt class="docutils literal">callgrind_anotate</tt> output.  What this shows you is the number of
+instructions run (which <tt class="docutils literal">valgrind</tt> calls <tt class="docutils literal">Ir</tt>) for each
+function, and the functions sorted highest to lowest.  You can usually ignore
+the header data and just jump to the list of functions.</p>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p class="last">In if you get a ton of &quot;???:Image&quot; lines and things that are not in your
+program then you're picking up junk from the OS.  Just add <tt class="docutils literal">| grep <span class="pre">-v</span> <span class="pre">&quot;???&quot;</span></tt>
+at the end to filter those out, like this.</p>
+</div>
+<p>I can now do a quick breakdown of this output to figure out where to look
+next:</p>
+<ul class="simple">
+<li>Each line lists the number of <tt class="docutils literal">Ir</tt> and the <a class="reference external" href="file:function">file:function</a> that
+executed them.  The <tt class="docutils literal">Ir</tt> is just the instruction count, and if you
+make that lower then you have made it faster.  There's some complexity
+to that, but at first just focus on getting the <tt class="docutils literal">Ir</tt> down.</li>
+<li>The way to attack this is to look at your top functions, and then
+see which one you think you can improve first.  In this case, I'd look
+at improving <tt class="docutils literal">bstrcmp</tt> or <tt class="docutils literal">BStree_get</tt>.  It's probably
+easier to start with <tt class="docutils literal">BStree_get</tt>.</li>
+<li>Some of these functions are just called from the unit test, so I would
+just ignore those.  Functions like <tt class="docutils literal">bformat</tt>, <tt class="docutils literal">bfromcstralloc</tt>,
+and <tt class="docutils literal">bdestroy</tt> fit this description.</li>
+<li>I would also look for functions I can simply avoid calling.  For example,
+maybe I can just say <tt class="docutils literal">BSTree</tt> only works with <tt class="docutils literal">bstring</tt> keys,
+and then I can just not use the callback system and remove <tt class="docutils literal">default_compare</tt>
+entirely.</li>
+</ul>
+<p>At this point though, I only know that I want to look at <tt class="docutils literal">BSTree_get</tt>
+to improve it, and not the reason <tt class="docutils literal">BSTree_get</tt> is slow.  That is
+phase two of the analysis.</p>
+</div>
+<div class="section" id="callgrind-annotating-source">
+<h1>Callgrind Annotating Source</h1>
+<p>I will next tell <tt class="docutils literal">callgrind_annotate</tt> to dump out the <tt class="docutils literal">bstree.c</tt>
+file and annotate each line with the number of <tt class="docutils literal">Ir</tt> it took.  You
+get the annotated source file by running:</p>
+<div class="highlight"><pre><a name="code--ex41.2.sh-session-pyg.html-1"></a><span class="gp">$</span> callgrind_annotate callgrind.out.1232 src/lcthw/bstree.c
+<a name="code--ex41.2.sh-session-pyg.html-2"></a><span class="go">...</span>
+</pre></div><p>Your output will have a big dump of the file's source, but I've cut out
+the parts for <tt class="docutils literal">BSTree_get</tt> and <tt class="docutils literal">BSTree_getnode</tt>:</p>
+<pre class="literal-block">
+--------------------------------------------------------------------------------
+-- User-annotated source: src/lcthw/bstree.c
+--------------------------------------------------------------------------------
+    Ir
+
+
+ 2,453  static inline BSTreeNode *BSTree_getnode(BSTree *map, BSTreeNode *node, void *key)
+     .  {
+61,853      int cmp = map-&gt;compare(node-&gt;key, key);
+663,908  =&gt; src/lcthw/bstree.c:default_compare (14850x)
+     .
+14,850      if(cmp == 0) {
+     .          return node;
+24,794      } else if(cmp &lt; 0) {
+30,623          if(node-&gt;left) {
+     .              return BSTree_getnode(map, node-&gt;left, key);
+     .          } else {
+     .              return NULL;
+     .          }
+     .      } else {
+13,146          if(node-&gt;right) {
+     .              return BSTree_getnode(map, node-&gt;right, key);
+     .          } else {
+     .              return NULL;
+     .          }
+     .      }
+     .  }
+     .
+     .  void *BSTree_get(BSTree *map, void *key)
+ 4,912  {
+24,557      if(map-&gt;root == NULL) {
+14,736          return NULL;
+     .      } else {
+     .          BSTreeNode *node = BSTree_getnode(map, map-&gt;root, key);
+ 2,453          return node == NULL ? NULL : node-&gt;data;
+     .      }
+     .  }
+</pre>
+<p>Each line is shown with either the number of <tt class="docutils literal">Ir</tt> (instructions) it
+ran, or a period (.) to show that it's not important.  What I'm looking for
+is hotspots, or lines that have huge numbers of <tt class="docutils literal">Ir</tt> that I can
+possibly bring down.  In this case, line 10 of the output above shows that
+what makes <tt class="docutils literal">BSTree_getnode</tt> so expensive is that it calls
+<tt class="docutils literal">default_comapre</tt> which calls <tt class="docutils literal">bstrcmp</tt>.  I already know that
+<tt class="docutils literal">bstrcmp</tt> is the worst running function, so if I want to
+improve the speed of <tt class="docutils literal">BSTree_getnode</tt> I should work on that first.</p>
+<p>I'll then look at <tt class="docutils literal">bstrcmp</tt> the same way:</p>
+<pre class="literal-block">
+ 98,370  int bstrcmp (const_bstring b0, const_bstring b1) {
+      .  int i, v, n;
+      .
+196,740     if (b0 == NULL || b1 == NULL || b0-&gt;data == NULL || b1-&gt;data == NULL ||
+ 32,790             b0-&gt;slen &lt; 0 || b1-&gt;slen &lt; 0) return SHRT_MIN;
+ 65,580     n = b0-&gt;slen; if (n &gt; b1-&gt;slen) n = b1-&gt;slen;
+ 89,449     if (b0-&gt;slen == b1-&gt;slen &amp;&amp; (b0-&gt;data == b1-&gt;data || b0-&gt;slen == 0))
+      .             return BSTR_OK;
+      .
+ 23,915     for (i = 0; i &lt; n; i ++) {
+163,642             v = ((char) b0-&gt;data[i]) - ((char) b1-&gt;data[i]);
+      .             if (v != 0) return v;
+      .             if (b0-&gt;data[i] == (unsigned char) '\0') return BSTR_OK;
+      .     }
+      .
+      .     if (b0-&gt;slen &gt; n) return 1;
+      .     if (b1-&gt;slen &gt; n) return -1;
+      .     return BSTR_OK;
+      .  }
+</pre>
+<p>The <tt class="docutils literal">Ir</tt> for this function shows two lines that take up most
+of the execution.  First, <tt class="docutils literal">bstrcmp</tt> seems to go through a lot
+of trouble to make sure that it is not given a <tt class="docutils literal">NULL</tt> value.
+That's a good thing so I want to leave that alone, but I'd consider
+writing a different compare function that was more &quot;risky&quot; and assumed
+it was never given a <tt class="docutils literal">NULL</tt>.  The next one is the loop that
+does the actual comparison.  It seems that there's some optimization
+that could be done in comparing the characters of the two data buffers.</p>
+</div>
+<div class="section" id="analyzing-memory-access-with-cachegrind">
+<h1>Analyzing Memory Access With Cachegrind</h1>
+<p>What I want to do next is see how many times this <tt class="docutils literal">bstrcmp</tt> function
+access memory to either read it or write it.  The tool for doing that (and
+other things) is <tt class="docutils literal">cachegrind</tt> and you use it like this:</p>
+<div class="highlight"><pre><a name="code--ex41.3.sh-session-pyg.html-1"></a><span class="gp">$</span> valgrind --tool<span class="o">=</span>cachegrind tests/bstree_tests
+<a name="code--ex41.3.sh-session-pyg.html-2"></a><span class="go">...</span>
+<a name="code--ex41.3.sh-session-pyg.html-3"></a><span class="gp">$</span> cg_annotate --show<span class="o">=</span>Dr,Dw cachegrind.out.1316 | grep -v <span class="s2">&quot;???&quot;</span>
+<a name="code--ex41.3.sh-session-pyg.html-4"></a><span class="go">--------------------------------------------------------------------------------</span>
+<a name="code--ex41.3.sh-session-pyg.html-5"></a><span class="go">I1 cache:         32768 B, 64 B, 8-way associative</span>
+<a name="code--ex41.3.sh-session-pyg.html-6"></a><span class="go">D1 cache:         32768 B, 64 B, 8-way associative</span>
+<a name="code--ex41.3.sh-session-pyg.html-7"></a><span class="go">LL cache:         4194304 B, 64 B, 16-way associative</span>
+<a name="code--ex41.3.sh-session-pyg.html-8"></a><span class="go">Command:          tests/bstree_tests</span>
+<a name="code--ex41.3.sh-session-pyg.html-9"></a><span class="go">Data file:        cachegrind.out.1316</span>
+<a name="code--ex41.3.sh-session-pyg.html-10"></a><span class="go">Events recorded:  Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw</span>
+<a name="code--ex41.3.sh-session-pyg.html-11"></a><span class="go">Events shown:     Dr Dw</span>
+<a name="code--ex41.3.sh-session-pyg.html-12"></a><span class="go">Event sort order: Ir I1mr ILmr Dr D1mr DLmr Dw D1mw DLmw</span>
+<a name="code--ex41.3.sh-session-pyg.html-13"></a><span class="go">Thresholds:       0.1 100 100 100 100 100 100 100 100</span>
+<a name="code--ex41.3.sh-session-pyg.html-14"></a><span class="go">Include dirs:     </span>
+<a name="code--ex41.3.sh-session-pyg.html-15"></a><span class="go">User annotated:   </span>
+<a name="code--ex41.3.sh-session-pyg.html-16"></a><span class="go">Auto-annotation:  off</span>
+<a name="code--ex41.3.sh-session-pyg.html-17"></a>
+<a name="code--ex41.3.sh-session-pyg.html-18"></a><span class="go">--------------------------------------------------------------------------------</span>
+<a name="code--ex41.3.sh-session-pyg.html-19"></a><span class="go">     Dr      Dw </span>
+<a name="code--ex41.3.sh-session-pyg.html-20"></a><span class="go">--------------------------------------------------------------------------------</span>
+<a name="code--ex41.3.sh-session-pyg.html-21"></a><span class="go">997,124 349,058  PROGRAM TOTALS</span>
+<a name="code--ex41.3.sh-session-pyg.html-22"></a>
+<a name="code--ex41.3.sh-session-pyg.html-23"></a><span class="go">--------------------------------------------------------------------------------</span>
+<a name="code--ex41.3.sh-session-pyg.html-24"></a><span class="go">     Dr     Dw  file:function</span>
+<a name="code--ex41.3.sh-session-pyg.html-25"></a><span class="go">--------------------------------------------------------------------------------</span>
+<a name="code--ex41.3.sh-session-pyg.html-26"></a><span class="go">169,754 19,430  src/lcthw/bstrlib.c:bstrcmp</span>
+<a name="code--ex41.3.sh-session-pyg.html-27"></a><span class="go"> 67,548 27,428  src/lcthw/bstree.c:BSTree_get</span>
+<a name="code--ex41.3.sh-session-pyg.html-28"></a><span class="go"> 19,430 19,430  src/lcthw/bstree.c:default_compare</span>
+<a name="code--ex41.3.sh-session-pyg.html-29"></a><span class="go">  5,420  2,383  src/lcthw/bstree.c:BSTree_delete</span>
+<a name="code--ex41.3.sh-session-pyg.html-30"></a><span class="go">  2,000  4,200  src/lcthw/bstrlib.c:bformat</span>
+<a name="code--ex41.3.sh-session-pyg.html-31"></a><span class="go">  1,600  2,800  src/lcthw/bstrlib.c:bfromcstralloc</span>
+<a name="code--ex41.3.sh-session-pyg.html-32"></a><span class="go">  2,770  1,410  src/lcthw/bstree.c:BSTree_set</span>
+<a name="code--ex41.3.sh-session-pyg.html-33"></a><span class="go">  1,200  1,200  src/lcthw/bstrlib.c:bdestroy</span>
+<a name="code--ex41.3.sh-session-pyg.html-34"></a>
+<a name="code--ex41.3.sh-session-pyg.html-35"></a><span class="gp">$</span>
+</pre></div><p>I tell <tt class="docutils literal">valgrind</tt> to use the <tt class="docutils literal">cachegrind</tt> tool, which runs
+<tt class="docutils literal">bstree_tests</tt> and then produces a <tt class="docutils literal">cachegrind.out.PID</tt> file
+just like <tt class="docutils literal">callgrind</tt> did.  I then use the program <tt class="docutils literal">cg_annotate</tt>
+to get a similar output, but notice that I'm telling it to do <tt class="docutils literal"><span class="pre">--show=Dr,Dw</span></tt>.
+This option says that I only want the memory read <tt class="docutils literal">Dr</tt> and write <tt class="docutils literal">Dw</tt>
+counts for each function.</p>
+<p>After that you get your usual header and then the counts for <tt class="docutils literal">Dr</tt> and <tt class="docutils literal">Dw</tt>
+for each <a class="reference external" href="file:function">file:function</a> combination.  I've edited this down so it shows the files
+and also removed any OS junk with <tt class="docutils literal">| grep <span class="pre">-v</span> <span class="pre">&quot;???&quot;</span></tt> so your output may
+be a little different.  What you see in my output is that <tt class="docutils literal">bstrcmp</tt> is the
+worst function for memory usage too, which is to be expected since that's mostly
+the only thing it does.  I'm going to now dump it's annotated source to
+see where.</p>
+<pre class="literal-block">
+--------------------------------------------------------------------------------
+-- User-annotated source: src/lcthw/bstrlib.c
+--------------------------------------------------------------------------------
+    Dr     Dw
+
+
+     0 19,430  int bstrcmp (const_bstring b0, const_bstring b1) {
+     .      .  int i, v, n;
+     .      .
+77,720      0       if (b0 == NULL || b1 == NULL || b0-&gt;data == NULL || b1-&gt;data == NULL ||
+38,860      0               b0-&gt;slen &lt; 0 || b1-&gt;slen &lt; 0) return SHRT_MIN;
+     0      0       n = b0-&gt;slen; if (n &gt; b1-&gt;slen) n = b1-&gt;slen;
+     0      0       if (b0-&gt;slen == b1-&gt;slen &amp;&amp; (b0-&gt;data == b1-&gt;data || b0-&gt;slen == 0))
+     .      .               return BSTR_OK;
+     .      .
+     0      0       for (i = 0; i &lt; n; i ++) {
+53,174      0               v = ((char) b0-&gt;data[i]) - ((char) b1-&gt;data[i]);
+     .      .               if (v != 0) return v;
+     .      .               if (b0-&gt;data[i] == (unsigned char) '\0') return BSTR_OK;
+     .      .       }
+     .      .
+     .      .       if (b0-&gt;slen &gt; n) return 1;
+     .      .       if (b1-&gt;slen &gt; n) return -1;
+     .      .       return BSTR_OK;
+     .      .  }
+</pre>
+<p>The surprising thing about this output is that the worst line of <tt class="docutils literal">bstrcmp</tt>
+isn't the character comparison like I thought.  For memory access it's that
+protective if-statement at the top that checks every possible bad variable
+it could receive.  That one if statement does more than twice as many memory
+accesses compared to the line that's comparing the characters on line 17 of
+this output.  If I were to make <tt class="docutils literal">bstrcmp</tt> then I would definitely just
+ditch that or do it once somewhere else.</p>
+<p>Another option is to turn this check into an <tt class="docutils literal">assert</tt> that only exists
+when running in development, and then compile it out in production.  I now
+have enough evidence to say that this line is bad for this data structure,
+so I can justify removing it.</p>
+<p>What I don't want to do however is justify making this function less defensive
+to just gain a few more cycles.  In a real performance improvement situation I
+would simply put this on a list and then dig for other gains I can make in
+the program.</p>
+</div>
+<div class="section" id="judo-tuning">
+<h1>Judo Tuning</h1>
+<blockquote>
+<p>&quot;We should forget about small efficiencies, say about 97% of the time: premature optimization is the root of all evil.&quot;</p>
+<p class="attribution">&mdash;Donald Knuth</p>
+</blockquote>
+<p>In my opinion, this quote seems to miss a major point about performance tuning.
+In this Knuth is saying that when you performance tune matters, in that if you
+do it in the beginning, then you'll cause all sorts of problems.  According to
+him optimization should happen &quot;sometime later&quot;, or at least that's my guess.
+Who knows these days really.</p>
+<p>I'm going to declare this quote not necessarily wrong, but missing the point,
+and instead I'm going to officially give my quote.  You can quote me on this:</p>
+<blockquote>
+<p>&quot;Use evidence to find the biggest optimizations that take the least effort.&quot;</p>
+<p class="attribution">&mdash;Zed A. Shaw</p>
+</blockquote>
+<p>It doesn't matter when you try to optimize something, but instead it's how
+you figure out if your optimization actually improved the software, and
+how much effort you put into doing them.  With evidence you can find the
+places in the code where just a little effort gets you big improvements.
+Usually these places are just dumb decisions, as in <tt class="docutils literal">bstrcmp</tt>
+trying to check everything possible for a <tt class="docutils literal">NULL</tt> value.</p>
+<p>At a certain point you have tuned the code to where the only thing that
+remains is tiny little micro-optimizations such as reorganizing if-statements
+and special loops like Duff's Device.  At this point, just stop because there's
+a good chance that you'd gain more by redesigning the software to just
+<em>not do things</em>.</p>
+<p>This is something that programmers who are optimizing simply fail to see.
+Many times the best way to do something fast is to find out ways to not
+do them.  In the above analysis, I wouldn't try to make <tt class="docutils literal">bstrcmp</tt>
+faster, I'd try to find a way to not use <tt class="docutils literal">bstrcmp</tt> so much.  Maybe
+there's a hashing scheme I can use that let's me do a sortable hash instead
+of constantly doing <tt class="docutils literal">bstrcmp</tt>.  Maybe I can optimize it by trying
+the first char first, and if it's comparable just don't call <tt class="docutils literal">bstrcmp</tt>.</p>
+<p>If after all that you can't do a redesign then start looking for little
+micro-optimizations, but as you do them <em>constantly confirm they
+improve speed</em>.  Remember that the goal is to cause the biggest impact
+with the least effort possible.</p>
+</div>
+<div class="section" id="using-kcachegrind">
+<h1>Using KCachegrind</h1>
+<p>The final section of this exercise is going to point you at a tool called
+<a class="reference external" href="http://kcachegrind.sourceforge.net/html/Home.html">KCachegrind</a>
+is a <em>fantastic</em> GUI for analyzing <tt class="docutils literal">callgrind</tt> and <tt class="docutils literal">cachegrind</tt>
+output.  I use it almost exclusively when I'm working on a Linux or BSD computer,
+and I've actually switched to just coding on Linux for projects because of
+<tt class="docutils literal">KCachegrind</tt>.</p>
+<p>Teaching you how to use it is outside the scope of this exercise, but you should
+be able to understand how to use it after this exercise.  The output is nearly
+the same except <tt class="docutils literal">KCachegrind</tt> lets you do the following:</p>
+<ul class="simple">
+<li>Graphically browse the source and execution times doing various sorts to
+find things to improve.</li>
+<li>Analyze different graphs to visually see what's taking up the most time
+and also what it is calling.</li>
+<li>Look at the actual machine code assembler output so you can see possible
+instructions that are happening, giving you more clues.</li>
+<li>Visualize the jump patterns for loops and branches in the source code,
+helping you find wayso to optimize the code easier.</li>
+</ul>
+<p>You should spend some time getting <tt class="docutils literal">KCachegrind</tt> installed and
+play with it.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Read the <a class="reference external" href="http://valgrind.org/docs/manual/cl-manual.html">callgrind manual</a>
+and try some advanced options.</li>
+<li>Read the <a class="reference external" href="http://valgrind.org/docs/manual/cg-manual.html">cachegrind manual</a>
+and also try some advanced options.</li>
+<li>Use <tt class="docutils literal">callgrind</tt> and <tt class="docutils literal">cachegrind</tt> on all the unit tests and
+see if you can find optimizations to make.  Did you find some things that
+surprised you?  If not you probably aren't looking hard enough.</li>
+<li>Use KCachegrind and see how it compares to doing the terminal output like
+I'm doing here.</li>
+<li>Now use these tools to do the Exercise 40 extra credits and improvements.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

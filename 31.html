@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 31: Debugging Code</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 31: Debugging Code</h1>
+            <p>I've already taught you about my awesome debug macros and you've been using
+them.  When I debug code I use the <tt class="docutils literal">debug()</tt> macro almost exclusively to
+analyze what's going on and track down the problem.  In this exercise I'm going
+to teach you the basics of using gdb to inspect a simple program that runs and
+doesn't exit.  You'll learn how to use gdb to attach to a running process, stop
+it, and see what's happening.  After that I'll give you some little tips and
+tricks that you can use with gdb.</p>
+<div class="section" id="debug-printing-vs-gdb-vs-valgrind">
+<h1>Debug Printing Vs. GDB Vs. Valgrind</h1>
+<p>I approach debugging primarily with a &quot;scientific method&quot; style, where I come
+up with possible causes and then rule them out or prove they cause the defect.
+The problem many programmers have though is their panic and rush to solve a bug
+makes them feel like this approach will &quot;slow them down&quot;.  In their rush to
+solve they fail to notice that they're really just flailing around and
+gathering no useful information.  I find that logging (debug printing) forces
+me to solve a bug scientifically and it's also just easier to gather
+information in more situations.</p>
+<p>In addition to that, I also have these reasons for using debug printing as my
+primary debugging tool:</p>
+<ul class="simple">
+<li>You see an entire tracing of a program's execution with debug printing of variables which lets you
+track how things are going wrong.  With gdb you have to place watch and debug statements all over
+for every thing you want and it's difficult to get a solid trace of the execution.</li>
+<li>The debug prints can stay in the code, and when you need them you can recompile and they come back.
+With gdb you have to configure the same information uniquely for every defect you have to hunt down.</li>
+<li>It's easier to turn on debug logging on a server that's not working right and then inspect the logs while
+it runs to see what's going on.  System administrators know how to handle logging, they don't know how
+to use gdb.</li>
+<li>Printing things is just easier. Debuggers are always obtuse and weird with their own quirky interface and
+inconsistencies.  There's nothing complicated about <tt class="docutils literal"><span class="pre">debug(&quot;Yo,</span> dis right? %d&quot;, my_stuff);</tt>.</li>
+<li>Writing debug prints to find a defect forces you to actually analyze the code and use the scientific method.
+You can think of a debug usage as, &quot;I hypothesize that the code is broken here.&quot;  Then when you run it
+you get your hypothesis tested and if it's not broken then you can move to another part where it could be.
+This may seem like it takes longer, but it's actually faster because you go through a process of &quot;differential
+diagnosis&quot; and rule out possible causes until you find the real one.</li>
+<li>Debug printing works better with unit testing.  You can actually just compile the debugs in all the time
+while you work, and when a unit test explodes just go look at the logs any time.  With gdb you'd have to
+rerun the unit test under gdb and then trace through it to see what's going on.</li>
+<li>With valgrind you get the equivalent of debug prints for many memory related errors, so you don't need to
+use something like gdb to find those defects anymore.</li>
+</ul>
+<p>Despite all these reasons that I rely on <tt class="docutils literal">debug</tt> over <tt class="docutils literal">gdb</tt>, I
+still use <tt class="docutils literal">gdb</tt> in a few situations and I think you should have any
+tool that helps you get your work done.  Sometimes, you just have to connect to
+a broken program and poke around.  Or, maybe you've got a server that's
+crashing and you can only get at core files to see why.  In these and a few
+other cases, gdb is the way to go, and it's always good to have as many tools
+as possible to help solve problems.</p>
+<p>I then break down when I use gdb vs. valgrind vs. debug printing like this:</p>
+<ul class="simple">
+<li>Valgrind is used to catch all memory errors.  I use gdb if valgrind is having problems or if using
+valgrind would slow the program down too much.</li>
+<li>Print with debug to diagnose and fix defects related to logic or usage.  This amounts to about 90% of the
+defects after you start using Valgrind.</li>
+<li>Use gdb for the remaining &quot;mystery weird stuff&quot; or emergency situations to gather information.  If Valgrind isn't turning anything
+up and I can't even print out the information I need, then I bust out gdb and start poking around.  My use of
+gdb in this case is entirely to gather information.  Once I have an idea of what's going on I go back to writing
+a unit test to cause the defect, and then do print statements to find out why.</li>
+</ul>
+</div>
+<div class="section" id="a-debugging-strategy">
+<h1>A Debugging Strategy</h1>
+<p>This process will actually work with any debugging technique you're going to
+use, whether that's Valgrind, debug printing, or using a debugger.  I'm going
+to describe it in terms of using <tt class="docutils literal">gdb</tt> since it seems people skip this
+process the most when using debuggers, but use this for every bug until you
+only need it on the very difficult ones.</p>
+<ul class="simple">
+<li>Start a little text file called <tt class="docutils literal">notes.txt</tt> and use it as a kind of
+&quot;lab notes&quot; for ideas, bugs, problems, etc.</li>
+<li>Before you use <tt class="docutils literal">gdb</tt>, write out the bug you're going to fix
+and what could be causing it.</li>
+<li>For each cause, write out the files and functions where you think
+the cause is coming from, or just write that you don't know.</li>
+<li>Now start <tt class="docutils literal">gdb</tt> and pick the first possible cause with good
+<a class="reference external" href="file:function">file:function</a> possibles and set breakpoints there.</li>
+<li>Use <tt class="docutils literal">gdb</tt> to then run the program and confirm if that is the
+cause.  The best way is to see if you can use the <tt class="docutils literal">set</tt> command
+to either fix the program easily or cause the error immediately.</li>
+<li>If this isn't the cause, then mark in the <tt class="docutils literal">notes.txt</tt> that it
+wasn't and why.  Move on to the next possible cause that's easiest
+to debug, and keep adding information you gather.</li>
+</ul>
+<p>In case you haven't noticed, this is basically the scientific method.  You
+write down a set of hypotheses, then you use debugging to prove or disprove
+them.  This gives you insight into more possible causes and then eventually you
+find it. This process helps you avoid going over the same possible causes
+repeatedly even though you've found they aren't possible.</p>
+<p>You can also do this with debug printing, the only difference is you actually
+write out your hypotheses in the source code where you think the problem is
+instead of the <tt class="docutils literal">notes.txt</tt>.  In a way, debug printing forces you to tackle
+bugs scientifically since you have to write out hypotheses as print statements.</p>
+</div>
+<div class="section" id="using-gdb">
+<h1>Using GDB</h1>
+<p>The program I'll debug in this exercise is just a while-loop that doesn't
+terminate correctly.  I'm putting a small <tt class="docutils literal">usleep</tt> call in it so that
+there's something interesting to troll through as well.</p>
+<div class="highlight"><pre><a name="code--ex31.c-pyg.html-1"></a><span class="cp">#include &lt;unistd.h&gt;</span>
+<a name="code--ex31.c-pyg.html-2"></a>
+<a name="code--ex31.c-pyg.html-3"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex31.c-pyg.html-4"></a><span class="p">{</span>
+<a name="code--ex31.c-pyg.html-5"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex31.c-pyg.html-6"></a>
+<a name="code--ex31.c-pyg.html-7"></a>    <span class="k">while</span><span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex31.c-pyg.html-8"></a>        <span class="n">usleep</span><span class="p">(</span><span class="mi">3000</span><span class="p">);</span>
+<a name="code--ex31.c-pyg.html-9"></a>    <span class="p">}</span>
+<a name="code--ex31.c-pyg.html-10"></a>
+<a name="code--ex31.c-pyg.html-11"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex31.c-pyg.html-12"></a><span class="p">}</span>
+</pre></div><p>Compile this like normal and then start it under <tt class="docutils literal">gdb</tt> like this:  <tt class="docutils literal">gdb ./ex31</tt></p>
+<p>Once it's running I want you to play around with these <tt class="docutils literal">gdb</tt> commands
+to see what they do and how to use them.</p>
+<dl class="docutils">
+<dt>help COMMAND</dt>
+<dd>Get a short help with COMMAND.</dd>
+<dt>break file.c:(line|function)</dt>
+<dd>Sets a break point where you want to pause execution.  You can give lines or function names to break at after the file.</dd>
+<dt>run ARGS</dt>
+<dd>Runs the program, using the ARGS as arguments to the program.</dd>
+<dt>cont</dt>
+<dd>Continues execution until a new breakpoint or error.</dd>
+<dt>step</dt>
+<dd><p class="first">Step through the code, but move <em>into functions</em>.  Use this to</p>
+<p class="last">trace into a function and see what it's doing.</p>
+</dd>
+<dt>next</dt>
+<dd>Just like <tt class="docutils literal">step</tt>, but go <em>over functions</em> by just running them.</dd>
+<dt>backtrace (or bt)</dt>
+<dd>Does a &quot;backtrace&quot;, which dumps the trace of function
+calls leading to the current point in the program. Very useful for figuring
+out how you got there, since it also prints the parameters that were passed
+to each function.  It's also similar to what Valgrind reports when you have
+a memory error.</dd>
+<dt>set var X = Y</dt>
+<dd>Set variable X equal to Y.</dd>
+<dt>print X</dt>
+<dd>Prints out the value of X, and you can usually use C syntax to access
+the values of pointers and contents of structs.</dd>
+<dt>ENTER</dt>
+<dd>The ENTER key just repeats the last command.</dd>
+<dt>quit</dt>
+<dd>Exits <tt class="docutils literal">gdb</tt></dd>
+</dl>
+<p>Those are the majority of commands I use with <tt class="docutils literal">gdb</tt>.  Your job is to
+now play with these and <tt class="docutils literal">ex31</tt> so you can get familiar with the output.</p>
+<p>Once you're familiar with <tt class="docutils literal">gdb</tt> you'll want to play with it some more.
+Try using it on more complicated programs like <tt class="docutils literal">devpkg</tt> to see if you
+can alter the program's execution or analyze what it's doing.</p>
+</div>
+<div class="section" id="process-attaching">
+<h1>Process Attaching</h1>
+<p>The most useful thing about <tt class="docutils literal">gdb</tt> is the ability to attach to a running program and
+debug it right there.  When you have a crashing server or a GUI program, you can't
+usually start it under <tt class="docutils literal">gdb</tt> like you just did.  Instead, you have to start
+it, hope it doesn't crash right away, then attach to it and set a breakpoint.  In
+this part of the exercise I'll show you how to do that.</p>
+<p>After you exit <tt class="docutils literal">gdb</tt> I want you to restart <tt class="docutils literal">ex31</tt> if you
+stopped it, and then start another Terminal window so you can process attach to
+it.  Process attaching is where you tell <tt class="docutils literal">gdb</tt> to connect to a program
+that's already running so you can inspect it live.  It stops the program and
+then you can walk through it, and when you're done it'll continue just like
+normal.</p>
+<p>Here's a session of me doing it to <tt class="docutils literal">ex31</tt>, stepping through it, then
+fixing the while-loop to make it exit.</p>
+<div class="highlight"><pre><a name="code--ex31.sh-session-pyg.html-1"></a><span class="gp">$</span> ps ax | grep ex31
+<a name="code--ex31.sh-session-pyg.html-2"></a><span class="go">10026 s000  S+     0:00.11 ./ex31</span>
+<a name="code--ex31.sh-session-pyg.html-3"></a><span class="go">10036 s001  R+     0:00.00 grep ex31</span>
+<a name="code--ex31.sh-session-pyg.html-4"></a>
+<a name="code--ex31.sh-session-pyg.html-5"></a><span class="gp">$</span> gdb ./ex31 10026
+<a name="code--ex31.sh-session-pyg.html-6"></a><span class="go">GNU gdb 6.3.50-20050815 (Apple version gdb-1705) (Fri Jul  1 10:50:06 UTC 2011)</span>
+<a name="code--ex31.sh-session-pyg.html-7"></a><span class="go">Copyright 2004 Free Software Foundation, Inc.</span>
+<a name="code--ex31.sh-session-pyg.html-8"></a><span class="go">GDB is free software, covered by the GNU General Public License, and you are</span>
+<a name="code--ex31.sh-session-pyg.html-9"></a><span class="go">welcome to change it and/or distribute copies of it under certain conditions.</span>
+<a name="code--ex31.sh-session-pyg.html-10"></a><span class="go">Type &quot;show copying&quot; to see the conditions.</span>
+<a name="code--ex31.sh-session-pyg.html-11"></a><span class="go">There is absolutely no warranty for GDB.  Type &quot;show warranty&quot; for details.</span>
+<a name="code--ex31.sh-session-pyg.html-12"></a><span class="go">This GDB was configured as &quot;x86_64-apple-darwin&quot;...Reading symbols for shared libraries .. done</span>
+<a name="code--ex31.sh-session-pyg.html-13"></a>
+<a name="code--ex31.sh-session-pyg.html-14"></a><span class="go">/Users/zedshaw/projects/books/learn-c-the-hard-way/code/10026: No such file or directory</span>
+<a name="code--ex31.sh-session-pyg.html-15"></a><span class="go">Attaching to program: `/Users/zedshaw/projects/books/learn-c-the-hard-way/code/ex31&#39;, process 10026.</span>
+<a name="code--ex31.sh-session-pyg.html-16"></a><span class="go">Reading symbols for shared libraries + done</span>
+<a name="code--ex31.sh-session-pyg.html-17"></a><span class="go">Reading symbols for shared libraries ++........................ done</span>
+<a name="code--ex31.sh-session-pyg.html-18"></a><span class="go">Reading symbols for shared libraries + done</span>
+<a name="code--ex31.sh-session-pyg.html-19"></a><span class="go">0x00007fff862c9e42 in __semwait_signal ()</span>
+<a name="code--ex31.sh-session-pyg.html-20"></a>
+<a name="code--ex31.sh-session-pyg.html-21"></a><span class="go">(gdb) break 8</span>
+<a name="code--ex31.sh-session-pyg.html-22"></a><span class="go">Breakpoint 1 at 0x107babf14: file ex31.c, line 8.</span>
+<a name="code--ex31.sh-session-pyg.html-23"></a>
+<a name="code--ex31.sh-session-pyg.html-24"></a><span class="go">(gdb) break ex31.c:11</span>
+<a name="code--ex31.sh-session-pyg.html-25"></a><span class="go">Breakpoint 2 at 0x107babf1c: file ex31.c, line 12.</span>
+<a name="code--ex31.sh-session-pyg.html-26"></a>
+<a name="code--ex31.sh-session-pyg.html-27"></a><span class="go">(gdb) cont</span>
+<a name="code--ex31.sh-session-pyg.html-28"></a><span class="go">Continuing.</span>
+<a name="code--ex31.sh-session-pyg.html-29"></a>
+<a name="code--ex31.sh-session-pyg.html-30"></a><span class="go">Breakpoint 1, main (argc=1, argv=0x7fff677aabd8) at ex31.c:8</span>
+<a name="code--ex31.sh-session-pyg.html-31"></a><span class="go">8      while(i &lt; 100) {</span>
+<a name="code--ex31.sh-session-pyg.html-32"></a>
+<a name="code--ex31.sh-session-pyg.html-33"></a><span class="go">(gdb) p i</span>
+<a name="code--ex31.sh-session-pyg.html-34"></a><span class="gp">$</span><span class="nv">1</span> <span class="o">=</span> 0
+<a name="code--ex31.sh-session-pyg.html-35"></a>
+<a name="code--ex31.sh-session-pyg.html-36"></a><span class="go">(gdb) cont</span>
+<a name="code--ex31.sh-session-pyg.html-37"></a><span class="go">Continuing.</span>
+<a name="code--ex31.sh-session-pyg.html-38"></a>
+<a name="code--ex31.sh-session-pyg.html-39"></a><span class="go">Breakpoint 1, main (argc=1, argv=0x7fff677aabd8) at ex31.c:8</span>
+<a name="code--ex31.sh-session-pyg.html-40"></a><span class="go">8      while(i &lt; 100) {</span>
+<a name="code--ex31.sh-session-pyg.html-41"></a>
+<a name="code--ex31.sh-session-pyg.html-42"></a><span class="go">(gdb) p i</span>
+<a name="code--ex31.sh-session-pyg.html-43"></a><span class="gp">$</span><span class="nv">2</span> <span class="o">=</span> 0
+<a name="code--ex31.sh-session-pyg.html-44"></a>
+<a name="code--ex31.sh-session-pyg.html-45"></a><span class="go">(gdb) list</span>
+<a name="code--ex31.sh-session-pyg.html-46"></a><span class="go">3  </span>
+<a name="code--ex31.sh-session-pyg.html-47"></a><span class="go">4  int main(int argc, char *argv[])</span>
+<a name="code--ex31.sh-session-pyg.html-48"></a><span class="go">5  {</span>
+<a name="code--ex31.sh-session-pyg.html-49"></a><span class="go">6      int i = 0;</span>
+<a name="code--ex31.sh-session-pyg.html-50"></a><span class="go">7  </span>
+<a name="code--ex31.sh-session-pyg.html-51"></a><span class="go">8      while(i &lt; 100) {</span>
+<a name="code--ex31.sh-session-pyg.html-52"></a><span class="go">9          usleep(3000);</span>
+<a name="code--ex31.sh-session-pyg.html-53"></a><span class="go">10     }</span>
+<a name="code--ex31.sh-session-pyg.html-54"></a><span class="go">11 </span>
+<a name="code--ex31.sh-session-pyg.html-55"></a><span class="go">12     return 0;</span>
+<a name="code--ex31.sh-session-pyg.html-56"></a>
+<a name="code--ex31.sh-session-pyg.html-57"></a><span class="go">(gdb) set var i = 200</span>
+<a name="code--ex31.sh-session-pyg.html-58"></a>
+<a name="code--ex31.sh-session-pyg.html-59"></a><span class="go">(gdb) p i</span>
+<a name="code--ex31.sh-session-pyg.html-60"></a><span class="gp">$</span><span class="nv">3</span> <span class="o">=</span> 200
+<a name="code--ex31.sh-session-pyg.html-61"></a>
+<a name="code--ex31.sh-session-pyg.html-62"></a><span class="go">(gdb) next</span>
+<a name="code--ex31.sh-session-pyg.html-63"></a>
+<a name="code--ex31.sh-session-pyg.html-64"></a><span class="go">Breakpoint 2, main (argc=1, argv=0x7fff677aabd8) at ex31.c:12</span>
+<a name="code--ex31.sh-session-pyg.html-65"></a><span class="go">12     return 0;</span>
+<a name="code--ex31.sh-session-pyg.html-66"></a>
+<a name="code--ex31.sh-session-pyg.html-67"></a><span class="go">(gdb) cont</span>
+<a name="code--ex31.sh-session-pyg.html-68"></a><span class="go">Continuing.</span>
+<a name="code--ex31.sh-session-pyg.html-69"></a>
+<a name="code--ex31.sh-session-pyg.html-70"></a><span class="go">Program exited normally.</span>
+<a name="code--ex31.sh-session-pyg.html-71"></a><span class="go">(gdb) quit</span>
+<a name="code--ex31.sh-session-pyg.html-72"></a><span class="gp">$</span>
+</pre></div><div class="note">
+<p class="first admonition-title">Note</p>
+<p class="last">On OSX you may see a GUI prompt for the root password, and even after you
+give it you still get an error from <tt class="docutils literal">gdb</tt> saying &quot;Unable to access task for process-id XXX: (os/kern) failure.&quot;  In that case stop both gdb and the
+<tt class="docutils literal">ex31</tt> program, then start over and it should work as long as you
+successfully entered the root password.</p>
+</div>
+<p>I'll walk through this session and explain what I did:</p>
+<dl class="docutils">
+<dt>gdb:1</dt>
+<dd>I use <tt class="docutils literal">ps</tt> to find out what the process id is
+of the <tt class="docutils literal">ex31</tt> I want to attach.</dd>
+<dt>gdb:5</dt>
+<dd>I'm attaching using <tt class="docutils literal">gdb ./ex31 PID</tt> replacing PID with
+the process id I have.</dd>
+<dt>gdb:6-19</dt>
+<dd><tt class="docutils literal">gdb</tt> prints out a bunch of information about it's
+license and then all the things it's reading.</dd>
+<dt>gdb:21</dt>
+<dd>The program is attached and stopped at this point, so now I set
+a breakpoint at line 8 in the file with <tt class="docutils literal">break</tt>.
+I'm assuming that I'm already in the file I want to break when I do this.</dd>
+<dt>gdb:24</dt>
+<dd>A better way to do a <tt class="docutils literal">break</tt>, is give <tt class="docutils literal">file.c:line</tt> format
+so you can be sure you did the right location.  I do that in this <tt class="docutils literal">break</tt>.</dd>
+<dt>gdb:27</dt>
+<dd>I use <tt class="docutils literal">cont</tt> to continue processing until I hit a breakpoint.</dd>
+<dt>gdb:30-31</dt>
+<dd>The breakpoint is reached so <tt class="docutils literal">gdb</tt> prints out variables
+I need to know about (<tt class="docutils literal">argc</tt> and <tt class="docutils literal">argv</tt>) and where it's stopped,
+then the line of code for the breakpoint.</dd>
+<dt>gdb:33-34</dt>
+<dd>I use the abbreviation for <tt class="docutils literal">print</tt> &quot;p&quot; to print out the value
+of the <tt class="docutils literal">i</tt> variable.  It's 0.</dd>
+<dt>gdb:36</dt>
+<dd>Continue again to see if <tt class="docutils literal">i</tt> changes.</dd>
+<dt>gdb:42</dt>
+<dd>Print out <tt class="docutils literal">i</tt> again, and nope it's not changing.</dd>
+<dt>gdb:45-55</dt>
+<dd>Use <tt class="docutils literal">list</tt> to see what the code is, and then I realize
+it's not exiting because I'm not incrementing <tt class="docutils literal">i</tt>.</dd>
+<dt>gdb:57</dt>
+<dd>Confirm my hypothesis that <tt class="docutils literal">i</tt> needs to change by using the
+<tt class="docutils literal">set</tt> command to change it to be <tt class="docutils literal">i = 200</tt>.  This is one of the
+best features of <tt class="docutils literal">gdb</tt> as it lets you &quot;fix&quot; a program really quick
+to see if you're right.</dd>
+<dt>gdb:59</dt>
+<dd>Print out <tt class="docutils literal">i</tt> just to make sure it changed.</dd>
+<dt>gdb:62</dt>
+<dd>Use <tt class="docutils literal">next</tt> to move to the next piece of code, and I see that
+the breakpoint at <tt class="docutils literal">ex31.c:12</tt> is hit, so that means the while-loop
+exited.  My hypothesis is correct, I need to make <tt class="docutils literal">i</tt> change.</dd>
+<dt>gdb:67</dt>
+<dd>Use <tt class="docutils literal">cont</tt> to continue and the program exits like normal.</dd>
+<dt>gdb:71</dt>
+<dd>I finally use <tt class="docutils literal">quit</tt> to get out of <tt class="docutils literal">gdb</tt>.</dd>
+</dl>
+</div>
+<div class="section" id="gdb-tricks">
+<h1>GDB Tricks</h1>
+<p>Here's a list of simple tricks you can do with GDB:</p>
+<dl class="docutils">
+<dt>gdb --args</dt>
+<dd>Normally <tt class="docutils literal">gdb</tt> takes arguments you give it
+and assumes they are for itself.  Using <tt class="docutils literal"><span class="pre">--args</span></tt> passes them to
+the program.</dd>
+<dt>thread apply all bt</dt>
+<dd>Dumps a backtrace for <em>all</em> threads.  Very useful.</dd>
+<dt>gdb --batch --ex r --ex bt --ex q --args</dt>
+<dd>Runs the program so that, if it
+bombs you get a backtrace.</dd>
+</dl>
+<dl class="docutils">
+<dt>?</dt>
+<dd>Got one? Leave it in the comments.</dd>
+</dl>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Find a graphical debugger and compare using it to raw <tt class="docutils literal">gdb</tt>.
+These are useful when the program you're looking at is local, but they
+are pointless if you have to debug a program on a server.</li>
+<li>You can enable &quot;core dumps&quot; on your OS, and when a program crashes
+you'll get a core file.  This core file is like a post-mortem of
+the program so you can load up what happened right at the crash
+and see what caused it.  Change <tt class="docutils literal">ex31.c</tt> so that it crashes
+after a few iterations, then try to get a core dump and analyze it.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

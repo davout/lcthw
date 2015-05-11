@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 29: Libraries And Linking</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 29: Libraries And Linking</h1>
+            <p>A central part of any C program is the ability to link it to libraries that
+your operating system provides.  Linking is how you get additional features
+for your program that someone else created and packaged on the system.  You've
+been using some standard libraries that are automatically included, but I'm
+going to explain the different types of libraries and what they do.</p>
+<p>First off, libraries are poorly designed in every programming language.  I have
+no idea why, but it seems language designers think of linking as something they
+just slap on later.  They are usually confusing, hard to deal with, can't do
+versioning right, and end up being linked differently everywhere.</p>
+<p>C is no different, but the way linking and libraries are done in C is an artifact
+of how the Unix operating system and executable formats were designed years ago.
+Learning how C links things helps you understand how your OS works and how it
+runs your programs.</p>
+<p>To start off there are two basic types of libraries:</p>
+<dl class="docutils">
+<dt>static</dt>
+<dd>You've made one of these when you used <tt class="docutils literal">ar</tt> and <tt class="docutils literal">ranlib</tt>
+to create the <tt class="docutils literal">libYOUR_LIBRARY.a</tt> in the last exercise.  This kind of library
+is nothing more than a container for a set of <tt class="docutils literal">.o</tt> object files and their
+functions, and you can treat it like one big <tt class="docutils literal">.o</tt> file when building
+your programs.</dd>
+<dt>dynamic</dt>
+<dd>These typically end in <tt class="docutils literal">.so</tt>, <tt class="docutils literal">.dll</tt> or about 1 million other endings
+on OSX depending on the version and who happened to be working that day.
+Seriously though, OSX adds <tt class="docutils literal">.dylib</tt>, <tt class="docutils literal">.bundle</tt>, and <tt class="docutils literal">.framework</tt> with
+not much distinction between the three. These files are built and then
+placed in a common location.  When you run your program the OS dynamically
+loads these files and links them to your program on the fly.</dd>
+</dl>
+<p>I tend to like static libraries for small to medium sized projects because they are
+easier to deal with and work on more operating systems.  I also like to put all of the
+code I can into a static library so that I can then link it to unit tests and to the
+file programs as needed.</p>
+<p>Dynamic libraries are good for larger systems, when space is tight, or if you have
+a large number of programs that use common functionality.  In this case you don't
+want to statically link all of the code for the common features to every program,
+so you put it in a dynamic library so that it is loaded only once for all of them.</p>
+<p>In the previous exercise I laid out how to make a static library (a <tt class="docutils literal">.a</tt> file),
+and that's what I'll use in the rest of the book.  In this exercise I'm going to
+show you how to make a simple .so library, and how to dynamically load it with the
+Unix <tt class="docutils literal">dlopen</tt> system.  I'll have you do this manually so that you understand
+everything that's actually happening, then the Extra Credit will be to use the
+<tt class="docutils literal"><span class="pre">c-skeleton</span></tt> skeleton to create it.</p>
+<div class="section" id="dynamically-loading-a-shared-library">
+<h1>Dynamically Loading A Shared Library</h1>
+<p>To do this I will create two source files.  One will be used to make a
+<tt class="docutils literal">libex29.so</tt> library, the other will be a program called <tt class="docutils literal">ex29</tt>
+that can load this library and run functions from it.</p>
+<div class="highlight"><pre><a name="code--c-skeleton--src--libex29.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-2"></a><span class="cp">#include &lt;ctype.h&gt;</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-3"></a><span class="cp">#include &quot;dbg.h&quot;</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-4"></a>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-5"></a>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-6"></a><span class="kt">int</span> <span class="nf">print_a_message</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span><span class="p">)</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-7"></a><span class="p">{</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-8"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;A STRING: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">msg</span><span class="p">);</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-9"></a>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-10"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-11"></a><span class="p">}</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-12"></a>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-13"></a>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-14"></a><span class="kt">int</span> <span class="nf">uppercase</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span><span class="p">)</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-15"></a><span class="p">{</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-16"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-17"></a>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-18"></a>    <span class="c1">// BUG: \0 termination problems</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-19"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">msg</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="sc">&#39;\0&#39;</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-20"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%c&quot;</span><span class="p">,</span> <span class="n">toupper</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="n">i</span><span class="p">]));</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-21"></a>    <span class="p">}</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-22"></a>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-23"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-24"></a>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-25"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-26"></a><span class="p">}</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-27"></a>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-28"></a><span class="kt">int</span> <span class="nf">lowercase</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span><span class="p">)</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-29"></a><span class="p">{</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-30"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-31"></a>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-32"></a>    <span class="c1">// BUG: \0 termination problems</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-33"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">msg</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="sc">&#39;\0&#39;</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-34"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%c&quot;</span><span class="p">,</span> <span class="n">tolower</span><span class="p">(</span><span class="n">msg</span><span class="p">[</span><span class="n">i</span><span class="p">]));</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-35"></a>    <span class="p">}</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-36"></a>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-37"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-38"></a>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-39"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-40"></a><span class="p">}</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-41"></a>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-42"></a><span class="kt">int</span> <span class="nf">fail_on_purpose</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">msg</span><span class="p">)</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-43"></a><span class="p">{</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-44"></a>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--c-skeleton--src--libex29.c-pyg.html-45"></a><span class="p">}</span>
+</pre></div><p>There's nothing fancy in there, although there's some bugs I'm leaving in
+on purpose to see if you've been paying attention.  You'll fix those later.</p>
+<p>What we want to do is use the functions <tt class="docutils literal">dlopen</tt>, <tt class="docutils literal">dlsym</tt> and
+<tt class="docutils literal">dlclose</tt> to work with the above functions.</p>
+<div class="highlight"><pre><a name="code--ex29.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex29.c-pyg.html-2"></a><span class="cp">#include &quot;dbg.h&quot;</span>
+<a name="code--ex29.c-pyg.html-3"></a><span class="cp">#include &lt;dlfcn.h&gt;</span>
+<a name="code--ex29.c-pyg.html-4"></a>
+<a name="code--ex29.c-pyg.html-5"></a><span class="k">typedef</span> <span class="nf">int</span> <span class="p">(</span><span class="o">*</span><span class="n">lib_function</span><span class="p">)(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">data</span><span class="p">);</span>
+<a name="code--ex29.c-pyg.html-6"></a>
+<a name="code--ex29.c-pyg.html-7"></a>
+<a name="code--ex29.c-pyg.html-8"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex29.c-pyg.html-9"></a><span class="p">{</span>
+<a name="code--ex29.c-pyg.html-10"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex29.c-pyg.html-11"></a>    <span class="n">check</span><span class="p">(</span><span class="n">argc</span> <span class="o">==</span> <span class="mi">4</span><span class="p">,</span> <span class="s">&quot;USAGE: ex29 libex29.so function data&quot;</span><span class="p">);</span>
+<a name="code--ex29.c-pyg.html-12"></a>
+<a name="code--ex29.c-pyg.html-13"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">lib_file</span> <span class="o">=</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<a name="code--ex29.c-pyg.html-14"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">func_to_run</span> <span class="o">=</span> <span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">];</span>
+<a name="code--ex29.c-pyg.html-15"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">data</span> <span class="o">=</span> <span class="n">argv</span><span class="p">[</span><span class="mi">3</span><span class="p">];</span>
+<a name="code--ex29.c-pyg.html-16"></a>
+<a name="code--ex29.c-pyg.html-17"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">lib</span> <span class="o">=</span> <span class="n">dlopen</span><span class="p">(</span><span class="n">lib_file</span><span class="p">,</span> <span class="n">RTLD_NOW</span><span class="p">);</span>
+<a name="code--ex29.c-pyg.html-18"></a>    <span class="n">check</span><span class="p">(</span><span class="n">lib</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to open the library %s: %s&quot;</span><span class="p">,</span> <span class="n">lib_file</span><span class="p">,</span> <span class="n">dlerror</span><span class="p">());</span>
+<a name="code--ex29.c-pyg.html-19"></a>
+<a name="code--ex29.c-pyg.html-20"></a>    <span class="n">lib_function</span> <span class="n">func</span> <span class="o">=</span> <span class="n">dlsym</span><span class="p">(</span><span class="n">lib</span><span class="p">,</span> <span class="n">func_to_run</span><span class="p">);</span>
+<a name="code--ex29.c-pyg.html-21"></a>    <span class="n">check</span><span class="p">(</span><span class="n">func</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Did not find %s function in the library %s: %s&quot;</span><span class="p">,</span> <span class="n">func_to_run</span><span class="p">,</span> <span class="n">lib_file</span><span class="p">,</span> <span class="n">dlerror</span><span class="p">());</span>
+<a name="code--ex29.c-pyg.html-22"></a>
+<a name="code--ex29.c-pyg.html-23"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
+<a name="code--ex29.c-pyg.html-24"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Function %s return %d for data: %s&quot;</span><span class="p">,</span> <span class="n">func_to_run</span><span class="p">,</span> <span class="n">rc</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
+<a name="code--ex29.c-pyg.html-25"></a>
+<a name="code--ex29.c-pyg.html-26"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">dlclose</span><span class="p">(</span><span class="n">lib</span><span class="p">);</span>
+<a name="code--ex29.c-pyg.html-27"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to close %s&quot;</span><span class="p">,</span> <span class="n">lib_file</span><span class="p">);</span>
+<a name="code--ex29.c-pyg.html-28"></a>
+<a name="code--ex29.c-pyg.html-29"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex29.c-pyg.html-30"></a>
+<a name="code--ex29.c-pyg.html-31"></a><span class="nl">error:</span>
+<a name="code--ex29.c-pyg.html-32"></a>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex29.c-pyg.html-33"></a><span class="p">}</span>
+</pre></div><p>I'll now break this down so you can see what's going on in this small bit
+of useful code:</p>
+<dl class="docutils">
+<dt>ex29.c:5</dt>
+<dd>I'll use this function pointer definition later to call functions
+in the library.  This is nothing new, but make sure you understand what
+it's doing.</dd>
+<dt>ex29.c:17</dt>
+<dd>After the usual setup for a small program, I use the <tt class="docutils literal">dlopen</tt>
+function to load up the library indicated by <tt class="docutils literal">lib_file</tt>.  This function
+returns a handle that we use later and works a lot like opening a file.</dd>
+<dt>ex29.c:18</dt>
+<dd>If there's an error, I do the usual check and exit, but notice at
+then end that I'm using <tt class="docutils literal">dlerror</tt> to find out what the library related
+error was.</dd>
+<dt>ex29.c:20</dt>
+<dd>I use <tt class="docutils literal">dlsym</tt> to get a function out of the <tt class="docutils literal">lib</tt>
+by it's <em>string</em> name in <tt class="docutils literal">func_to_run</tt>.  This is the powerful
+part, since I'm dynamically getting a pointer to a function based on a
+string I got from the command line <tt class="docutils literal">argv</tt>.</dd>
+<dt>ex29.c:23</dt>
+<dd>I then call the <tt class="docutils literal">func</tt> function that was returned, and
+check its return value.</dd>
+<dt>ex29.c:26</dt>
+<dd>Finally, I close the library up just like I would a file.  Usually
+you keep these open the whole time the program is running, so closing at
+the end isn't as useful, but I'm demonstrating it here.</dd>
+</dl>
+</div>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>Now that you know what this file does, here's a shell session of me building
+the <tt class="docutils literal">libex29.so</tt>, <tt class="docutils literal">ex29</tt> and then working with it.  Follow
+along so you learn how these things are built manually.</p>
+<div class="highlight"><pre><a name="code--ex29.sh-session-pyg.html-1"></a><span class="gp">#</span> compile the lib file and make the .so
+<a name="code--ex29.sh-session-pyg.html-2"></a><span class="gp">#</span> you may need -fPIC here on some platforms. add that <span class="k">if </span>you get an error
+<a name="code--ex29.sh-session-pyg.html-3"></a><span class="gp">$</span> cc -c libex29.c -o libex29.o
+<a name="code--ex29.sh-session-pyg.html-4"></a><span class="gp">$</span> cc -shared -o libex29.so libex29.o
+<a name="code--ex29.sh-session-pyg.html-5"></a>
+<a name="code--ex29.sh-session-pyg.html-6"></a><span class="gp">#</span> make the loader program
+<a name="code--ex29.sh-session-pyg.html-7"></a><span class="gp">$</span> cc -Wall -g -DNDEBUG ex29.c -ldl -o ex29
+<a name="code--ex29.sh-session-pyg.html-8"></a>
+<a name="code--ex29.sh-session-pyg.html-9"></a><span class="gp">#</span> try it out with some things that work
+<a name="code--ex29.sh-session-pyg.html-10"></a><span class="gp">$</span> ex29 ./libex29.so print_a_message <span class="s2">&quot;hello there&quot;</span>
+<a name="code--ex29.sh-session-pyg.html-11"></a><span class="go">-bash: ex29: command not found</span>
+<a name="code--ex29.sh-session-pyg.html-12"></a><span class="gp">$</span> ./ex29 ./libex29.so print_a_message <span class="s2">&quot;hello there&quot;</span>
+<a name="code--ex29.sh-session-pyg.html-13"></a><span class="go">A STRING: hello there</span>
+<a name="code--ex29.sh-session-pyg.html-14"></a><span class="gp">$</span> ./ex29 ./libex29.so uppercase <span class="s2">&quot;hello there&quot;</span>
+<a name="code--ex29.sh-session-pyg.html-15"></a><span class="go">HELLO THERE</span>
+<a name="code--ex29.sh-session-pyg.html-16"></a><span class="gp">$</span> ./ex29 ./libex29.so lowercase <span class="s2">&quot;HELLO tHeRe&quot;</span>
+<a name="code--ex29.sh-session-pyg.html-17"></a><span class="go">hello there</span>
+<a name="code--ex29.sh-session-pyg.html-18"></a><span class="gp">$</span> ./ex29 ./libex29.so fail_on_purpose <span class="s2">&quot;i fail&quot;</span>
+<a name="code--ex29.sh-session-pyg.html-19"></a><span class="go">[ERROR] (ex29.c:23: errno: None) Function fail_on_purpose return 1 for data: i fail</span>
+<a name="code--ex29.sh-session-pyg.html-20"></a>
+<a name="code--ex29.sh-session-pyg.html-21"></a><span class="gp">#</span> try to give it bad args
+<a name="code--ex29.sh-session-pyg.html-22"></a><span class="gp">$</span> ./ex29 ./libex29.so fail_on_purpose
+<a name="code--ex29.sh-session-pyg.html-23"></a><span class="go">[ERROR] (ex29.c:11: errno: None) USAGE: ex29 libex29.so function data</span>
+<a name="code--ex29.sh-session-pyg.html-24"></a>
+<a name="code--ex29.sh-session-pyg.html-25"></a><span class="gp">#</span> try calling a <span class="k">function </span>that is not there
+<a name="code--ex29.sh-session-pyg.html-26"></a><span class="gp">$</span> ./ex29 ./libex29.so adfasfasdf asdfadff
+<a name="code--ex29.sh-session-pyg.html-27"></a><span class="go">[ERROR] (ex29.c:20: errno: None) Did not find adfasfasdf </span>
+<a name="code--ex29.sh-session-pyg.html-28"></a><span class="go">  function in the library libex29.so: dlsym(0x1076009b0, adfasfasdf): symbol not found</span>
+<a name="code--ex29.sh-session-pyg.html-29"></a>
+<a name="code--ex29.sh-session-pyg.html-30"></a><span class="gp">#</span> try loading a .so that is not there
+<a name="code--ex29.sh-session-pyg.html-31"></a><span class="gp">$</span> ./ex29 ./libex.so adfasfasdf asdfadfas
+<a name="code--ex29.sh-session-pyg.html-32"></a><span class="go">[ERROR] (ex29.c:17: errno: No such file or directory) Failed to open</span>
+<a name="code--ex29.sh-session-pyg.html-33"></a><span class="go">    the library libex.so: dlopen(libex.so, 2): image not found</span>
+<a name="code--ex29.sh-session-pyg.html-34"></a><span class="gp">$</span>
+</pre></div><p>One thing that you may run into is that every OS, every version of every
+OS, and every compiler on every version of every OS, seems to want to change
+the way you build a shared library every other month that some new programmer
+thinks it's wrong.  If the line I use to make the <tt class="docutils literal">libex29.so</tt> file is
+wrong, then let me know and I'll add some comments for other platforms.</p>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p>Sometimes you'll do what you think is normal and run this command
+<tt class="docutils literal">cc <span class="pre">-Wall</span> <span class="pre">-g</span> <span class="pre">-DNDEBUG</span> <span class="pre">-ldl</span> ex29.c <span class="pre">-o</span> ex29</tt> thinking everthing
+will work, but nope.  You see, on some platforms the order of where
+libraries goes makes them work or not, and for no real reason.  On
+Debian or Ubuntu you have to do
+<tt class="docutils literal">cc <span class="pre">-Wall</span> <span class="pre">-g</span> <span class="pre">-DNDEBUG</span> ex29.c <span class="pre">-ldl</span> <span class="pre">-o</span> ex29</tt> for no reason at all.
+It's just the way it is, so since this works on OSX I'm doing it
+here, but in the future, if you link against a dynamic library and
+it can't find a function, try shuffling things around.</p>
+<p class="last">The irritation here is there is an actual platform difference on nothing
+more than order of command line arguments.  On no rational planet should
+putting an <tt class="docutils literal"><span class="pre">-ldl</span></tt> at one position be different from another.  It's an
+option, and having to know these things is incredibly annoying.</p>
+</div>
+</div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<p>Open <tt class="docutils literal">libex29.so</tt> and edit it with an editor that can handle
+binary files.  Change a couple bytes, then close it.  Try to see
+if you can get the <tt class="docutils literal">dlopen</tt> function to load it even though
+you've corrupted it.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Were you paying attention to the bad code I have in the <tt class="docutils literal">libex29.c</tt> functions?
+See how, even though I use a for-loop they still check for <tt class="docutils literal">'\0'</tt>
+endings?  Fix this so the functions always take a length for the
+string to work with inside the function.</li>
+<li>Take the <tt class="docutils literal"><span class="pre">c-skeleton</span></tt> skeleton, and create a new project
+for this exercise.  Put the <tt class="docutils literal">libex29.c</tt> file in the <tt class="docutils literal">src/</tt>
+directory.  Change the Makefile so that it builds this as <tt class="docutils literal">build/libex29.so</tt>.</li>
+<li>Take the <tt class="docutils literal">ex29.c</tt> file and put it in <tt class="docutils literal">tests/ex29_tests.c</tt> so
+that it runs as a unit test.  Make this all work, which means you have to
+change it so that it loads the <tt class="docutils literal">build/libex29.so</tt> file and runs
+tests similar to what I did manually above.</li>
+<li>Read the <tt class="docutils literal">man dlopen</tt> documentation and read about all the
+related functions.  Try some of the other options to <tt class="docutils literal">dlopen</tt>
+beside <tt class="docutils literal">RTLD_NOW</tt>.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

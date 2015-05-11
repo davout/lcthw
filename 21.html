@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 21: Advanced Data Types And Flow Control</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 21: Advanced Data Types And Flow Control</h1>
+            <p>This exercise will be a complete compendium of the available C data types and
+flow control structures you can use.  It will work as a reference to complete
+your knowledge, and won't have any code for you to enter.  I'll have you
+memorize some of the information by creating flash cards so you can get
+the important concepts solid in your mind.</p>
+<p>For this exercise to be useful, you should spend at least a week hammering
+the content and filling out all the element I have missing here.  You'll be
+writing out what each one means, and then writing a program to confirm
+what you've researched.</p>
+<div class="section" id="available-data-types">
+<h1>Available Data Types</h1>
+<dl class="docutils">
+<dt><tt class="docutils literal">int</tt></dt>
+<dd>Stores a regular integer, defaulting to 32 bits in size.</dd>
+<dt><tt class="docutils literal">double</tt></dt>
+<dd>Holds a large floating point number.</dd>
+<dt><tt class="docutils literal">float</tt></dt>
+<dd>Holds a smaller floating point number.</dd>
+<dt><tt class="docutils literal">char</tt></dt>
+<dd>Holds a single 1 byte character.</dd>
+<dt><tt class="docutils literal">void</tt></dt>
+<dd>Indicates &quot;no type&quot; and used to say a function returns
+nothing, or a pointer has no type as in <tt class="docutils literal">void *thing</tt>.</dd>
+<dt><tt class="docutils literal">enum</tt></dt>
+<dd>Enumerated types, work as integers, convert to integers,
+but give you symbolic names for sets.  Some compilers will warn
+you when you don't cover all elements of an enum in <tt class="docutils literal"><span class="pre">switch-statements</span></tt>.</dd>
+</dl>
+<div class="section" id="type-modifiers">
+<h2>Type Modifiers</h2>
+<dl class="docutils">
+<dt><tt class="docutils literal">unsigned</tt></dt>
+<dd>Changes the type so that it does not have negative numbers,
+giving you a larger upper bound but nothing lower than 0.</dd>
+<dt><tt class="docutils literal">signed</tt></dt>
+<dd>Gives you negative and positive numbers, but halves your
+upper bound in exchange for the same lower bound negative.</dd>
+<dt><tt class="docutils literal">long</tt></dt>
+<dd>Uses a larger storage for the type so that it can hold
+bigger numbers, usually doubling the current size.</dd>
+<dt><tt class="docutils literal">short</tt></dt>
+<dd>Uses smaller storage for the type so it stores less, but
+takes half the space.</dd>
+</dl>
+</div>
+<div class="section" id="type-qualifiers">
+<h2>Type Qualifiers</h2>
+<dl class="docutils">
+<dt><tt class="docutils literal">const</tt></dt>
+<dd>Indicates the variable won't change after being initialized.</dd>
+<dt><tt class="docutils literal">volatile</tt></dt>
+<dd>Indicates that all bets are off, and the compiler should leave
+this alone and try not to do any fancy optimizations to it.  You usually
+only need this if you're doing really weird stuff to your variables.</dd>
+<dt><tt class="docutils literal">register</tt></dt>
+<dd>Forces the compiler to keep this variable in a register, and
+the compiler can just ignore you.  These days compilers are better at
+figuring out where to put variables, so only use this if you actually
+can measure it improving the speed.</dd>
+</dl>
+</div>
+<div class="section" id="type-conversion">
+<h2>Type Conversion</h2>
+<p>C uses a sort of &quot;stepped type promotion&quot; mechanism, where it looks at two operands on
+either side of an expression, and promotes the smaller side to match the larger side
+before doing the operation.  If one side of an expression is on this list, then the
+other side is converted to that type before the operation is done, and this goes
+in this order:</p>
+<ul class="simple">
+<li>long double</li>
+<li>double</li>
+<li>float</li>
+<li>int (but only <tt class="docutils literal">char</tt> and <tt class="docutils literal">short int</tt>);</li>
+<li>long</li>
+</ul>
+<p>If you find yourself trying to figure out how your conversions are working in
+an expression, then don't leave it to the compiler.  Use explicit casting
+operations to make it exactly what you want.  For example, if you have:</p>
+<p><tt class="docutils literal">long + char - int * double</tt></p>
+<p>Rather than trying to figure out if it will be converted to double correctly,
+just use casts:</p>
+<p><tt class="docutils literal">(double)long - (double)char - (double)int * double</tt></p>
+<p>Putting the type you want in parenthesis before the variable name is how you
+force it into the type you really need.  The important thing though is
+<em>always promote up, not down</em>.  Don't cast <tt class="docutils literal">long</tt> into <tt class="docutils literal">char</tt>
+unless you know what you're doing.</p>
+</div>
+<div class="section" id="type-sizes">
+<h2>Type Sizes</h2>
+<p>The <tt class="docutils literal">stdint.h</tt> defines both a set of <tt class="docutils literal">typdefs</tt> for exact sized integer
+types, as well as a set of macros for the sizes of all the types.  This is easier
+to work with than the older <tt class="docutils literal">limits.h</tt> since it is consistent.  The types
+defined are:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">int8_t</tt></dt>
+<dd>8 bit signed integer.</dd>
+<dt><tt class="docutils literal">uint8_t</tt></dt>
+<dd>8 bit unsigned integer.</dd>
+<dt><tt class="docutils literal">int16_t</tt></dt>
+<dd>16 bit signed integer.</dd>
+<dt><tt class="docutils literal">uint16_t</tt></dt>
+<dd>16 bit unsigned integer.</dd>
+<dt><tt class="docutils literal">int32_t</tt></dt>
+<dd>32 bit signed integer.</dd>
+<dt><tt class="docutils literal">uint32_t</tt></dt>
+<dd>32 bit unsigned integer.</dd>
+<dt><tt class="docutils literal">int64_t</tt></dt>
+<dd>64 bit signed integer.</dd>
+<dt><tt class="docutils literal">uint64_t</tt></dt>
+<dd>64 bit unsigned integer.</dd>
+</dl>
+<p>The pattern here is of the form (u)int(BITS)_t where a <em>u</em> is put in front to indicate
+&quot;unsigned&quot;, then <em>BITS</em> is a number for the number of bits.  This pattern is then repeated
+for macros that return the maximum values of these types:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">INT(N)_MAX</tt></dt>
+<dd>Maximum positive number of the signed integer of bits <em>(N)</em>, such as <tt class="docutils literal">INT16_MAX</tt>.</dd>
+<dt><tt class="docutils literal">INT(N)_MIN</tt></dt>
+<dd>Minimum negative number of signed integer of bits <em>(N)</em>.</dd>
+<dt><tt class="docutils literal">UINT(N)_MAX</tt></dt>
+<dd>Maximum positive number of unsigned integer of bits <em>(N)</em>. Since it's unsigned the minimum is 0 and can't have a negative value.</dd>
+</dl>
+<div class="warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Pay attention! Do not go looking for a literal <tt class="docutils literal">INT(N)_MAX</tt> definition in any header file.  I'm using
+the <tt class="docutils literal">(N)</tt> as a placeholder for any number of bits your platform currently supports.  This <tt class="docutils literal">(N)</tt> could
+be any number, 8, 16, 32, 64, even maybe 128.  I use this notation in this exercise so that I don't have
+to literally write out every possible combination.</p>
+</div>
+<p>There are also macros in <tt class="docutils literal">stdint.h</tt> for sizes of the <tt class="docutils literal">size_t</tt> type, integers large enough to hold pointers,
+and other handy size defining macros.  Compilers have to at least have these, and then they can allow
+other larger types.</p>
+<p>Here is a full list should be in <tt class="docutils literal">stdint.h</tt>:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">int_least(N)_t</tt></dt>
+<dd>holds at least <em>(N)</em> bits.</dd>
+<dt><tt class="docutils literal">uint_least(N)_t</tt></dt>
+<dd>holds at least (N) bits unsigned.</dd>
+<dt><tt class="docutils literal">INT_LEAST(N)_MAX</tt></dt>
+<dd>max value of the matching least <em>(N)</em> type.</dd>
+<dt><tt class="docutils literal">INT_LEAST(N)_MIN</tt></dt>
+<dd>min value of the matching least <em>(N)</em> type.</dd>
+<dt><tt class="docutils literal">UINT_LEAST(N)_MAX</tt></dt>
+<dd>unsigned maximum of the matching <em>(N)</em> type.</dd>
+<dt><tt class="docutils literal">int_fast(N)_t</tt></dt>
+<dd>similar to <tt class="docutils literal">int_least*N*_t</tt> but asking for the &quot;fastest&quot; with at least that precision.</dd>
+<dt><tt class="docutils literal">uint_fast(N)_t</tt></dt>
+<dd>unsigned fastest least integer.</dd>
+<dt><tt class="docutils literal">INT_FAST(N)_MAX</tt></dt>
+<dd>max value of the matching fastest <em>(N)</em> type.</dd>
+<dt><tt class="docutils literal">INT_FAST(N)_MIN</tt></dt>
+<dd>min value of the matching fastest <em>(N)</em> type.</dd>
+<dt><tt class="docutils literal">UINT_FAST(N)_MAX</tt></dt>
+<dd>unsigned max value of the matching fastest <em>(N)</em> type.</dd>
+<dt><tt class="docutils literal">intptr_t</tt></dt>
+<dd>a <em>signed</em> integer large enough to hold a pointer.</dd>
+<dt><tt class="docutils literal">uintptr_t</tt></dt>
+<dd>an <em>unsigned</em> integer large enough to hold a pointer.</dd>
+<dt><tt class="docutils literal">INTPTR_MAX</tt></dt>
+<dd>max value of a <tt class="docutils literal">intptr_t</tt>.</dd>
+<dt><tt class="docutils literal">INTPTR_MIN</tt></dt>
+<dd>min value of a <tt class="docutils literal">intptr_t</tt>.</dd>
+<dt><tt class="docutils literal">UINTPTR_MAX</tt></dt>
+<dd>unsigned max value of a <tt class="docutils literal">uintptr_t</tt>.</dd>
+<dt><tt class="docutils literal">intmax_t</tt></dt>
+<dd>biggest number possible on that system.</dd>
+<dt><tt class="docutils literal">uintmax_t</tt></dt>
+<dd>biggest unsigned number possible.</dd>
+<dt><tt class="docutils literal">INTMAX_MAX</tt></dt>
+<dd>largest value for the biggest signed number.</dd>
+<dt><tt class="docutils literal">INTMAX_MIN</tt></dt>
+<dd>smallest value for the biggest signed number.</dd>
+<dt><tt class="docutils literal">UINTMAX_MAX</tt></dt>
+<dd>largest value for the biggest unsigned number.</dd>
+<dt><tt class="docutils literal">PTRDIFF_MIN</tt></dt>
+<dd>minimum value of <tt class="docutils literal">ptrdiff_t</tt>.</dd>
+<dt><tt class="docutils literal">PTRDIFF_MAX</tt></dt>
+<dd>maximum value of <tt class="docutils literal">ptrdiff_t</tt>.</dd>
+<dt><tt class="docutils literal">SIZE_MAX</tt></dt>
+<dd>maximum of a <tt class="docutils literal">size_t</tt>.</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="available-operators">
+<h1>Available Operators</h1>
+<p>This is a comprehensive list of all the operators you have in the C language.
+In this list, I'm indicating the following:</p>
+<dl class="docutils">
+<dt>(binary)</dt>
+<dd>The operator has a left and right: <tt class="docutils literal">X + Y</tt>.</dd>
+<dt>(unary)</dt>
+<dd>The operator is on its own: <tt class="docutils literal"><span class="pre">-X</span></tt>.</dd>
+<dt>(prefix)</dt>
+<dd>The operator comes before the variable: <tt class="docutils literal">++X</tt>.</dd>
+<dt>(postfix)</dt>
+<dd><p class="first">Usually the same as the <tt class="docutils literal">(prefix)</tt> version, but placing it</p>
+<p class="last">after gives it a different meaning: <tt class="docutils literal">X++</tt>.</p>
+</dd>
+<dt>(ternary)</dt>
+<dd><p class="first">There's only one of these, so it's actually called the</p>
+<p class="last">ternary but it means &quot;three operands&quot;: <tt class="docutils literal">X ? Y : Z</tt>.</p>
+</dd>
+</dl>
+<div class="section" id="math-operators">
+<h2>Math Operators</h2>
+<p>These are your basic math operations, plus I put <tt class="docutils literal">()</tt> in
+with these since it calls a function and is close to a &quot;math&quot;
+operation.</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">()</tt></dt>
+<dd>Function call.</dd>
+<dt><tt class="docutils literal">*</tt> (binary)</dt>
+<dd>multiply.</dd>
+<dt><tt class="docutils literal">/</tt></dt>
+<dd>divide.</dd>
+<dt><tt class="docutils literal">+</tt> (binary)</dt>
+<dd>addition.</dd>
+<dt><tt class="docutils literal">+</tt> (unary)</dt>
+<dd>positive number.</dd>
+<dt><tt class="docutils literal">++</tt> (postfix)</dt>
+<dd>read, then increment.</dd>
+<dt><tt class="docutils literal">++</tt> (prefix)</dt>
+<dd>increment, then read.</dd>
+<dt><tt class="docutils literal"><span class="pre">--</span></tt> (postfix)</dt>
+<dd>read, then decrement.</dd>
+<dt><tt class="docutils literal"><span class="pre">--</span></tt> (prefix)</dt>
+<dd>decrement, then read.</dd>
+<dt><tt class="docutils literal">-</tt> (binary)</dt>
+<dd>subtract.</dd>
+<dt><tt class="docutils literal">-</tt> (unary)</dt>
+<dd>negative number.</dd>
+</dl>
+</div>
+<div class="section" id="data-operators">
+<h2>Data Operators</h2>
+<p>These are used to access data in different ways and forms.</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">-&gt;</span></tt></dt>
+<dd>struct pointer access.</dd>
+<dt><tt class="docutils literal">.</tt></dt>
+<dd>struct value access.</dd>
+<dt><tt class="docutils literal">[]</tt></dt>
+<dd>Array index.</dd>
+<dt><tt class="docutils literal">sizeof</tt></dt>
+<dd>size of a type or variable.</dd>
+<dt><tt class="docutils literal">&amp;</tt> (unary)</dt>
+<dd>Address of.</dd>
+<dt><tt class="docutils literal">*</tt> (unary)</dt>
+<dd>Value of.</dd>
+</dl>
+</div>
+<div class="section" id="logic-operators">
+<h2>Logic Operators</h2>
+<p>These handle testing equality and inequality of variables.</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">!=</tt></dt>
+<dd>does not equal.</dd>
+<dt><tt class="docutils literal">&lt;</tt></dt>
+<dd>less than.</dd>
+<dt><tt class="docutils literal">&lt;=</tt></dt>
+<dd>less than or equal.</dd>
+<dt><tt class="docutils literal">==</tt></dt>
+<dd>equal (not assignment).</dd>
+<dt><tt class="docutils literal">&gt;</tt></dt>
+<dd>greater than.</dd>
+<dt><tt class="docutils literal">&gt;=</tt></dt>
+<dd>greater than or equal.</dd>
+</dl>
+</div>
+<div class="section" id="bit-operators">
+<h2>Bit Operators</h2>
+<p>These are more advanced and for shifting and modifying the
+raw bits in integers.</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">&amp;</tt> (binary)</dt>
+<dd>Bitwise and.</dd>
+<dt><tt class="docutils literal">&lt;&lt;</tt></dt>
+<dd>Shift left.</dd>
+<dt><tt class="docutils literal">&gt;&gt;</tt></dt>
+<dd>Shift right.</dd>
+<dt><tt class="docutils literal">^</tt></dt>
+<dd>bitwise xor (exclusive or).</dd>
+<dt><tt class="docutils literal">|</tt></dt>
+<dd>bitwise or.</dd>
+<dt><tt class="docutils literal">~</tt></dt>
+<dd>compliment (flips all the bits).</dd>
+</dl>
+</div>
+<div class="section" id="boolean-operators">
+<h2>Boolean Operators</h2>
+<p>Used in truth testing.  Study the ternary operator carefully, it is very handy.</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">!</tt></dt>
+<dd>not.</dd>
+<dt><tt class="docutils literal">&amp;&amp;</tt></dt>
+<dd>and.</dd>
+<dt><tt class="docutils literal">||</tt></dt>
+<dd>or.</dd>
+<dt><tt class="docutils literal"><span class="pre">?:</span></tt></dt>
+<dd>Ternary truth test, read <tt class="docutils literal">X ? Y : Z</tt> as &quot;if X then Y else Z&quot;.</dd>
+</dl>
+</div>
+<div class="section" id="assignment-operators">
+<h2>Assignment Operators</h2>
+<p>Compound assignment operators that assign a value, and/or perform
+an operation at the same time.  Most of the above operations
+can also be combined into a compound assignment operator.</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">=</tt></dt>
+<dd>assign.</dd>
+<dt><tt class="docutils literal">%=</tt></dt>
+<dd>modulus assign.</dd>
+<dt><tt class="docutils literal">&amp;=</tt></dt>
+<dd>bitwise and assign.</dd>
+<dt><tt class="docutils literal">*=</tt></dt>
+<dd>multiply assign.</dd>
+<dt><tt class="docutils literal">+=</tt></dt>
+<dd>plus assign.</dd>
+<dt><tt class="docutils literal"><span class="pre">-=</span></tt></dt>
+<dd>minus assign.</dd>
+<dt><tt class="docutils literal">/=</tt></dt>
+<dd>divide assign.</dd>
+<dt><tt class="docutils literal">&lt;&lt;=</tt></dt>
+<dd>shift left, assign.</dd>
+<dt><tt class="docutils literal">&gt;&gt;=</tt></dt>
+<dd>shift right, assign.</dd>
+<dt><tt class="docutils literal">^=</tt></dt>
+<dd>bitwise xor, assign.</dd>
+<dt><tt class="docutils literal">|=</tt></dt>
+<dd>bitwise or, assign.</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="available-control-structures">
+<h1>Available Control Structures</h1>
+<p>There's a few control structures you haven't encountered yet:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal"><span class="pre">do-while</span></tt></dt>
+<dd><p class="first"><tt class="docutils literal">do { ... } while(X);</tt> First does the code in the block, then</p>
+<p class="last">tests the <tt class="docutils literal">X</tt> expression before exiting.</p>
+</dd>
+<dt><tt class="docutils literal">break</tt></dt>
+<dd>Put this in a loop, and it breaks out ending it early.</dd>
+<dt><tt class="docutils literal">continue</tt></dt>
+<dd>Stops the body of a loop and jumps to the test so it can continue.</dd>
+<dt><tt class="docutils literal">goto</tt></dt>
+<dd><p class="first">Jumps to a spot in the code where you've placed a <tt class="docutils literal">label:</tt>, and</p>
+<p class="last">you've been using this in the <tt class="docutils literal">dbg.h</tt> macros to go to the <tt class="docutils literal">error:</tt>
+label.</p>
+</dd>
+</dl>
+<div class="section" id="extra-credit">
+<h2>Extra Credit</h2>
+<ul class="simple">
+<li>Read <tt class="docutils literal">stdint.h</tt> or a description of it and write out all the possible
+available size identifiers.</li>
+<li>Go through each item here and write out what it does in code.  Research it so you
+know you got it right by looking it up online.</li>
+<li>Get this information solid as well by making flash cards and spending 15
+minutes a day memorizing it.</li>
+<li>Create a program that prints out examples of each type and confirm that your
+research is right.</li>
+</ul>
+</div>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

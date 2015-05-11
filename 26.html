@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 26: Write A First Real Program</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 26: Write A First Real Program</h1>
+            <p>You are at the half-way mark in the book, so you need to take a
+mid-term.  In this mid-term you're going to recreate a piece
+of software I wrote specifically for this book called <tt class="docutils literal">devpkg</tt>.
+You'll then extend it in a few key ways and improve the code, most
+importantly by writing some unit tests for it.</p>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p class="last">I wrote this exercise before writing some of the exercises you might
+need to complete this.  If you are attempting this one now, please
+keep in mind that the software may have bugs, that you might have
+problems because of my mistakes, and that you might not know everything
+you need to finish it.  If so, tell me at <a class="reference external" href="mailto:help&#64;learncodethehardway.org">help&#64;learncodethehardway.org</a>
+and then wait until I finish the other exercises.</p>
+</div>
+<div class="section" id="what-is-devpkg">
+<h1>What Is <tt class="docutils literal">devpkg</tt>?</h1>
+<p><tt class="docutils literal">Devpkg</tt> is a simple C program that installs other software.  I made it
+specifically for this book as a way to teach you how a real software project is
+structured, and also how to reuse other people's libraries.  It uses a
+portability library called <a class="reference external" href="http://apr.apache.org/">The Apache Portable
+Runtime (APR)</a> that has many handy C functions which work on tons of platforms,
+including Windows.  Other than that, it just grabs code from the internet
+(or local files) and does the usual <tt class="docutils literal">./configure ; make ; make install</tt>
+every programmer does.</p>
+<p>Your goal in this exercise is to build <tt class="docutils literal">devpkg</tt> from source,
+finish each <em>Challenge</em> I give, and use the source to understand
+what <tt class="docutils literal">devpkg</tt> does and why.</p>
+<div class="section" id="what-we-want-to-make">
+<h2>What We Want To Make</h2>
+<p>We want a tool that has three commands:</p>
+<dl class="docutils">
+<dt>devpkg -S</dt>
+<dd>Sets up a new install on a computer.</dd>
+<dt>devpkg -I</dt>
+<dd>Installs a piece of software from a URL.</dd>
+<dt>devpkg -L</dt>
+<dd>Lists all the software that's been installed.</dd>
+<dt>devpkg -F</dt>
+<dd>Fetches some source code for manual building.</dd>
+<dt>devpkg -B</dt>
+<dd>Builds fetches source code and installs it, even if already installed.</dd>
+</dl>
+<p>We want <tt class="docutils literal">devpkg</tt> to be able to take almost any URL, figure
+out what kind of project it is, download it, install it, and register
+that it downloaded that software.  We'd also like it to process a
+simple dependency list so it can install all the software that a
+project might need as well.</p>
+</div>
+<div class="section" id="the-design">
+<h2>The Design</h2>
+<p>To accomplish this goal <tt class="docutils literal">devpkg</tt> will have a very simple design:</p>
+<dl class="docutils">
+<dt>Use external commands</dt>
+<dd>You'll do most of the work through external
+commands like <tt class="docutils literal">curl</tt>, <tt class="docutils literal">git</tt>, and <tt class="docutils literal">tar</tt>.  This
+reduces the amount of code <tt class="docutils literal">devpkg</tt> needs to get things done.</dd>
+<dt>Simple File Database</dt>
+<dd>You could easily make it more complex, but to
+start you'll just make a single simple file database at
+<tt class="docutils literal"><span class="pre">/usr/local/.devpkg/db</span></tt> to keep track of what's installed.</dd>
+<dt>/usr/local Always</dt>
+<dd>Again you could make this more advanced, but for
+starters just assume it's always <tt class="docutils literal">/usr/local</tt> which is a standard
+install path for most software on Unix.</dd>
+<dt>configure, make, make install</dt>
+<dd>It's assumed that most software can
+install with just a <tt class="docutils literal">configure; make; make install</tt> and maybe
+<tt class="docutils literal">configure</tt> is optional.  If the software can't at a minimum
+do that, then there's some options to modify the commands, but otherwise
+<tt class="docutils literal">devpkg</tt> won't bother.</dd>
+<dt>The User Can Be root</dt>
+<dd>We'll assume the user can become root using
+sudo, but that they don't want to become root until the end.</dd>
+</dl>
+<p>This will keep our program small at first and work well enough to get it
+going, at which point you'll be able to modify it further for this exercise.</p>
+</div>
+<div class="section" id="the-apache-portable-runtime">
+<h2>The Apache Portable Runtime</h2>
+<p>One more thing you'll do is leverage the <a class="reference external" href="http://apr.apache.org/">The Apache Portable Runtime (APR)</a>
+libraries to get a good set of portable routines
+for doing this kind of work.  The APR isn't necessary, and you could probably
+write this program without them, but it'd take more code than necessary.
+I'm also forcing you to use APR now so you get used to linking and using
+other libraries.  Finally, the APR also works on <em>Windows</em> so your
+skills with it are transferable to many other platforms.</p>
+<p>You should go get both the <tt class="docutils literal"><span class="pre">apr-1.4.5</span></tt> and the <tt class="docutils literal"><span class="pre">apr-util-1.3</span></tt>
+libraries, as well as browse through the documentation available at the
+<a class="reference external" href="http://apr.apache.org/">main APR site at apr.apache.org</a></p>
+<p>Here's a shell script that will install all the stuff you need.  You
+should write this into a file by hand, and then run it until it can
+install APR without any errors.</p>
+<div class="highlight"><pre><a name="code--ex26.1.sh-pyg.html-1"></a><span class="nb">set</span> -e
+<a name="code--ex26.1.sh-pyg.html-2"></a>
+<a name="code--ex26.1.sh-pyg.html-3"></a><span class="c"># go somewhere safe</span>
+<a name="code--ex26.1.sh-pyg.html-4"></a><span class="nb">cd</span> /tmp
+<a name="code--ex26.1.sh-pyg.html-5"></a>
+<a name="code--ex26.1.sh-pyg.html-6"></a><span class="c"># get the source to base APR 1.4.6</span>
+<a name="code--ex26.1.sh-pyg.html-7"></a>curl -L -O http://archive.apache.org/dist/apr/apr-1.4.6.tar.gz
+<a name="code--ex26.1.sh-pyg.html-8"></a>
+<a name="code--ex26.1.sh-pyg.html-9"></a><span class="c"># extract it and go into the source</span>
+<a name="code--ex26.1.sh-pyg.html-10"></a>tar -xzvf apr-1.4.6.tar.gz
+<a name="code--ex26.1.sh-pyg.html-11"></a><span class="nb">cd </span>apr-1.4.6
+<a name="code--ex26.1.sh-pyg.html-12"></a>
+<a name="code--ex26.1.sh-pyg.html-13"></a><span class="c"># configure, make, make install</span>
+<a name="code--ex26.1.sh-pyg.html-14"></a>./configure
+<a name="code--ex26.1.sh-pyg.html-15"></a>make
+<a name="code--ex26.1.sh-pyg.html-16"></a>sudo make install
+<a name="code--ex26.1.sh-pyg.html-17"></a>
+<a name="code--ex26.1.sh-pyg.html-18"></a><span class="c"># reset and cleanup</span>
+<a name="code--ex26.1.sh-pyg.html-19"></a><span class="nb">cd</span> /tmp
+<a name="code--ex26.1.sh-pyg.html-20"></a>rm -rf apr-1.4.6 apr-1.4.6.tar.gz
+<a name="code--ex26.1.sh-pyg.html-21"></a>
+<a name="code--ex26.1.sh-pyg.html-22"></a><span class="c"># do the same with apr-util</span>
+<a name="code--ex26.1.sh-pyg.html-23"></a>curl -L -O http://archive.apache.org/dist/apr/apr-util-1.4.1.tar.gz
+<a name="code--ex26.1.sh-pyg.html-24"></a>
+<a name="code--ex26.1.sh-pyg.html-25"></a><span class="c"># extract</span>
+<a name="code--ex26.1.sh-pyg.html-26"></a>tar -xzvf apr-util-1.4.1.tar.gz
+<a name="code--ex26.1.sh-pyg.html-27"></a><span class="nb">cd </span>apr-util-1.4.1
+<a name="code--ex26.1.sh-pyg.html-28"></a>
+<a name="code--ex26.1.sh-pyg.html-29"></a><span class="c"># configure, make, make install</span>
+<a name="code--ex26.1.sh-pyg.html-30"></a>./configure --with-apr<span class="o">=</span>/usr/local/apr
+<a name="code--ex26.1.sh-pyg.html-31"></a><span class="c"># you need that extra parameter to configure because</span>
+<a name="code--ex26.1.sh-pyg.html-32"></a><span class="c"># apr-util can&#39;t really find it because...who knows.</span>
+<a name="code--ex26.1.sh-pyg.html-33"></a>
+<a name="code--ex26.1.sh-pyg.html-34"></a>make
+<a name="code--ex26.1.sh-pyg.html-35"></a>sudo make install
+<a name="code--ex26.1.sh-pyg.html-36"></a>
+<a name="code--ex26.1.sh-pyg.html-37"></a><span class="c">#cleanup</span>
+<a name="code--ex26.1.sh-pyg.html-38"></a><span class="nb">cd</span> /tmp
+<a name="code--ex26.1.sh-pyg.html-39"></a>rm -rf apr-util-1.4.1* apr-1.4.6*
+</pre></div><p>I'm having you write this script out because this is basically what
+we want <tt class="docutils literal">devpkg</tt> to do, but with extra options and checks.
+In fact, you could just do it all in shell with less code, but then
+that wouldn't be a very good program for a C book would it?</p>
+<p>Simply run this script and fix it until it works, then you'll have the
+libraries you need to complete the rest of this project.</p>
+</div>
+</div>
+<div class="section" id="project-layout">
+<h1>Project Layout</h1>
+<p>You need to setup some simple project files to get started.  Here's how I
+usually craft a new project:</p>
+<div class="highlight"><pre><a name="code--ex26.2.sh-pyg.html-1"></a>mkdir devpkg
+<a name="code--ex26.2.sh-pyg.html-2"></a><span class="nb">cd </span>devpkg
+<a name="code--ex26.2.sh-pyg.html-3"></a>touch README Makefile
+</pre></div><div class="section" id="other-dependencies">
+<h2>Other Dependencies</h2>
+<p>You should have already installed APR and APR-util, so now you need
+a few more files as basic dependencies:</p>
+<ul class="simple">
+<li><tt class="docutils literal">dbg.h</tt> from Exercise 20.</li>
+<li><tt class="docutils literal">bstrlib.h</tt> and <tt class="docutils literal">bstrlib.c</tt> from <a class="reference external" href="http://bstring.sourceforge.net/">http://bstring.sourceforge.net/</a>. Download the .zip file, extract it, and copy just those two files out.</li>
+<li>Type <tt class="docutils literal">make bstrlib.o</tt> and if it doesn't work, read the &quot;Fixing bstring&quot;
+instructions below.</li>
+</ul>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p>In some platforms the bstring.c file will have an error like:</p>
+<pre class="literal-block">
+bstrlib.c:2762: error: expected declaration specifiers or '...' before numeric constant
+</pre>
+<p>This is from a bad define the authors added which doesn't work always.
+You just need to change the line 2759 that reads <tt class="docutils literal">#ifdef __GNUC__</tt>
+and make it:</p>
+<p><tt class="docutils literal">#if defined(__GNUC__) &amp;&amp; !defined(__APPLE__)</tt></p>
+<p class="last">Then it should work on Apple Mac OSX.</p>
+</div>
+<p>When that's all done, you should have a <tt class="docutils literal">Makefile</tt>, <tt class="docutils literal">README</tt>,
+<tt class="docutils literal">dbg.h</tt>, <tt class="docutils literal">bstrlib.h</tt>, and <tt class="docutils literal">bstrlib.c</tt> ready to go.</p>
+</div>
+</div>
+<div class="section" id="the-makefile">
+<h1>The Makefile</h1>
+<p>A good place to start is the <tt class="docutils literal">Makefile</tt> since this lays out
+how things are built and what source files you'll be creating.</p>
+<div class="highlight"><pre><a name="code--ex26--Makefile-pyg.html-1"></a><span class="nv">PREFIX</span><span class="o">?=</span>/usr/local
+<a name="code--ex26--Makefile-pyg.html-2"></a><span class="nv">CFLAGS</span><span class="o">=</span>-g -Wall -I<span class="k">${</span><span class="nv">PREFIX</span><span class="k">}</span>/apr/include/apr-1  -I<span class="k">${</span><span class="nv">PREFIX</span><span class="k">}</span>/apr/include/apr-util-1
+<a name="code--ex26--Makefile-pyg.html-3"></a><span class="nv">LDFLAGS</span><span class="o">=</span>-L<span class="k">${</span><span class="nv">PREFIX</span><span class="k">}</span>/apr/lib -lapr-1 -pthread -laprutil-1
+<a name="code--ex26--Makefile-pyg.html-4"></a>
+<a name="code--ex26--Makefile-pyg.html-5"></a><span class="nf">all</span><span class="o">:</span> <span class="m">devpkg</span>
+<a name="code--ex26--Makefile-pyg.html-6"></a>
+<a name="code--ex26--Makefile-pyg.html-7"></a><span class="nf">devpkg</span><span class="o">:</span> <span class="m">bstrlib.o db.o shell.o commands.o</span>
+<a name="code--ex26--Makefile-pyg.html-8"></a>
+<a name="code--ex26--Makefile-pyg.html-9"></a><span class="nf">install</span><span class="o">:</span> <span class="m">all</span>
+<a name="code--ex26--Makefile-pyg.html-10"></a>     install -d <span class="k">$(</span>DESTDIR<span class="k">)</span>/<span class="k">$(</span>PREFIX<span class="k">)</span>/bin/
+<a name="code--ex26--Makefile-pyg.html-11"></a>     install devpkg <span class="k">$(</span>DESTDIR<span class="k">)</span>/<span class="k">$(</span>PREFIX<span class="k">)</span>/bin/
+<a name="code--ex26--Makefile-pyg.html-12"></a>
+<a name="code--ex26--Makefile-pyg.html-13"></a><span class="nf">clean</span><span class="o">:</span>
+<a name="code--ex26--Makefile-pyg.html-14"></a>     rm -f *.o
+<a name="code--ex26--Makefile-pyg.html-15"></a>     rm -f devpkg
+<a name="code--ex26--Makefile-pyg.html-16"></a>     rm -rf *.dSYM
+</pre></div><p>There's nothing in this that you haven't seen before, except maybe the strange
+<tt class="docutils literal"><span class="pre">?=</span></tt> syntax, which says &quot;set PREFIX equal to this unless PREFIX is already
+set&quot;.</p>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p>If you are on more recent versions of Ubuntu and you get errors about <tt class="docutils literal">apr_off_t</tt> or <tt class="docutils literal">off64_t</tt> then add <tt class="docutils literal"><span class="pre">-D_LARGEFILE64_SOURCE=1</span></tt> to <tt class="docutils literal">CFLAGS</tt>.</p>
+<p class="last">Another thing is you need to add <tt class="docutils literal">/usr/local/apr/lib</tt> to a file in
+/etc/ld.conf.so.d/ then run <tt class="docutils literal">ldconfig</tt> so that it picks up
+the libraries correctly.</p>
+</div>
+</div>
+<div class="section" id="the-source-files">
+<h1>The Source Files</h1>
+<p>From the make file, we see that there's four dependencies for <tt class="docutils literal">devpkg</tt>
+which are:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">bstrlib.o</tt></dt>
+<dd>Comes from <tt class="docutils literal">bstrlib.c</tt> and header file <tt class="docutils literal">bstlib.h</tt> which
+you already have.</dd>
+<dt><tt class="docutils literal">db.o</tt></dt>
+<dd>From <tt class="docutils literal">db.c</tt> and header file <tt class="docutils literal">db.h</tt>, and it
+will contain code for our little &quot;database&quot; routines.</dd>
+<dt><tt class="docutils literal">shell.o</tt></dt>
+<dd>From <tt class="docutils literal">shell.c</tt> and header <tt class="docutils literal">shell.h</tt>, with a couple
+functions that make running other commands like <tt class="docutils literal">curl</tt> easier.</dd>
+<dt><tt class="docutils literal">commands.o</tt></dt>
+<dd>From <tt class="docutils literal">command.c</tt> and header <tt class="docutils literal">command.h</tt>, and
+contains all the commands that <tt class="docutils literal">devpkg</tt> needs to be useful.</dd>
+<dt><tt class="docutils literal">devpkg</tt></dt>
+<dd>It's not explicitly mentioned, but instead is the target
+(on the left) in this part of the <tt class="docutils literal">Makefile</tt>. It comes from
+<tt class="docutils literal">devpkg.c</tt> which contains the <tt class="docutils literal">main</tt> function for the whole
+program.</dd>
+</dl>
+<p>Your job is to now create each of these files and type in their code
+and get them correct.</p>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p>You may read this description and think, &quot;Man! How is it that Zed is
+so smart he just sat down and typed these files out like this!? I
+could never do that.&quot;  I didn't magically craft <tt class="docutils literal">devpkg</tt>
+in this form with my awesome code powers.  Instead, what I did is this:</p>
+<ul class="simple">
+<li>I wrote a quick little README to get an idea of how I wanted it to work.</li>
+<li>I created a simple bash script (like the one you did) to figure
+out all the pieces that you need.</li>
+<li>I made one .c file and hacked on it for a few days working through
+the idea and figuring it out.</li>
+<li>I got it mostly working and debugged, <em>then</em> I started
+breaking up the one big file into these four files.</li>
+<li>After getting these files laid down, I renamed and refined the
+functions and data structures so they'd be more logical and &quot;pretty&quot;.</li>
+<li>Finally, after I had it working the <em>exact same</em> but with
+the new structure, I added a few features like the <tt class="docutils literal"><span class="pre">-F</span></tt> and
+<tt class="docutils literal"><span class="pre">-B</span></tt> options.</li>
+</ul>
+<p>You're reading this in the order I want to teach it to you, but don't think
+this is how I always build software.  Sometimes I already know the subject and
+I use more planning.  Sometimes I just hack up an idea and see how well it'd
+work.  Sometimes I write one, then throw it away and plan out a better one.  It
+all depends on what my experience tells me is best, or where my inspiration
+takes me.</p>
+<p class="last">If you run into an &quot;expert&quot; who tries to tell you there's only one
+way to solve a programming problem, then they're lying to you.  Either
+they actually use multiple tactics, or they're not very good.</p>
+</div>
+<div class="section" id="the-db-functions">
+<h2>The DB Functions</h2>
+<p>There must be a way to record URLs that have been installed, list these
+URLs, and check if something has already been installed so we can
+skip it.  I'll use a simple flat file database and the <tt class="docutils literal">bstrlib.h</tt>
+library to do it.</p>
+<p>First, create the <tt class="docutils literal">db.h</tt> header file so you know what you'll be
+implementing.</p>
+<div class="highlight"><pre><a name="code--ex26--db.h-pyg.html-1"></a><span class="cp">#ifndef _db_h</span>
+<a name="code--ex26--db.h-pyg.html-2"></a><span class="cp">#define _db_h</span>
+<a name="code--ex26--db.h-pyg.html-3"></a>
+<a name="code--ex26--db.h-pyg.html-4"></a><span class="cp">#define DB_FILE &quot;/usr/local/.devpkg/db&quot;</span>
+<a name="code--ex26--db.h-pyg.html-5"></a><span class="cp">#define DB_DIR &quot;/usr/local/.devpkg&quot;</span>
+<a name="code--ex26--db.h-pyg.html-6"></a>
+<a name="code--ex26--db.h-pyg.html-7"></a>
+<a name="code--ex26--db.h-pyg.html-8"></a><span class="kt">int</span> <span class="nf">DB_init</span><span class="p">();</span>
+<a name="code--ex26--db.h-pyg.html-9"></a><span class="kt">int</span> <span class="nf">DB_list</span><span class="p">();</span>
+<a name="code--ex26--db.h-pyg.html-10"></a><span class="kt">int</span> <span class="nf">DB_update</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">url</span><span class="p">);</span>
+<a name="code--ex26--db.h-pyg.html-11"></a><span class="kt">int</span> <span class="nf">DB_find</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">url</span><span class="p">);</span>
+<a name="code--ex26--db.h-pyg.html-12"></a>
+<a name="code--ex26--db.h-pyg.html-13"></a><span class="cp">#endif</span>
+</pre></div><p>Then implement those functions in <tt class="docutils literal">db.c</tt>, as you build this, use
+<tt class="docutils literal">make</tt> like you've been to get it to compile cleanly.</p>
+<div class="highlight"><pre><a name="code--ex26--db.c-pyg.html-1"></a><span class="cp">#include &lt;unistd.h&gt;</span>
+<a name="code--ex26--db.c-pyg.html-2"></a><span class="cp">#include &lt;apr_errno.h&gt;</span>
+<a name="code--ex26--db.c-pyg.html-3"></a><span class="cp">#include &lt;apr_file_io.h&gt;</span>
+<a name="code--ex26--db.c-pyg.html-4"></a>
+<a name="code--ex26--db.c-pyg.html-5"></a><span class="cp">#include &quot;db.h&quot;</span>
+<a name="code--ex26--db.c-pyg.html-6"></a><span class="cp">#include &quot;bstrlib.h&quot;</span>
+<a name="code--ex26--db.c-pyg.html-7"></a><span class="cp">#include &quot;dbg.h&quot;</span>
+<a name="code--ex26--db.c-pyg.html-8"></a>
+<a name="code--ex26--db.c-pyg.html-9"></a><span class="k">static</span> <span class="kt">FILE</span> <span class="o">*</span><span class="nf">DB_open</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">path</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">mode</span><span class="p">)</span>
+<a name="code--ex26--db.c-pyg.html-10"></a><span class="p">{</span>
+<a name="code--ex26--db.c-pyg.html-11"></a>    <span class="k">return</span> <span class="n">fopen</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">mode</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-12"></a><span class="p">}</span>
+<a name="code--ex26--db.c-pyg.html-13"></a>
+<a name="code--ex26--db.c-pyg.html-14"></a>
+<a name="code--ex26--db.c-pyg.html-15"></a><span class="k">static</span> <span class="kt">void</span> <span class="nf">DB_close</span><span class="p">(</span><span class="kt">FILE</span> <span class="o">*</span><span class="n">db</span><span class="p">)</span>
+<a name="code--ex26--db.c-pyg.html-16"></a><span class="p">{</span>
+<a name="code--ex26--db.c-pyg.html-17"></a>    <span class="n">fclose</span><span class="p">(</span><span class="n">db</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-18"></a><span class="p">}</span>
+<a name="code--ex26--db.c-pyg.html-19"></a>
+<a name="code--ex26--db.c-pyg.html-20"></a>
+<a name="code--ex26--db.c-pyg.html-21"></a><span class="k">static</span> <span class="n">bstring</span> <span class="nf">DB_load</span><span class="p">()</span>
+<a name="code--ex26--db.c-pyg.html-22"></a><span class="p">{</span>
+<a name="code--ex26--db.c-pyg.html-23"></a>    <span class="kt">FILE</span> <span class="o">*</span><span class="n">db</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--db.c-pyg.html-24"></a>    <span class="n">bstring</span> <span class="n">data</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--db.c-pyg.html-25"></a>
+<a name="code--ex26--db.c-pyg.html-26"></a>    <span class="n">db</span> <span class="o">=</span> <span class="n">DB_open</span><span class="p">(</span><span class="n">DB_FILE</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-27"></a>    <span class="n">check</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="s">&quot;Failed to open database: %s&quot;</span><span class="p">,</span> <span class="n">DB_FILE</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-28"></a>
+<a name="code--ex26--db.c-pyg.html-29"></a>    <span class="n">data</span> <span class="o">=</span> <span class="n">bread</span><span class="p">((</span><span class="n">bNread</span><span class="p">)</span><span class="n">fread</span><span class="p">,</span> <span class="n">db</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-30"></a>    <span class="n">check</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s">&quot;Failed to read from db file: %s&quot;</span><span class="p">,</span> <span class="n">DB_FILE</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-31"></a>
+<a name="code--ex26--db.c-pyg.html-32"></a>    <span class="n">DB_close</span><span class="p">(</span><span class="n">db</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-33"></a>    <span class="k">return</span> <span class="n">data</span><span class="p">;</span>
+<a name="code--ex26--db.c-pyg.html-34"></a>
+<a name="code--ex26--db.c-pyg.html-35"></a><span class="nl">error:</span>
+<a name="code--ex26--db.c-pyg.html-36"></a>    <span class="k">if</span><span class="p">(</span><span class="n">db</span><span class="p">)</span> <span class="n">DB_close</span><span class="p">(</span><span class="n">db</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-37"></a>    <span class="k">if</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="n">bdestroy</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-38"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--db.c-pyg.html-39"></a><span class="p">}</span>
+<a name="code--ex26--db.c-pyg.html-40"></a>
+<a name="code--ex26--db.c-pyg.html-41"></a>
+<a name="code--ex26--db.c-pyg.html-42"></a><span class="kt">int</span> <span class="nf">DB_update</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">url</span><span class="p">)</span>
+<a name="code--ex26--db.c-pyg.html-43"></a><span class="p">{</span>
+<a name="code--ex26--db.c-pyg.html-44"></a>    <span class="k">if</span><span class="p">(</span><span class="n">DB_find</span><span class="p">(</span><span class="n">url</span><span class="p">))</span> <span class="p">{</span>
+<a name="code--ex26--db.c-pyg.html-45"></a>        <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;Already recorded as installed: %s&quot;</span><span class="p">,</span> <span class="n">url</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-46"></a>    <span class="p">}</span>
+<a name="code--ex26--db.c-pyg.html-47"></a>
+<a name="code--ex26--db.c-pyg.html-48"></a>    <span class="kt">FILE</span> <span class="o">*</span><span class="n">db</span> <span class="o">=</span> <span class="n">DB_open</span><span class="p">(</span><span class="n">DB_FILE</span><span class="p">,</span> <span class="s">&quot;a+&quot;</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-49"></a>    <span class="n">check</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="s">&quot;Failed to open DB file: %s&quot;</span><span class="p">,</span> <span class="n">DB_FILE</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-50"></a>
+<a name="code--ex26--db.c-pyg.html-51"></a>    <span class="n">bstring</span> <span class="n">line</span> <span class="o">=</span> <span class="n">bfromcstr</span><span class="p">(</span><span class="n">url</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-52"></a>    <span class="n">bconchar</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="sc">&#39;\n&#39;</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-53"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">fwrite</span><span class="p">(</span><span class="n">line</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">,</span> <span class="n">blength</span><span class="p">(</span><span class="n">line</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">db</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-54"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&quot;Failed to append to the db.&quot;</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-55"></a>
+<a name="code--ex26--db.c-pyg.html-56"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex26--db.c-pyg.html-57"></a><span class="nl">error:</span>
+<a name="code--ex26--db.c-pyg.html-58"></a>    <span class="k">if</span><span class="p">(</span><span class="n">db</span><span class="p">)</span> <span class="n">DB_close</span><span class="p">(</span><span class="n">db</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-59"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex26--db.c-pyg.html-60"></a><span class="p">}</span>
+<a name="code--ex26--db.c-pyg.html-61"></a>
+<a name="code--ex26--db.c-pyg.html-62"></a>
+<a name="code--ex26--db.c-pyg.html-63"></a><span class="kt">int</span> <span class="nf">DB_find</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">url</span><span class="p">)</span>
+<a name="code--ex26--db.c-pyg.html-64"></a><span class="p">{</span>
+<a name="code--ex26--db.c-pyg.html-65"></a>    <span class="n">bstring</span> <span class="n">data</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--db.c-pyg.html-66"></a>    <span class="n">bstring</span> <span class="n">line</span> <span class="o">=</span> <span class="n">bfromcstr</span><span class="p">(</span><span class="n">url</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-67"></a>    <span class="kt">int</span> <span class="n">res</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex26--db.c-pyg.html-68"></a>
+<a name="code--ex26--db.c-pyg.html-69"></a>    <span class="n">data</span> <span class="o">=</span> <span class="n">DB_load</span><span class="p">();</span>
+<a name="code--ex26--db.c-pyg.html-70"></a>    <span class="n">check</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s">&quot;Failed to load: %s&quot;</span><span class="p">,</span> <span class="n">DB_FILE</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-71"></a>
+<a name="code--ex26--db.c-pyg.html-72"></a>    <span class="k">if</span><span class="p">(</span><span class="n">binstr</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span> <span class="o">==</span> <span class="n">BSTR_ERR</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--db.c-pyg.html-73"></a>        <span class="n">res</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex26--db.c-pyg.html-74"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--ex26--db.c-pyg.html-75"></a>        <span class="n">res</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex26--db.c-pyg.html-76"></a>    <span class="p">}</span>
+<a name="code--ex26--db.c-pyg.html-77"></a>
+<a name="code--ex26--db.c-pyg.html-78"></a><span class="nl">error:</span> <span class="c1">// fallthrough</span>
+<a name="code--ex26--db.c-pyg.html-79"></a>    <span class="k">if</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="n">bdestroy</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-80"></a>    <span class="k">if</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="n">bdestroy</span><span class="p">(</span><span class="n">line</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-81"></a>
+<a name="code--ex26--db.c-pyg.html-82"></a>    <span class="k">return</span> <span class="n">res</span><span class="p">;</span>
+<a name="code--ex26--db.c-pyg.html-83"></a><span class="p">}</span>
+<a name="code--ex26--db.c-pyg.html-84"></a>
+<a name="code--ex26--db.c-pyg.html-85"></a>
+<a name="code--ex26--db.c-pyg.html-86"></a><span class="kt">int</span> <span class="nf">DB_init</span><span class="p">()</span>
+<a name="code--ex26--db.c-pyg.html-87"></a><span class="p">{</span>
+<a name="code--ex26--db.c-pyg.html-88"></a>    <span class="kt">apr_pool_t</span> <span class="o">*</span><span class="n">p</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--db.c-pyg.html-89"></a>    <span class="n">apr_pool_initialize</span><span class="p">();</span>
+<a name="code--ex26--db.c-pyg.html-90"></a>    <span class="n">apr_pool_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">p</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-91"></a>
+<a name="code--ex26--db.c-pyg.html-92"></a>    <span class="k">if</span><span class="p">(</span><span class="n">access</span><span class="p">(</span><span class="n">DB_DIR</span><span class="p">,</span> <span class="n">W_OK</span> <span class="o">|</span> <span class="n">X_OK</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--db.c-pyg.html-93"></a>        <span class="kt">apr_status_t</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">apr_dir_make_recursive</span><span class="p">(</span><span class="n">DB_DIR</span><span class="p">,</span>
+<a name="code--ex26--db.c-pyg.html-94"></a>                <span class="n">APR_UREAD</span> <span class="o">|</span> <span class="n">APR_UWRITE</span> <span class="o">|</span> <span class="n">APR_UEXECUTE</span> <span class="o">|</span>
+<a name="code--ex26--db.c-pyg.html-95"></a>                <span class="n">APR_GREAD</span> <span class="o">|</span> <span class="n">APR_GWRITE</span> <span class="o">|</span> <span class="n">APR_GEXECUTE</span><span class="p">,</span> <span class="n">p</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-96"></a>        <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="n">APR_SUCCESS</span><span class="p">,</span> <span class="s">&quot;Failed to make database dir: %s&quot;</span><span class="p">,</span> <span class="n">DB_DIR</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-97"></a>    <span class="p">}</span>
+<a name="code--ex26--db.c-pyg.html-98"></a>
+<a name="code--ex26--db.c-pyg.html-99"></a>    <span class="k">if</span><span class="p">(</span><span class="n">access</span><span class="p">(</span><span class="n">DB_FILE</span><span class="p">,</span> <span class="n">W_OK</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--db.c-pyg.html-100"></a>        <span class="kt">FILE</span> <span class="o">*</span><span class="n">db</span> <span class="o">=</span> <span class="n">DB_open</span><span class="p">(</span><span class="n">DB_FILE</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-101"></a>        <span class="n">check</span><span class="p">(</span><span class="n">db</span><span class="p">,</span> <span class="s">&quot;Cannot open database: %s&quot;</span><span class="p">,</span> <span class="n">DB_FILE</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-102"></a>        <span class="n">DB_close</span><span class="p">(</span><span class="n">db</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-103"></a>    <span class="p">}</span>
+<a name="code--ex26--db.c-pyg.html-104"></a>
+<a name="code--ex26--db.c-pyg.html-105"></a>    <span class="n">apr_pool_destroy</span><span class="p">(</span><span class="n">p</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-106"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex26--db.c-pyg.html-107"></a>
+<a name="code--ex26--db.c-pyg.html-108"></a><span class="nl">error:</span>
+<a name="code--ex26--db.c-pyg.html-109"></a>    <span class="n">apr_pool_destroy</span><span class="p">(</span><span class="n">p</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-110"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex26--db.c-pyg.html-111"></a><span class="p">}</span>
+<a name="code--ex26--db.c-pyg.html-112"></a>
+<a name="code--ex26--db.c-pyg.html-113"></a>
+<a name="code--ex26--db.c-pyg.html-114"></a><span class="kt">int</span> <span class="nf">DB_list</span><span class="p">()</span>
+<a name="code--ex26--db.c-pyg.html-115"></a><span class="p">{</span>
+<a name="code--ex26--db.c-pyg.html-116"></a>    <span class="n">bstring</span> <span class="n">data</span> <span class="o">=</span> <span class="n">DB_load</span><span class="p">();</span>
+<a name="code--ex26--db.c-pyg.html-117"></a>    <span class="n">check</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="s">&quot;Failed to read load: %s&quot;</span><span class="p">,</span> <span class="n">DB_FILE</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-118"></a>
+<a name="code--ex26--db.c-pyg.html-119"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%s&quot;</span><span class="p">,</span> <span class="n">bdata</span><span class="p">(</span><span class="n">data</span><span class="p">));</span>
+<a name="code--ex26--db.c-pyg.html-120"></a>    <span class="n">bdestroy</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
+<a name="code--ex26--db.c-pyg.html-121"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex26--db.c-pyg.html-122"></a>
+<a name="code--ex26--db.c-pyg.html-123"></a><span class="nl">error:</span>
+<a name="code--ex26--db.c-pyg.html-124"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex26--db.c-pyg.html-125"></a><span class="p">}</span>
+</pre></div><div class="section" id="challenge-1-code-review">
+<h3>Challenge 1: Code Review</h3>
+<p>Before continuing, read every line of these files carefully and
+confirm that you have them entered in <em>exactly</em>.  Read them
+line-by-line backwards to practice that. Also trace each function
+call and make sure you are using <tt class="docutils literal">check</tt> to validate the
+return codes.  Finally, look up <em>every</em> function that you
+don't recognize either on the APR web site documentation, or
+in the <tt class="docutils literal">bstrlib.h</tt> and <tt class="docutils literal">bstrlib.c</tt> source.</p>
+</div>
+</div>
+<div class="section" id="the-shell-functions">
+<h2>The Shell Functions</h2>
+<p>A key design decision for <tt class="docutils literal">devpkg</tt> is to do most of the work
+using external tools like <tt class="docutils literal">curl</tt>, <tt class="docutils literal">tar</tt>, and <tt class="docutils literal">git</tt>.
+We could find libraries to do all of this internally, but it's pointless
+if we just need the base features of these programs.  There is no shame
+in running another command in Unix.</p>
+<p>To do this I'm going to use the <tt class="docutils literal">apr_thread_proc.h</tt> functions
+to run programs, but I also want to make a simple kind of &quot;template&quot;
+system.  I'll use a <tt class="docutils literal">struct Shell</tt> that holds all the information
+needed to run a program, but has &quot;holes&quot; in the arguments list where I
+can replace them with values.</p>
+<p>Look at the <tt class="docutils literal">shell.h</tt> file to see the structure and the commands I'll use.
+You can see I'm using <tt class="docutils literal">extern</tt> to indicate that other <tt class="docutils literal">.c</tt> files
+can access variables I'm defining in <tt class="docutils literal">shell.c</tt>.</p>
+<div class="highlight"><pre><a name="code--ex26--shell.h-pyg.html-1"></a><span class="cp">#ifndef _shell_h</span>
+<a name="code--ex26--shell.h-pyg.html-2"></a><span class="cp">#define _shell_h</span>
+<a name="code--ex26--shell.h-pyg.html-3"></a>
+<a name="code--ex26--shell.h-pyg.html-4"></a><span class="cp">#define MAX_COMMAND_ARGS 100</span>
+<a name="code--ex26--shell.h-pyg.html-5"></a>
+<a name="code--ex26--shell.h-pyg.html-6"></a><span class="cp">#include &lt;apr_thread_proc.h&gt;</span>
+<a name="code--ex26--shell.h-pyg.html-7"></a>
+<a name="code--ex26--shell.h-pyg.html-8"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="n">Shell</span> <span class="p">{</span>
+<a name="code--ex26--shell.h-pyg.html-9"></a>    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">dir</span><span class="p">;</span>
+<a name="code--ex26--shell.h-pyg.html-10"></a>    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">exe</span><span class="p">;</span>
+<a name="code--ex26--shell.h-pyg.html-11"></a>
+<a name="code--ex26--shell.h-pyg.html-12"></a>    <span class="kt">apr_procattr_t</span> <span class="o">*</span><span class="n">attr</span><span class="p">;</span>
+<a name="code--ex26--shell.h-pyg.html-13"></a>    <span class="kt">apr_proc_t</span> <span class="n">proc</span><span class="p">;</span>
+<a name="code--ex26--shell.h-pyg.html-14"></a>    <span class="n">apr_exit_why_e</span> <span class="n">exit_why</span><span class="p">;</span>
+<a name="code--ex26--shell.h-pyg.html-15"></a>    <span class="kt">int</span> <span class="n">exit_code</span><span class="p">;</span>
+<a name="code--ex26--shell.h-pyg.html-16"></a>
+<a name="code--ex26--shell.h-pyg.html-17"></a>    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">args</span><span class="p">[</span><span class="n">MAX_COMMAND_ARGS</span><span class="p">];</span>
+<a name="code--ex26--shell.h-pyg.html-18"></a><span class="p">}</span> <span class="n">Shell</span><span class="p">;</span>
+<a name="code--ex26--shell.h-pyg.html-19"></a>
+<a name="code--ex26--shell.h-pyg.html-20"></a><span class="kt">int</span> <span class="nf">Shell_run</span><span class="p">(</span><span class="kt">apr_pool_t</span> <span class="o">*</span><span class="n">p</span><span class="p">,</span> <span class="n">Shell</span> <span class="o">*</span><span class="n">cmd</span><span class="p">);</span>
+<a name="code--ex26--shell.h-pyg.html-21"></a><span class="kt">int</span> <span class="nf">Shell_exec</span><span class="p">(</span><span class="n">Shell</span> <span class="n">cmd</span><span class="p">,</span> <span class="p">...);</span>
+<a name="code--ex26--shell.h-pyg.html-22"></a>
+<a name="code--ex26--shell.h-pyg.html-23"></a><span class="k">extern</span> <span class="n">Shell</span> <span class="n">CLEANUP_SH</span><span class="p">;</span>
+<a name="code--ex26--shell.h-pyg.html-24"></a><span class="k">extern</span> <span class="n">Shell</span> <span class="n">GIT_SH</span><span class="p">;</span>
+<a name="code--ex26--shell.h-pyg.html-25"></a><span class="k">extern</span> <span class="n">Shell</span> <span class="n">TAR_SH</span><span class="p">;</span>
+<a name="code--ex26--shell.h-pyg.html-26"></a><span class="k">extern</span> <span class="n">Shell</span> <span class="n">CURL_SH</span><span class="p">;</span>
+<a name="code--ex26--shell.h-pyg.html-27"></a><span class="k">extern</span> <span class="n">Shell</span> <span class="n">CONFIGURE_SH</span><span class="p">;</span>
+<a name="code--ex26--shell.h-pyg.html-28"></a><span class="k">extern</span> <span class="n">Shell</span> <span class="n">MAKE_SH</span><span class="p">;</span>
+<a name="code--ex26--shell.h-pyg.html-29"></a><span class="k">extern</span> <span class="n">Shell</span> <span class="n">INSTALL_SH</span><span class="p">;</span>
+<a name="code--ex26--shell.h-pyg.html-30"></a>
+<a name="code--ex26--shell.h-pyg.html-31"></a><span class="cp">#endif</span>
+</pre></div><p>Make sure you've created <tt class="docutils literal">shell.h</tt> exactly, and that you've got the
+same names and number of <tt class="docutils literal">extern Shell</tt> variables.  Those are used
+by the <tt class="docutils literal">Shell_run</tt> and <tt class="docutils literal">Shell_exec</tt> functions to run commands.
+I define these two functions, and create the real variables in <tt class="docutils literal">shell.c</tt>.</p>
+<div class="highlight"><pre><a name="code--ex26--shell.c-pyg.html-1"></a><span class="cp">#include &quot;shell.h&quot;</span>
+<a name="code--ex26--shell.c-pyg.html-2"></a><span class="cp">#include &quot;dbg.h&quot;</span>
+<a name="code--ex26--shell.c-pyg.html-3"></a><span class="cp">#include &lt;stdarg.h&gt;</span>
+<a name="code--ex26--shell.c-pyg.html-4"></a>
+<a name="code--ex26--shell.c-pyg.html-5"></a><span class="kt">int</span> <span class="nf">Shell_exec</span><span class="p">(</span><span class="n">Shell</span> <span class="n">template</span><span class="p">,</span> <span class="p">...)</span>
+<a name="code--ex26--shell.c-pyg.html-6"></a><span class="p">{</span>
+<a name="code--ex26--shell.c-pyg.html-7"></a>    <span class="kt">apr_pool_t</span> <span class="o">*</span><span class="n">p</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--shell.c-pyg.html-8"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex26--shell.c-pyg.html-9"></a>    <span class="kt">apr_status_t</span> <span class="n">rv</span> <span class="o">=</span> <span class="n">APR_SUCCESS</span><span class="p">;</span>
+<a name="code--ex26--shell.c-pyg.html-10"></a>    <span class="kt">va_list</span> <span class="n">argp</span><span class="p">;</span>
+<a name="code--ex26--shell.c-pyg.html-11"></a>    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">key</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--shell.c-pyg.html-12"></a>    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">arg</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--shell.c-pyg.html-13"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex26--shell.c-pyg.html-14"></a>
+<a name="code--ex26--shell.c-pyg.html-15"></a>    <span class="n">rv</span> <span class="o">=</span> <span class="n">apr_pool_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">p</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-16"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rv</span> <span class="o">==</span> <span class="n">APR_SUCCESS</span><span class="p">,</span> <span class="s">&quot;Failed to create pool.&quot;</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-17"></a>
+<a name="code--ex26--shell.c-pyg.html-18"></a>    <span class="n">va_start</span><span class="p">(</span><span class="n">argp</span><span class="p">,</span> <span class="n">template</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-19"></a>
+<a name="code--ex26--shell.c-pyg.html-20"></a>    <span class="k">for</span><span class="p">(</span><span class="n">key</span> <span class="o">=</span> <span class="n">va_arg</span><span class="p">(</span><span class="n">argp</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-21"></a>        <span class="n">key</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--shell.c-pyg.html-22"></a>        <span class="n">key</span> <span class="o">=</span> <span class="n">va_arg</span><span class="p">(</span><span class="n">argp</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="p">))</span>
+<a name="code--ex26--shell.c-pyg.html-23"></a>    <span class="p">{</span>
+<a name="code--ex26--shell.c-pyg.html-24"></a>        <span class="n">arg</span> <span class="o">=</span> <span class="n">va_arg</span><span class="p">(</span><span class="n">argp</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-25"></a>
+<a name="code--ex26--shell.c-pyg.html-26"></a>        <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">template</span><span class="p">.</span><span class="n">args</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--shell.c-pyg.html-27"></a>            <span class="k">if</span><span class="p">(</span><span class="n">strcmp</span><span class="p">(</span><span class="n">template</span><span class="p">.</span><span class="n">args</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">key</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--shell.c-pyg.html-28"></a>                <span class="n">template</span><span class="p">.</span><span class="n">args</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">arg</span><span class="p">;</span>
+<a name="code--ex26--shell.c-pyg.html-29"></a>                <span class="k">break</span><span class="p">;</span> <span class="c1">// found it</span>
+<a name="code--ex26--shell.c-pyg.html-30"></a>            <span class="p">}</span>
+<a name="code--ex26--shell.c-pyg.html-31"></a>        <span class="p">}</span>
+<a name="code--ex26--shell.c-pyg.html-32"></a>    <span class="p">}</span>
+<a name="code--ex26--shell.c-pyg.html-33"></a>
+<a name="code--ex26--shell.c-pyg.html-34"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">Shell_run</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">template</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-35"></a>    <span class="n">apr_pool_destroy</span><span class="p">(</span><span class="n">p</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-36"></a>    <span class="n">va_end</span><span class="p">(</span><span class="n">argp</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-37"></a>    <span class="k">return</span> <span class="n">rc</span><span class="p">;</span>
+<a name="code--ex26--shell.c-pyg.html-38"></a>
+<a name="code--ex26--shell.c-pyg.html-39"></a><span class="nl">error:</span>
+<a name="code--ex26--shell.c-pyg.html-40"></a>    <span class="k">if</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--shell.c-pyg.html-41"></a>        <span class="n">apr_pool_destroy</span><span class="p">(</span><span class="n">p</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-42"></a>    <span class="p">}</span>
+<a name="code--ex26--shell.c-pyg.html-43"></a>    <span class="k">return</span> <span class="n">rc</span><span class="p">;</span>
+<a name="code--ex26--shell.c-pyg.html-44"></a><span class="p">}</span>
+<a name="code--ex26--shell.c-pyg.html-45"></a>
+<a name="code--ex26--shell.c-pyg.html-46"></a><span class="kt">int</span> <span class="nf">Shell_run</span><span class="p">(</span><span class="kt">apr_pool_t</span> <span class="o">*</span><span class="n">p</span><span class="p">,</span> <span class="n">Shell</span> <span class="o">*</span><span class="n">cmd</span><span class="p">)</span>
+<a name="code--ex26--shell.c-pyg.html-47"></a><span class="p">{</span>
+<a name="code--ex26--shell.c-pyg.html-48"></a>    <span class="kt">apr_procattr_t</span> <span class="o">*</span><span class="n">attr</span><span class="p">;</span>
+<a name="code--ex26--shell.c-pyg.html-49"></a>    <span class="kt">apr_status_t</span> <span class="n">rv</span><span class="p">;</span>
+<a name="code--ex26--shell.c-pyg.html-50"></a>    <span class="kt">apr_proc_t</span> <span class="n">newproc</span><span class="p">;</span>
+<a name="code--ex26--shell.c-pyg.html-51"></a>
+<a name="code--ex26--shell.c-pyg.html-52"></a>    <span class="n">rv</span> <span class="o">=</span> <span class="n">apr_procattr_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">attr</span><span class="p">,</span> <span class="n">p</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-53"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rv</span> <span class="o">==</span> <span class="n">APR_SUCCESS</span><span class="p">,</span> <span class="s">&quot;Failed to create proc attr.&quot;</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-54"></a>
+<a name="code--ex26--shell.c-pyg.html-55"></a>    <span class="n">rv</span> <span class="o">=</span> <span class="n">apr_procattr_io_set</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">APR_NO_PIPE</span><span class="p">,</span> <span class="n">APR_NO_PIPE</span><span class="p">,</span>
+<a name="code--ex26--shell.c-pyg.html-56"></a>            <span class="n">APR_NO_PIPE</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-57"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rv</span> <span class="o">==</span> <span class="n">APR_SUCCESS</span><span class="p">,</span> <span class="s">&quot;Failed to set IO of command.&quot;</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-58"></a>
+<a name="code--ex26--shell.c-pyg.html-59"></a>    <span class="n">rv</span> <span class="o">=</span> <span class="n">apr_procattr_dir_set</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">cmd</span><span class="o">-&gt;</span><span class="n">dir</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-60"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rv</span> <span class="o">==</span> <span class="n">APR_SUCCESS</span><span class="p">,</span> <span class="s">&quot;Failed to set root to %s&quot;</span><span class="p">,</span> <span class="n">cmd</span><span class="o">-&gt;</span><span class="n">dir</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-61"></a>
+<a name="code--ex26--shell.c-pyg.html-62"></a>    <span class="n">rv</span> <span class="o">=</span> <span class="n">apr_procattr_cmdtype_set</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">APR_PROGRAM_PATH</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-63"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rv</span> <span class="o">==</span> <span class="n">APR_SUCCESS</span><span class="p">,</span> <span class="s">&quot;Failed to set cmd type.&quot;</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-64"></a>
+<a name="code--ex26--shell.c-pyg.html-65"></a>    <span class="n">rv</span> <span class="o">=</span> <span class="n">apr_proc_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">newproc</span><span class="p">,</span> <span class="n">cmd</span><span class="o">-&gt;</span><span class="n">exe</span><span class="p">,</span> <span class="n">cmd</span><span class="o">-&gt;</span><span class="n">args</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">p</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-66"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rv</span> <span class="o">==</span> <span class="n">APR_SUCCESS</span><span class="p">,</span> <span class="s">&quot;Failed to run command.&quot;</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-67"></a>
+<a name="code--ex26--shell.c-pyg.html-68"></a>    <span class="n">rv</span> <span class="o">=</span> <span class="n">apr_proc_wait</span><span class="p">(</span><span class="o">&amp;</span><span class="n">newproc</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">cmd</span><span class="o">-&gt;</span><span class="n">exit_code</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">cmd</span><span class="o">-&gt;</span><span class="n">exit_why</span><span class="p">,</span> <span class="n">APR_WAIT</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-69"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rv</span> <span class="o">==</span> <span class="n">APR_CHILD_DONE</span><span class="p">,</span> <span class="s">&quot;Failed to wait.&quot;</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-70"></a>
+<a name="code--ex26--shell.c-pyg.html-71"></a>    <span class="n">check</span><span class="p">(</span><span class="n">cmd</span><span class="o">-&gt;</span><span class="n">exit_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;%s exited badly.&quot;</span><span class="p">,</span> <span class="n">cmd</span><span class="o">-&gt;</span><span class="n">exe</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-72"></a>    <span class="n">check</span><span class="p">(</span><span class="n">cmd</span><span class="o">-&gt;</span><span class="n">exit_why</span> <span class="o">==</span> <span class="n">APR_PROC_EXIT</span><span class="p">,</span> <span class="s">&quot;%s was killed or crashed&quot;</span><span class="p">,</span> <span class="n">cmd</span><span class="o">-&gt;</span><span class="n">exe</span><span class="p">);</span>
+<a name="code--ex26--shell.c-pyg.html-73"></a>
+<a name="code--ex26--shell.c-pyg.html-74"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex26--shell.c-pyg.html-75"></a>
+<a name="code--ex26--shell.c-pyg.html-76"></a><span class="nl">error:</span>
+<a name="code--ex26--shell.c-pyg.html-77"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex26--shell.c-pyg.html-78"></a><span class="p">}</span>
+<a name="code--ex26--shell.c-pyg.html-79"></a>
+<a name="code--ex26--shell.c-pyg.html-80"></a><span class="n">Shell</span> <span class="n">CLEANUP_SH</span> <span class="o">=</span> <span class="p">{</span>
+<a name="code--ex26--shell.c-pyg.html-81"></a>    <span class="p">.</span><span class="n">exe</span> <span class="o">=</span> <span class="s">&quot;rm&quot;</span><span class="p">,</span>
+<a name="code--ex26--shell.c-pyg.html-82"></a>    <span class="p">.</span><span class="n">dir</span> <span class="o">=</span> <span class="s">&quot;/tmp&quot;</span><span class="p">,</span>
+<a name="code--ex26--shell.c-pyg.html-83"></a>    <span class="p">.</span><span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;rm&quot;</span><span class="p">,</span> <span class="s">&quot;-rf&quot;</span><span class="p">,</span> <span class="s">&quot;/tmp/pkg-build&quot;</span><span class="p">,</span> <span class="s">&quot;/tmp/pkg-src.tar.gz&quot;</span><span class="p">,</span>
+<a name="code--ex26--shell.c-pyg.html-84"></a>        <span class="s">&quot;/tmp/pkg-src.tar.bz2&quot;</span><span class="p">,</span> <span class="s">&quot;/tmp/DEPENDS&quot;</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">}</span>
+<a name="code--ex26--shell.c-pyg.html-85"></a><span class="p">};</span>
+<a name="code--ex26--shell.c-pyg.html-86"></a>
+<a name="code--ex26--shell.c-pyg.html-87"></a><span class="n">Shell</span> <span class="n">GIT_SH</span> <span class="o">=</span> <span class="p">{</span>
+<a name="code--ex26--shell.c-pyg.html-88"></a>    <span class="p">.</span><span class="n">dir</span> <span class="o">=</span> <span class="s">&quot;/tmp&quot;</span><span class="p">,</span>
+<a name="code--ex26--shell.c-pyg.html-89"></a>    <span class="p">.</span><span class="n">exe</span> <span class="o">=</span> <span class="s">&quot;git&quot;</span><span class="p">,</span>
+<a name="code--ex26--shell.c-pyg.html-90"></a>    <span class="p">.</span><span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;git&quot;</span><span class="p">,</span> <span class="s">&quot;clone&quot;</span><span class="p">,</span> <span class="s">&quot;URL&quot;</span><span class="p">,</span> <span class="s">&quot;pkg-build&quot;</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">}</span>
+<a name="code--ex26--shell.c-pyg.html-91"></a><span class="p">};</span>
+<a name="code--ex26--shell.c-pyg.html-92"></a>
+<a name="code--ex26--shell.c-pyg.html-93"></a><span class="n">Shell</span> <span class="n">TAR_SH</span> <span class="o">=</span> <span class="p">{</span>
+<a name="code--ex26--shell.c-pyg.html-94"></a>    <span class="p">.</span><span class="n">dir</span> <span class="o">=</span> <span class="s">&quot;/tmp/pkg-build&quot;</span><span class="p">,</span>
+<a name="code--ex26--shell.c-pyg.html-95"></a>    <span class="p">.</span><span class="n">exe</span> <span class="o">=</span> <span class="s">&quot;tar&quot;</span><span class="p">,</span>
+<a name="code--ex26--shell.c-pyg.html-96"></a>    <span class="p">.</span><span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;tar&quot;</span><span class="p">,</span> <span class="s">&quot;-xzf&quot;</span><span class="p">,</span> <span class="s">&quot;FILE&quot;</span><span class="p">,</span> <span class="s">&quot;--strip-components&quot;</span><span class="p">,</span> <span class="s">&quot;1&quot;</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">}</span>
+<a name="code--ex26--shell.c-pyg.html-97"></a><span class="p">};</span>
+<a name="code--ex26--shell.c-pyg.html-98"></a>
+<a name="code--ex26--shell.c-pyg.html-99"></a><span class="n">Shell</span> <span class="n">CURL_SH</span> <span class="o">=</span> <span class="p">{</span>
+<a name="code--ex26--shell.c-pyg.html-100"></a>    <span class="p">.</span><span class="n">dir</span> <span class="o">=</span> <span class="s">&quot;/tmp&quot;</span><span class="p">,</span>
+<a name="code--ex26--shell.c-pyg.html-101"></a>    <span class="p">.</span><span class="n">exe</span> <span class="o">=</span> <span class="s">&quot;curl&quot;</span><span class="p">,</span>
+<a name="code--ex26--shell.c-pyg.html-102"></a>    <span class="p">.</span><span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;curl&quot;</span><span class="p">,</span> <span class="s">&quot;-L&quot;</span><span class="p">,</span> <span class="s">&quot;-o&quot;</span><span class="p">,</span> <span class="s">&quot;TARGET&quot;</span><span class="p">,</span> <span class="s">&quot;URL&quot;</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">}</span>
+<a name="code--ex26--shell.c-pyg.html-103"></a><span class="p">};</span>
+<a name="code--ex26--shell.c-pyg.html-104"></a>
+<a name="code--ex26--shell.c-pyg.html-105"></a><span class="n">Shell</span> <span class="n">CONFIGURE_SH</span> <span class="o">=</span> <span class="p">{</span>
+<a name="code--ex26--shell.c-pyg.html-106"></a>    <span class="p">.</span><span class="n">exe</span> <span class="o">=</span> <span class="s">&quot;./configure&quot;</span><span class="p">,</span>
+<a name="code--ex26--shell.c-pyg.html-107"></a>    <span class="p">.</span><span class="n">dir</span> <span class="o">=</span> <span class="s">&quot;/tmp/pkg-build&quot;</span><span class="p">,</span>
+<a name="code--ex26--shell.c-pyg.html-108"></a>    <span class="p">.</span><span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;configure&quot;</span><span class="p">,</span> <span class="s">&quot;OPTS&quot;</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">},</span>
+<a name="code--ex26--shell.c-pyg.html-109"></a><span class="p">};</span>
+<a name="code--ex26--shell.c-pyg.html-110"></a>
+<a name="code--ex26--shell.c-pyg.html-111"></a><span class="n">Shell</span> <span class="n">MAKE_SH</span> <span class="o">=</span> <span class="p">{</span>
+<a name="code--ex26--shell.c-pyg.html-112"></a>    <span class="p">.</span><span class="n">exe</span> <span class="o">=</span> <span class="s">&quot;make&quot;</span><span class="p">,</span>
+<a name="code--ex26--shell.c-pyg.html-113"></a>    <span class="p">.</span><span class="n">dir</span> <span class="o">=</span> <span class="s">&quot;/tmp/pkg-build&quot;</span><span class="p">,</span>
+<a name="code--ex26--shell.c-pyg.html-114"></a>    <span class="p">.</span><span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;make&quot;</span><span class="p">,</span> <span class="s">&quot;OPTS&quot;</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">}</span>
+<a name="code--ex26--shell.c-pyg.html-115"></a><span class="p">};</span>
+<a name="code--ex26--shell.c-pyg.html-116"></a>
+<a name="code--ex26--shell.c-pyg.html-117"></a><span class="n">Shell</span> <span class="n">INSTALL_SH</span> <span class="o">=</span> <span class="p">{</span>
+<a name="code--ex26--shell.c-pyg.html-118"></a>    <span class="p">.</span><span class="n">exe</span> <span class="o">=</span> <span class="s">&quot;sudo&quot;</span><span class="p">,</span>
+<a name="code--ex26--shell.c-pyg.html-119"></a>    <span class="p">.</span><span class="n">dir</span> <span class="o">=</span> <span class="s">&quot;/tmp/pkg-build&quot;</span><span class="p">,</span>
+<a name="code--ex26--shell.c-pyg.html-120"></a>    <span class="p">.</span><span class="n">args</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;sudo&quot;</span><span class="p">,</span> <span class="s">&quot;make&quot;</span><span class="p">,</span> <span class="s">&quot;TARGET&quot;</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">}</span>
+<a name="code--ex26--shell.c-pyg.html-121"></a><span class="p">};</span>
+</pre></div><p>Read the <tt class="docutils literal">shell.c</tt> from the bottom to the top (which is a common C source
+layout) and you see I've created the actual <tt class="docutils literal">Shell</tt> variables that you
+indicated were <tt class="docutils literal">extern</tt> in <tt class="docutils literal">shell.h</tt>.  They live here, but are
+available to the rest of the program.  This is how you make global variables
+that live in one <tt class="docutils literal">.o</tt> file but are used everywhere.  You shouldn't make
+many of these, but they are handy for things like this.</p>
+<p>Continuing up the file we get to the <tt class="docutils literal">Shell_run</tt> function, which is
+a &quot;base&quot; function that just runs a command based on what's in a <tt class="docutils literal">Shell</tt>
+struct.  It uses many of the functions defined in <tt class="docutils literal">apr_thread_proc.h</tt>
+so go look up each one to see how it works.  This seems like a lot of work
+compared to just using the <tt class="docutils literal">system</tt> function call, but this also gives
+you more control over the other program's execution.  For example, in our
+<tt class="docutils literal">Shell</tt> struct we have a <tt class="docutils literal">.dir</tt> attribute which forces the program
+to be in a specific directory before running.</p>
+<p>Finally, I have the <tt class="docutils literal">Shell_exec</tt> function, which is a &quot;variable arguments&quot;
+function.  You've seen this before, but make sure you grasp the <tt class="docutils literal">stdarg.h</tt>
+functions and how to write one of these.  In the challenge for this section
+you are going to analyze this function.</p>
+<div class="section" id="challenge-2-analyze-shell-exec">
+<h3>Challenge 2: Analyze Shell_exec</h3>
+<p>Challenge for these files (in addition to a full code review just like you
+did in Challenge 1) is to fully analyze <tt class="docutils literal">Shell_exec</tt> and break down
+exactly how it works.  You should be able to understand each line, how
+the two <tt class="docutils literal"><span class="pre">for-loops</span></tt> work, and how arguments are being replaced.</p>
+<p>Once you have it analyzed, add a field to <tt class="docutils literal">struct Shell</tt> that gives
+the number of variable <tt class="docutils literal">args</tt> that must be replaced.  Update all the
+commands to have the right count of args, and then have an error check that
+confirms these args have been replaced and error exit.</p>
+</div>
+</div>
+<div class="section" id="the-command-functions">
+<h2>The Command Functions</h2>
+<p>Now you get to make the actual commands that do the work.  These commands
+will use functions from APR, <tt class="docutils literal">db.h</tt> and <tt class="docutils literal">shell.h</tt> to do the
+real work of downloading and building software you want it to build.
+This is the most complex set of files, so do them carefully.  As before, you
+start by making the <tt class="docutils literal">commands.h</tt> file, then implementing its functions
+in the <tt class="docutils literal">commands.c</tt> file.</p>
+<div class="highlight"><pre><a name="code--ex26--commands.h-pyg.html-1"></a><span class="cp">#ifndef _commands_h</span>
+<a name="code--ex26--commands.h-pyg.html-2"></a><span class="cp">#define _commands_h</span>
+<a name="code--ex26--commands.h-pyg.html-3"></a>
+<a name="code--ex26--commands.h-pyg.html-4"></a><span class="cp">#include &lt;apr_pools.h&gt;</span>
+<a name="code--ex26--commands.h-pyg.html-5"></a>
+<a name="code--ex26--commands.h-pyg.html-6"></a><span class="cp">#define DEPENDS_PATH &quot;/tmp/DEPENDS&quot;</span>
+<a name="code--ex26--commands.h-pyg.html-7"></a><span class="cp">#define TAR_GZ_SRC &quot;/tmp/pkg-src.tar.gz&quot;</span>
+<a name="code--ex26--commands.h-pyg.html-8"></a><span class="cp">#define TAR_BZ2_SRC &quot;/tmp/pkg-src.tar.bz2&quot;</span>
+<a name="code--ex26--commands.h-pyg.html-9"></a><span class="cp">#define BUILD_DIR &quot;/tmp/pkg-build&quot;</span>
+<a name="code--ex26--commands.h-pyg.html-10"></a><span class="cp">#define GIT_PAT &quot;*.git&quot;</span>
+<a name="code--ex26--commands.h-pyg.html-11"></a><span class="cp">#define DEPEND_PAT &quot;*DEPENDS&quot;</span>
+<a name="code--ex26--commands.h-pyg.html-12"></a><span class="cp">#define TAR_GZ_PAT &quot;*.tar.gz&quot;</span>
+<a name="code--ex26--commands.h-pyg.html-13"></a><span class="cp">#define TAR_BZ2_PAT &quot;*.tar.bz2&quot;</span>
+<a name="code--ex26--commands.h-pyg.html-14"></a><span class="cp">#define CONFIG_SCRIPT &quot;/tmp/pkg-build/configure&quot;</span>
+<a name="code--ex26--commands.h-pyg.html-15"></a>
+<a name="code--ex26--commands.h-pyg.html-16"></a><span class="k">enum</span> <span class="n">CommandType</span> <span class="p">{</span>
+<a name="code--ex26--commands.h-pyg.html-17"></a>    <span class="n">COMMAND_NONE</span><span class="p">,</span> <span class="n">COMMAND_INSTALL</span><span class="p">,</span> <span class="n">COMMAND_LIST</span><span class="p">,</span> <span class="n">COMMAND_FETCH</span><span class="p">,</span>
+<a name="code--ex26--commands.h-pyg.html-18"></a>    <span class="n">COMMAND_INIT</span><span class="p">,</span> <span class="n">COMMAND_BUILD</span>
+<a name="code--ex26--commands.h-pyg.html-19"></a><span class="p">};</span>
+<a name="code--ex26--commands.h-pyg.html-20"></a>
+<a name="code--ex26--commands.h-pyg.html-21"></a>
+<a name="code--ex26--commands.h-pyg.html-22"></a><span class="kt">int</span> <span class="nf">Command_fetch</span><span class="p">(</span><span class="kt">apr_pool_t</span> <span class="o">*</span><span class="n">p</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">url</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fetch_only</span><span class="p">);</span>
+<a name="code--ex26--commands.h-pyg.html-23"></a>
+<a name="code--ex26--commands.h-pyg.html-24"></a><span class="kt">int</span> <span class="nf">Command_install</span><span class="p">(</span><span class="kt">apr_pool_t</span> <span class="o">*</span><span class="n">p</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">url</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">configure_opts</span><span class="p">,</span>
+<a name="code--ex26--commands.h-pyg.html-25"></a>        <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">make_opts</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">install_opts</span><span class="p">);</span>
+<a name="code--ex26--commands.h-pyg.html-26"></a>
+<a name="code--ex26--commands.h-pyg.html-27"></a><span class="kt">int</span> <span class="nf">Command_depends</span><span class="p">(</span><span class="kt">apr_pool_t</span> <span class="o">*</span><span class="n">p</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">path</span><span class="p">);</span>
+<a name="code--ex26--commands.h-pyg.html-28"></a>
+<a name="code--ex26--commands.h-pyg.html-29"></a><span class="kt">int</span> <span class="nf">Command_build</span><span class="p">(</span><span class="kt">apr_pool_t</span> <span class="o">*</span><span class="n">p</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">url</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">configure_opts</span><span class="p">,</span>
+<a name="code--ex26--commands.h-pyg.html-30"></a>        <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">make_opts</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">install_opts</span><span class="p">);</span>
+<a name="code--ex26--commands.h-pyg.html-31"></a>
+<a name="code--ex26--commands.h-pyg.html-32"></a><span class="cp">#endif</span>
+</pre></div><p>There's not much in <tt class="docutils literal">commands.h</tt> that you haven't seen already.  You
+should see that there's some defines for strings that are used everywhere.
+The real interesting code is in <tt class="docutils literal">commands.c</tt>.</p>
+<div class="highlight"><pre><a name="code--ex26--commands.c-pyg.html-1"></a><span class="cp">#include &lt;apr_uri.h&gt;</span>
+<a name="code--ex26--commands.c-pyg.html-2"></a><span class="cp">#include &lt;apr_fnmatch.h&gt;</span>
+<a name="code--ex26--commands.c-pyg.html-3"></a><span class="cp">#include &lt;unistd.h&gt;</span>
+<a name="code--ex26--commands.c-pyg.html-4"></a>
+<a name="code--ex26--commands.c-pyg.html-5"></a><span class="cp">#include &quot;commands.h&quot;</span>
+<a name="code--ex26--commands.c-pyg.html-6"></a><span class="cp">#include &quot;dbg.h&quot;</span>
+<a name="code--ex26--commands.c-pyg.html-7"></a><span class="cp">#include &quot;bstrlib.h&quot;</span>
+<a name="code--ex26--commands.c-pyg.html-8"></a><span class="cp">#include &quot;db.h&quot;</span>
+<a name="code--ex26--commands.c-pyg.html-9"></a><span class="cp">#include &quot;shell.h&quot;</span>
+<a name="code--ex26--commands.c-pyg.html-10"></a>
+<a name="code--ex26--commands.c-pyg.html-11"></a>
+<a name="code--ex26--commands.c-pyg.html-12"></a><span class="kt">int</span> <span class="nf">Command_depends</span><span class="p">(</span><span class="kt">apr_pool_t</span> <span class="o">*</span><span class="n">p</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">path</span><span class="p">)</span>
+<a name="code--ex26--commands.c-pyg.html-13"></a><span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-14"></a>    <span class="kt">FILE</span> <span class="o">*</span><span class="n">in</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-15"></a>    <span class="n">bstring</span> <span class="n">line</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-16"></a>
+<a name="code--ex26--commands.c-pyg.html-17"></a>    <span class="n">in</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-18"></a>    <span class="n">check</span><span class="p">(</span><span class="n">in</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to open downloaded depends: %s&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-19"></a>
+<a name="code--ex26--commands.c-pyg.html-20"></a>    <span class="k">for</span><span class="p">(</span><span class="n">line</span> <span class="o">=</span> <span class="n">bgets</span><span class="p">((</span><span class="n">bNgetc</span><span class="p">)</span><span class="n">fgetc</span><span class="p">,</span> <span class="n">in</span><span class="p">,</span> <span class="sc">&#39;\n&#39;</span><span class="p">);</span> <span class="n">line</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-21"></a>            <span class="n">line</span> <span class="o">=</span> <span class="n">bgets</span><span class="p">((</span><span class="n">bNgetc</span><span class="p">)</span><span class="n">fgetc</span><span class="p">,</span> <span class="n">in</span><span class="p">,</span> <span class="sc">&#39;\n&#39;</span><span class="p">))</span>
+<a name="code--ex26--commands.c-pyg.html-22"></a>    <span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-23"></a>        <span class="n">btrimws</span><span class="p">(</span><span class="n">line</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-24"></a>        <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;Processing depends: %s&quot;</span><span class="p">,</span> <span class="n">bdata</span><span class="p">(</span><span class="n">line</span><span class="p">));</span>
+<a name="code--ex26--commands.c-pyg.html-25"></a>        <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">Command_install</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">bdata</span><span class="p">(</span><span class="n">line</span><span class="p">),</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-26"></a>        <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to install: %s&quot;</span><span class="p">,</span> <span class="n">bdata</span><span class="p">(</span><span class="n">line</span><span class="p">));</span>
+<a name="code--ex26--commands.c-pyg.html-27"></a>        <span class="n">bdestroy</span><span class="p">(</span><span class="n">line</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-28"></a>    <span class="p">}</span>
+<a name="code--ex26--commands.c-pyg.html-29"></a>
+<a name="code--ex26--commands.c-pyg.html-30"></a>    <span class="n">fclose</span><span class="p">(</span><span class="n">in</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-31"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-32"></a>
+<a name="code--ex26--commands.c-pyg.html-33"></a><span class="nl">error:</span>
+<a name="code--ex26--commands.c-pyg.html-34"></a>    <span class="k">if</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="n">bdestroy</span><span class="p">(</span><span class="n">line</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-35"></a>    <span class="k">if</span><span class="p">(</span><span class="n">in</span><span class="p">)</span> <span class="n">fclose</span><span class="p">(</span><span class="n">in</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-36"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-37"></a><span class="p">}</span>
+<a name="code--ex26--commands.c-pyg.html-38"></a>
+<a name="code--ex26--commands.c-pyg.html-39"></a><span class="kt">int</span> <span class="nf">Command_fetch</span><span class="p">(</span><span class="kt">apr_pool_t</span> <span class="o">*</span><span class="n">p</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">url</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fetch_only</span><span class="p">)</span>
+<a name="code--ex26--commands.c-pyg.html-40"></a><span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-41"></a>    <span class="kt">apr_uri_t</span> <span class="n">info</span> <span class="o">=</span> <span class="p">{.</span><span class="n">port</span> <span class="o">=</span> <span class="mi">0</span><span class="p">};</span>
+<a name="code--ex26--commands.c-pyg.html-42"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-43"></a>    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">depends_file</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-44"></a>    <span class="kt">apr_status_t</span> <span class="n">rv</span> <span class="o">=</span> <span class="n">apr_uri_parse</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">info</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-45"></a>
+<a name="code--ex26--commands.c-pyg.html-46"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rv</span> <span class="o">==</span> <span class="n">APR_SUCCESS</span><span class="p">,</span> <span class="s">&quot;Failed to parse URL: %s&quot;</span><span class="p">,</span> <span class="n">url</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-47"></a>
+<a name="code--ex26--commands.c-pyg.html-48"></a>    <span class="k">if</span><span class="p">(</span><span class="n">apr_fnmatch</span><span class="p">(</span><span class="n">GIT_PAT</span><span class="p">,</span> <span class="n">info</span><span class="p">.</span><span class="n">path</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="n">APR_SUCCESS</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-49"></a>        <span class="n">rc</span> <span class="o">=</span> <span class="n">Shell_exec</span><span class="p">(</span><span class="n">GIT_SH</span><span class="p">,</span> <span class="s">&quot;URL&quot;</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-50"></a>        <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;git failed.&quot;</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-51"></a>    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">apr_fnmatch</span><span class="p">(</span><span class="n">DEPEND_PAT</span><span class="p">,</span> <span class="n">info</span><span class="p">.</span><span class="n">path</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="n">APR_SUCCESS</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-52"></a>        <span class="n">check</span><span class="p">(</span><span class="o">!</span><span class="n">fetch_only</span><span class="p">,</span> <span class="s">&quot;No point in fetching a DEPENDS file.&quot;</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-53"></a>
+<a name="code--ex26--commands.c-pyg.html-54"></a>        <span class="k">if</span><span class="p">(</span><span class="n">info</span><span class="p">.</span><span class="n">scheme</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-55"></a>            <span class="n">depends_file</span> <span class="o">=</span> <span class="n">DEPENDS_PATH</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-56"></a>            <span class="n">rc</span> <span class="o">=</span> <span class="n">Shell_exec</span><span class="p">(</span><span class="n">CURL_SH</span><span class="p">,</span> <span class="s">&quot;URL&quot;</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="s">&quot;TARGET&quot;</span><span class="p">,</span> <span class="n">depends_file</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-57"></a>            <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Curl failed.&quot;</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-58"></a>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-59"></a>            <span class="n">depends_file</span> <span class="o">=</span> <span class="n">info</span><span class="p">.</span><span class="n">path</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-60"></a>        <span class="p">}</span>
+<a name="code--ex26--commands.c-pyg.html-61"></a>
+<a name="code--ex26--commands.c-pyg.html-62"></a>        <span class="c1">// recursively process the devpkg list</span>
+<a name="code--ex26--commands.c-pyg.html-63"></a>        <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;Building according to DEPENDS: %s&quot;</span><span class="p">,</span> <span class="n">url</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-64"></a>        <span class="n">rv</span> <span class="o">=</span> <span class="n">Command_depends</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">depends_file</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-65"></a>        <span class="n">check</span><span class="p">(</span><span class="n">rv</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to process the DEPENDS: %s&quot;</span><span class="p">,</span> <span class="n">url</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-66"></a>
+<a name="code--ex26--commands.c-pyg.html-67"></a>        <span class="c1">// this indicates that nothing needs to be done</span>
+<a name="code--ex26--commands.c-pyg.html-68"></a>        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-69"></a>
+<a name="code--ex26--commands.c-pyg.html-70"></a>    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">apr_fnmatch</span><span class="p">(</span><span class="n">TAR_GZ_PAT</span><span class="p">,</span> <span class="n">info</span><span class="p">.</span><span class="n">path</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="n">APR_SUCCESS</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-71"></a>        <span class="k">if</span><span class="p">(</span><span class="n">info</span><span class="p">.</span><span class="n">scheme</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-72"></a>            <span class="n">rc</span> <span class="o">=</span> <span class="n">Shell_exec</span><span class="p">(</span><span class="n">CURL_SH</span><span class="p">,</span>
+<a name="code--ex26--commands.c-pyg.html-73"></a>                    <span class="s">&quot;URL&quot;</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span>
+<a name="code--ex26--commands.c-pyg.html-74"></a>                    <span class="s">&quot;TARGET&quot;</span><span class="p">,</span> <span class="n">TAR_GZ_SRC</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-75"></a>            <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to curl source: %s&quot;</span><span class="p">,</span> <span class="n">url</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-76"></a>        <span class="p">}</span>
+<a name="code--ex26--commands.c-pyg.html-77"></a>
+<a name="code--ex26--commands.c-pyg.html-78"></a>        <span class="n">rv</span> <span class="o">=</span> <span class="n">apr_dir_make_recursive</span><span class="p">(</span><span class="n">BUILD_DIR</span><span class="p">,</span>
+<a name="code--ex26--commands.c-pyg.html-79"></a>                <span class="n">APR_UREAD</span> <span class="o">|</span> <span class="n">APR_UWRITE</span> <span class="o">|</span> <span class="n">APR_UEXECUTE</span><span class="p">,</span> <span class="n">p</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-80"></a>        <span class="n">check</span><span class="p">(</span><span class="n">rv</span> <span class="o">==</span> <span class="n">APR_SUCCESS</span><span class="p">,</span> <span class="s">&quot;Failed to make directory %s&quot;</span><span class="p">,</span> <span class="n">BUILD_DIR</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-81"></a>
+<a name="code--ex26--commands.c-pyg.html-82"></a>        <span class="n">rc</span> <span class="o">=</span> <span class="n">Shell_exec</span><span class="p">(</span><span class="n">TAR_SH</span><span class="p">,</span> <span class="s">&quot;FILE&quot;</span><span class="p">,</span> <span class="n">TAR_GZ_SRC</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-83"></a>        <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to untar %s&quot;</span><span class="p">,</span> <span class="n">TAR_GZ_SRC</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-84"></a>    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">apr_fnmatch</span><span class="p">(</span><span class="n">TAR_BZ2_PAT</span><span class="p">,</span> <span class="n">info</span><span class="p">.</span><span class="n">path</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="n">APR_SUCCESS</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-85"></a>        <span class="k">if</span><span class="p">(</span><span class="n">info</span><span class="p">.</span><span class="n">scheme</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-86"></a>            <span class="n">rc</span> <span class="o">=</span> <span class="n">Shell_exec</span><span class="p">(</span><span class="n">CURL_SH</span><span class="p">,</span> <span class="s">&quot;URL&quot;</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="s">&quot;TARGET&quot;</span><span class="p">,</span> <span class="n">TAR_BZ2_SRC</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-87"></a>            <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Curl failed.&quot;</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-88"></a>        <span class="p">}</span>
+<a name="code--ex26--commands.c-pyg.html-89"></a>
+<a name="code--ex26--commands.c-pyg.html-90"></a>        <span class="kt">apr_status_t</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">apr_dir_make_recursive</span><span class="p">(</span><span class="n">BUILD_DIR</span><span class="p">,</span>
+<a name="code--ex26--commands.c-pyg.html-91"></a>                <span class="n">APR_UREAD</span> <span class="o">|</span> <span class="n">APR_UWRITE</span> <span class="o">|</span> <span class="n">APR_UEXECUTE</span><span class="p">,</span> <span class="n">p</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-92"></a>
+<a name="code--ex26--commands.c-pyg.html-93"></a>        <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to make directory %s&quot;</span><span class="p">,</span> <span class="n">BUILD_DIR</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-94"></a>        <span class="n">rc</span> <span class="o">=</span> <span class="n">Shell_exec</span><span class="p">(</span><span class="n">TAR_SH</span><span class="p">,</span> <span class="s">&quot;FILE&quot;</span><span class="p">,</span> <span class="n">TAR_BZ2_SRC</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-95"></a>        <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to untar %s&quot;</span><span class="p">,</span> <span class="n">TAR_BZ2_SRC</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-96"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-97"></a>        <span class="n">sentinel</span><span class="p">(</span><span class="s">&quot;Don&#39;t now how to handle %s&quot;</span><span class="p">,</span> <span class="n">url</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-98"></a>    <span class="p">}</span>
+<a name="code--ex26--commands.c-pyg.html-99"></a>
+<a name="code--ex26--commands.c-pyg.html-100"></a>    <span class="c1">// indicates that an install needs to actually run</span>
+<a name="code--ex26--commands.c-pyg.html-101"></a>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-102"></a><span class="nl">error:</span>
+<a name="code--ex26--commands.c-pyg.html-103"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-104"></a><span class="p">}</span>
+<a name="code--ex26--commands.c-pyg.html-105"></a>
+<a name="code--ex26--commands.c-pyg.html-106"></a><span class="kt">int</span> <span class="nf">Command_build</span><span class="p">(</span><span class="kt">apr_pool_t</span> <span class="o">*</span><span class="n">p</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">url</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">configure_opts</span><span class="p">,</span>
+<a name="code--ex26--commands.c-pyg.html-107"></a>        <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">make_opts</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">install_opts</span><span class="p">)</span>
+<a name="code--ex26--commands.c-pyg.html-108"></a><span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-109"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-110"></a>
+<a name="code--ex26--commands.c-pyg.html-111"></a>    <span class="n">check</span><span class="p">(</span><span class="n">access</span><span class="p">(</span><span class="n">BUILD_DIR</span><span class="p">,</span> <span class="n">X_OK</span> <span class="o">|</span> <span class="n">R_OK</span> <span class="o">|</span> <span class="n">W_OK</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span>
+<a name="code--ex26--commands.c-pyg.html-112"></a>            <span class="s">&quot;Build directory doesn&#39;t exist: %s&quot;</span><span class="p">,</span> <span class="n">BUILD_DIR</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-113"></a>
+<a name="code--ex26--commands.c-pyg.html-114"></a>    <span class="c1">// actually do an install</span>
+<a name="code--ex26--commands.c-pyg.html-115"></a>    <span class="k">if</span><span class="p">(</span><span class="n">access</span><span class="p">(</span><span class="n">CONFIG_SCRIPT</span><span class="p">,</span> <span class="n">X_OK</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-116"></a>        <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;Has a configure script, running it.&quot;</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-117"></a>        <span class="n">rc</span> <span class="o">=</span> <span class="n">Shell_exec</span><span class="p">(</span><span class="n">CONFIGURE_SH</span><span class="p">,</span> <span class="s">&quot;OPTS&quot;</span><span class="p">,</span> <span class="n">configure_opts</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-118"></a>        <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to configure.&quot;</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-119"></a>    <span class="p">}</span>
+<a name="code--ex26--commands.c-pyg.html-120"></a>
+<a name="code--ex26--commands.c-pyg.html-121"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">Shell_exec</span><span class="p">(</span><span class="n">MAKE_SH</span><span class="p">,</span> <span class="s">&quot;OPTS&quot;</span><span class="p">,</span> <span class="n">make_opts</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-122"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to build.&quot;</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-123"></a>
+<a name="code--ex26--commands.c-pyg.html-124"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">Shell_exec</span><span class="p">(</span><span class="n">INSTALL_SH</span><span class="p">,</span>
+<a name="code--ex26--commands.c-pyg.html-125"></a>            <span class="s">&quot;TARGET&quot;</span><span class="p">,</span> <span class="n">install_opts</span> <span class="o">?</span> <span class="n">install_opts</span> <span class="o">:</span> <span class="s">&quot;install&quot;</span><span class="p">,</span>
+<a name="code--ex26--commands.c-pyg.html-126"></a>            <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-127"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to install.&quot;</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-128"></a>
+<a name="code--ex26--commands.c-pyg.html-129"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">Shell_exec</span><span class="p">(</span><span class="n">CLEANUP_SH</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-130"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to cleanup after build.&quot;</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-131"></a>
+<a name="code--ex26--commands.c-pyg.html-132"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">DB_update</span><span class="p">(</span><span class="n">url</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-133"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to add this package to the database.&quot;</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-134"></a>
+<a name="code--ex26--commands.c-pyg.html-135"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-136"></a>
+<a name="code--ex26--commands.c-pyg.html-137"></a><span class="nl">error:</span>
+<a name="code--ex26--commands.c-pyg.html-138"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-139"></a><span class="p">}</span>
+<a name="code--ex26--commands.c-pyg.html-140"></a>
+<a name="code--ex26--commands.c-pyg.html-141"></a><span class="kt">int</span> <span class="nf">Command_install</span><span class="p">(</span><span class="kt">apr_pool_t</span> <span class="o">*</span><span class="n">p</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">url</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">configure_opts</span><span class="p">,</span>
+<a name="code--ex26--commands.c-pyg.html-142"></a>        <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">make_opts</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">install_opts</span><span class="p">)</span>
+<a name="code--ex26--commands.c-pyg.html-143"></a><span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-144"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-145"></a>    <span class="n">check</span><span class="p">(</span><span class="n">Shell_exec</span><span class="p">(</span><span class="n">CLEANUP_SH</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to cleanup before building.&quot;</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-146"></a>
+<a name="code--ex26--commands.c-pyg.html-147"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">DB_find</span><span class="p">(</span><span class="n">url</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-148"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;Error checking the install database.&quot;</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-149"></a>
+<a name="code--ex26--commands.c-pyg.html-150"></a>    <span class="k">if</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-151"></a>        <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;Package %s already installed.&quot;</span><span class="p">,</span> <span class="n">url</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-152"></a>        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-153"></a>    <span class="p">}</span>
+<a name="code--ex26--commands.c-pyg.html-154"></a>
+<a name="code--ex26--commands.c-pyg.html-155"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">Command_fetch</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-156"></a>
+<a name="code--ex26--commands.c-pyg.html-157"></a>    <span class="k">if</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-158"></a>        <span class="n">rc</span> <span class="o">=</span> <span class="n">Command_build</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">configure_opts</span><span class="p">,</span> <span class="n">make_opts</span><span class="p">,</span> <span class="n">install_opts</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-159"></a>        <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to build: %s&quot;</span><span class="p">,</span> <span class="n">url</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-160"></a>    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-161"></a>        <span class="c1">// no install needed</span>
+<a name="code--ex26--commands.c-pyg.html-162"></a>        <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;Depends successfully installed: %s&quot;</span><span class="p">,</span> <span class="n">url</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-163"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--ex26--commands.c-pyg.html-164"></a>        <span class="c1">// had an error</span>
+<a name="code--ex26--commands.c-pyg.html-165"></a>        <span class="n">sentinel</span><span class="p">(</span><span class="s">&quot;Install failed: %s&quot;</span><span class="p">,</span> <span class="n">url</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-166"></a>    <span class="p">}</span>
+<a name="code--ex26--commands.c-pyg.html-167"></a>
+<a name="code--ex26--commands.c-pyg.html-168"></a>    <span class="n">Shell_exec</span><span class="p">(</span><span class="n">CLEANUP_SH</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-169"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-170"></a>
+<a name="code--ex26--commands.c-pyg.html-171"></a><span class="nl">error:</span>
+<a name="code--ex26--commands.c-pyg.html-172"></a>    <span class="n">Shell_exec</span><span class="p">(</span><span class="n">CLEANUP_SH</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--ex26--commands.c-pyg.html-173"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex26--commands.c-pyg.html-174"></a><span class="p">}</span>
+</pre></div><p>After you have this entered in and compiling, you can analyze it.  If you've
+don the challenges until now, you should see how the <tt class="docutils literal">shell.c</tt> functions
+are being used to run shells and how the arguments are being replaced.  If
+not then go back and make sure you <em>truly</em> understand how <tt class="docutils literal">Shell_exec</tt>
+actually works.</p>
+<div class="section" id="challenge-3-critique-my-design">
+<h3>Challenge 3: Critique My Design</h3>
+<p>As before, do a complete review of this code and make sure it's exactly
+the same.  Then go through each function and make sure you know how it
+works and what it's doing.  You also should trace how each function calls
+the other functions you've written in this file and other files.  Finally,
+confirm that you understand all the functions you're calling from APR here.</p>
+<p>Once you have the file correct and analyzed, go back through and assume
+I'm an idiot.  Then, criticize the design I have to see how you can improve
+it if you can.  Don't <em>actually</em> change the code, just create a little
+<tt class="docutils literal">notes.txt</tt> file and write down your thoughts and what you might change.</p>
+</div>
+</div>
+<div class="section" id="the-devpkg-main-function">
+<h2>The <tt class="docutils literal">devpkg</tt> Main Function</h2>
+<p>The last and most important file, but probably the simplest, is <tt class="docutils literal">devpkg.c</tt>
+where the <tt class="docutils literal">main</tt> function lives.  There's no <tt class="docutils literal">.h</tt> file for this, since
+this one includes all the others.  Instead this just creates the executable
+<tt class="docutils literal">devpkg</tt> when combined with the other <tt class="docutils literal">.o</tt> files from our
+<tt class="docutils literal">Makefile</tt>.  Enter in the code for this file, and make sure it's
+correct.</p>
+<div class="highlight"><pre><a name="code--ex26--devpkg.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex26--devpkg.c-pyg.html-2"></a><span class="cp">#include &lt;apr_general.h&gt;</span>
+<a name="code--ex26--devpkg.c-pyg.html-3"></a><span class="cp">#include &lt;apr_getopt.h&gt;</span>
+<a name="code--ex26--devpkg.c-pyg.html-4"></a><span class="cp">#include &lt;apr_strings.h&gt;</span>
+<a name="code--ex26--devpkg.c-pyg.html-5"></a><span class="cp">#include &lt;apr_lib.h&gt;</span>
+<a name="code--ex26--devpkg.c-pyg.html-6"></a>
+<a name="code--ex26--devpkg.c-pyg.html-7"></a><span class="cp">#include &quot;dbg.h&quot;</span>
+<a name="code--ex26--devpkg.c-pyg.html-8"></a><span class="cp">#include &quot;db.h&quot;</span>
+<a name="code--ex26--devpkg.c-pyg.html-9"></a><span class="cp">#include &quot;commands.h&quot;</span>
+<a name="code--ex26--devpkg.c-pyg.html-10"></a>
+<a name="code--ex26--devpkg.c-pyg.html-11"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="k">const</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex26--devpkg.c-pyg.html-12"></a><span class="p">{</span>
+<a name="code--ex26--devpkg.c-pyg.html-13"></a>    <span class="kt">apr_pool_t</span> <span class="o">*</span><span class="n">p</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-14"></a>    <span class="n">apr_pool_initialize</span><span class="p">();</span>
+<a name="code--ex26--devpkg.c-pyg.html-15"></a>    <span class="n">apr_pool_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">p</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--ex26--devpkg.c-pyg.html-16"></a>
+<a name="code--ex26--devpkg.c-pyg.html-17"></a>    <span class="kt">apr_getopt_t</span> <span class="o">*</span><span class="n">opt</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-18"></a>    <span class="kt">apr_status_t</span> <span class="n">rv</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-19"></a>
+<a name="code--ex26--devpkg.c-pyg.html-20"></a>    <span class="kt">char</span> <span class="n">ch</span> <span class="o">=</span> <span class="sc">&#39;\0&#39;</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-21"></a>    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">optarg</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-22"></a>    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">config_opts</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-23"></a>    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">install_opts</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-24"></a>    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">make_opts</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-25"></a>    <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">url</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-26"></a>    <span class="k">enum</span> <span class="n">CommandType</span> <span class="n">request</span> <span class="o">=</span> <span class="n">COMMAND_NONE</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-27"></a>
+<a name="code--ex26--devpkg.c-pyg.html-28"></a>
+<a name="code--ex26--devpkg.c-pyg.html-29"></a>    <span class="n">rv</span> <span class="o">=</span> <span class="n">apr_getopt_init</span><span class="p">(</span><span class="o">&amp;</span><span class="n">opt</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">);</span>
+<a name="code--ex26--devpkg.c-pyg.html-30"></a>
+<a name="code--ex26--devpkg.c-pyg.html-31"></a>    <span class="k">while</span><span class="p">(</span><span class="n">apr_getopt</span><span class="p">(</span><span class="n">opt</span><span class="p">,</span> <span class="s">&quot;I:Lc:m:i:d:SF:B:&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ch</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">optarg</span><span class="p">)</span> <span class="o">==</span> <span class="n">APR_SUCCESS</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--devpkg.c-pyg.html-32"></a>        <span class="k">switch</span> <span class="p">(</span><span class="n">ch</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--devpkg.c-pyg.html-33"></a>            <span class="k">case</span> <span class="sc">&#39;I&#39;</span>:
+<a name="code--ex26--devpkg.c-pyg.html-34"></a>                <span class="n">request</span> <span class="o">=</span> <span class="n">COMMAND_INSTALL</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-35"></a>                <span class="n">url</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-36"></a>                <span class="k">break</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-37"></a>
+<a name="code--ex26--devpkg.c-pyg.html-38"></a>            <span class="k">case</span> <span class="sc">&#39;L&#39;</span>:
+<a name="code--ex26--devpkg.c-pyg.html-39"></a>                <span class="n">request</span> <span class="o">=</span> <span class="n">COMMAND_LIST</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-40"></a>                <span class="k">break</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-41"></a>
+<a name="code--ex26--devpkg.c-pyg.html-42"></a>            <span class="k">case</span> <span class="sc">&#39;c&#39;</span>:
+<a name="code--ex26--devpkg.c-pyg.html-43"></a>                <span class="n">config_opts</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-44"></a>                <span class="k">break</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-45"></a>
+<a name="code--ex26--devpkg.c-pyg.html-46"></a>            <span class="k">case</span> <span class="sc">&#39;m&#39;</span>:
+<a name="code--ex26--devpkg.c-pyg.html-47"></a>                <span class="n">make_opts</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-48"></a>                <span class="k">break</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-49"></a>
+<a name="code--ex26--devpkg.c-pyg.html-50"></a>            <span class="k">case</span> <span class="sc">&#39;i&#39;</span>:
+<a name="code--ex26--devpkg.c-pyg.html-51"></a>                <span class="n">install_opts</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-52"></a>                <span class="k">break</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-53"></a>
+<a name="code--ex26--devpkg.c-pyg.html-54"></a>            <span class="k">case</span> <span class="sc">&#39;S&#39;</span>:
+<a name="code--ex26--devpkg.c-pyg.html-55"></a>                <span class="n">request</span> <span class="o">=</span> <span class="n">COMMAND_INIT</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-56"></a>                <span class="k">break</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-57"></a>
+<a name="code--ex26--devpkg.c-pyg.html-58"></a>            <span class="k">case</span> <span class="sc">&#39;F&#39;</span>:
+<a name="code--ex26--devpkg.c-pyg.html-59"></a>                <span class="n">request</span> <span class="o">=</span> <span class="n">COMMAND_FETCH</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-60"></a>                <span class="n">url</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-61"></a>                <span class="k">break</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-62"></a>
+<a name="code--ex26--devpkg.c-pyg.html-63"></a>            <span class="k">case</span> <span class="sc">&#39;B&#39;</span>:
+<a name="code--ex26--devpkg.c-pyg.html-64"></a>                <span class="n">request</span> <span class="o">=</span> <span class="n">COMMAND_BUILD</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-65"></a>                <span class="n">url</span> <span class="o">=</span> <span class="n">optarg</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-66"></a>                <span class="k">break</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-67"></a>        <span class="p">}</span>
+<a name="code--ex26--devpkg.c-pyg.html-68"></a>    <span class="p">}</span>
+<a name="code--ex26--devpkg.c-pyg.html-69"></a>
+<a name="code--ex26--devpkg.c-pyg.html-70"></a>    <span class="k">switch</span><span class="p">(</span><span class="n">request</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex26--devpkg.c-pyg.html-71"></a>        <span class="k">case</span> <span class="n">COMMAND_INSTALL</span>:
+<a name="code--ex26--devpkg.c-pyg.html-72"></a>            <span class="n">check</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="s">&quot;You must at least give a URL.&quot;</span><span class="p">);</span>
+<a name="code--ex26--devpkg.c-pyg.html-73"></a>            <span class="n">Command_install</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">config_opts</span><span class="p">,</span> <span class="n">make_opts</span><span class="p">,</span> <span class="n">install_opts</span><span class="p">);</span>
+<a name="code--ex26--devpkg.c-pyg.html-74"></a>            <span class="k">break</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-75"></a>
+<a name="code--ex26--devpkg.c-pyg.html-76"></a>        <span class="k">case</span> <span class="n">COMMAND_LIST</span>:
+<a name="code--ex26--devpkg.c-pyg.html-77"></a>            <span class="n">DB_list</span><span class="p">();</span>
+<a name="code--ex26--devpkg.c-pyg.html-78"></a>            <span class="k">break</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-79"></a>
+<a name="code--ex26--devpkg.c-pyg.html-80"></a>        <span class="k">case</span> <span class="n">COMMAND_FETCH</span>:
+<a name="code--ex26--devpkg.c-pyg.html-81"></a>            <span class="n">check</span><span class="p">(</span><span class="n">url</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;You must give a URL.&quot;</span><span class="p">);</span>
+<a name="code--ex26--devpkg.c-pyg.html-82"></a>            <span class="n">Command_fetch</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+<a name="code--ex26--devpkg.c-pyg.html-83"></a>            <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;Downloaded to %s and in /tmp/&quot;</span><span class="p">,</span> <span class="n">BUILD_DIR</span><span class="p">);</span>
+<a name="code--ex26--devpkg.c-pyg.html-84"></a>            <span class="k">break</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-85"></a>
+<a name="code--ex26--devpkg.c-pyg.html-86"></a>        <span class="k">case</span> <span class="n">COMMAND_BUILD</span>:
+<a name="code--ex26--devpkg.c-pyg.html-87"></a>            <span class="n">check</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="s">&quot;You must at least give a URL.&quot;</span><span class="p">);</span>
+<a name="code--ex26--devpkg.c-pyg.html-88"></a>            <span class="n">Command_build</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">url</span><span class="p">,</span> <span class="n">config_opts</span><span class="p">,</span> <span class="n">make_opts</span><span class="p">,</span> <span class="n">install_opts</span><span class="p">);</span>
+<a name="code--ex26--devpkg.c-pyg.html-89"></a>            <span class="k">break</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-90"></a>
+<a name="code--ex26--devpkg.c-pyg.html-91"></a>        <span class="k">case</span> <span class="n">COMMAND_INIT</span>:
+<a name="code--ex26--devpkg.c-pyg.html-92"></a>            <span class="n">rv</span> <span class="o">=</span> <span class="n">DB_init</span><span class="p">();</span>
+<a name="code--ex26--devpkg.c-pyg.html-93"></a>            <span class="n">check</span><span class="p">(</span><span class="n">rv</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to make the database.&quot;</span><span class="p">);</span>
+<a name="code--ex26--devpkg.c-pyg.html-94"></a>            <span class="k">break</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-95"></a>
+<a name="code--ex26--devpkg.c-pyg.html-96"></a>        <span class="nl">default:</span>
+<a name="code--ex26--devpkg.c-pyg.html-97"></a>            <span class="n">sentinel</span><span class="p">(</span><span class="s">&quot;Invalid command given.&quot;</span><span class="p">);</span>
+<a name="code--ex26--devpkg.c-pyg.html-98"></a>    <span class="p">}</span>
+<a name="code--ex26--devpkg.c-pyg.html-99"></a>
+<a name="code--ex26--devpkg.c-pyg.html-100"></a>
+<a name="code--ex26--devpkg.c-pyg.html-101"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-102"></a>
+<a name="code--ex26--devpkg.c-pyg.html-103"></a><span class="nl">error:</span>
+<a name="code--ex26--devpkg.c-pyg.html-104"></a>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex26--devpkg.c-pyg.html-105"></a><span class="p">}</span>
+</pre></div><div class="section" id="challenge-4-the-readme-and-test-files">
+<h3>Challenge 4: The README And Test Files</h3>
+<p>The challenge for this file is to understand how the arguments are
+being processed, what the arguments are, and then create the <tt class="docutils literal">README</tt>
+file with instructions on how to use it.  As you write the README, also
+write a simple <tt class="docutils literal">test.sh</tt> that runs <tt class="docutils literal">./devpkg</tt> to check that
+each command is actually working against real live code.  Use the <tt class="docutils literal">set <span class="pre">-e</span></tt>
+at the top of your script so that it aborts on the first error.</p>
+<p>Finally, run the program under valgrind and make sure it's all working
+before moving on to the mid-term exam.</p>
+</div>
+</div>
+</div>
+<div class="section" id="the-mid-term-exam">
+<h1>The Mid-Term Exam</h1>
+<p>Your final challenge is the mid-term exam and it involves three things:</p>
+<ul class="simple">
+<li>Compare your code to my code available online and starting with 100%,
+remove 1% for each line you got wrong.</li>
+<li>Take your notes.txt on how you would improve the code and functionality
+of <tt class="docutils literal">devpkg</tt> and implement your improvements.</li>
+<li>Write an alternative version of <tt class="docutils literal">devpkg</tt> using your other
+favorite language or the one you think can do this the best.  Compare
+the two, then improve your <em>C</em> version of <tt class="docutils literal">devpkg</tt> based on what
+you've learned.</li>
+</ul>
+<p>To compare your code with mine, do the following:</p>
+<pre class="literal-block">
+cd ..  # get one directory above your current one
+git clone git://gitorious.org/devpkg/devpkg.git devpkgzed
+diff -r devpkg devpkgzed
+</pre>
+<p>This will clone my version of <tt class="docutils literal">devpkg</tt> into a directory
+<tt class="docutils literal">devpkgzed</tt> and then use the tool <tt class="docutils literal">diff</tt> to compare
+what you've done to what I did.  The files you're working with in
+this book come directly from this project, so if you get different
+lines then that's an error.</p>
+<p>Keep in mind that there's no real pass or fail on this exercise, just
+a way for you to challenge yourself to be as exact and meticulous as
+possible.</p>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

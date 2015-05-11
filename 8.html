@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 8: Sizes And Arrays</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 8: Sizes And Arrays</h1>
+            <p>In the last exercise you did math, but with a <tt class="docutils literal">'\0'</tt> (nul) character.  This
+may be odd coming from other languages, since they try to treat &quot;strings&quot; and
+&quot;byte arrays&quot; as different beasts.  C however treats strings as just arrays of
+bytes, and it's only the different printing functions that know there's a
+difference.</p>
+<p>Before I can really explain the significance of this, I have to introduce a few
+more concepts: <tt class="docutils literal">sizeof</tt> and arrays.  Here's the code we'll be talking about:</p>
+<div class="highlight"><pre><a name="code--ex8.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex8.c-pyg.html-2"></a>
+<a name="code--ex8.c-pyg.html-3"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex8.c-pyg.html-4"></a><span class="p">{</span>
+<a name="code--ex8.c-pyg.html-5"></a>    <span class="kt">int</span> <span class="n">areas</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">10</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="mi">20</span><span class="p">};</span>
+<a name="code--ex8.c-pyg.html-6"></a>    <span class="kt">char</span> <span class="n">name</span><span class="p">[]</span> <span class="o">=</span> <span class="s">&quot;Zed&quot;</span><span class="p">;</span>
+<a name="code--ex8.c-pyg.html-7"></a>    <span class="kt">char</span> <span class="n">full_name</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+<a name="code--ex8.c-pyg.html-8"></a>        <span class="sc">&#39;Z&#39;</span><span class="p">,</span> <span class="sc">&#39;e&#39;</span><span class="p">,</span> <span class="sc">&#39;d&#39;</span><span class="p">,</span>
+<a name="code--ex8.c-pyg.html-9"></a>         <span class="sc">&#39; &#39;</span><span class="p">,</span> <span class="sc">&#39;A&#39;</span><span class="p">,</span> <span class="sc">&#39;.&#39;</span><span class="p">,</span> <span class="sc">&#39; &#39;</span><span class="p">,</span>
+<a name="code--ex8.c-pyg.html-10"></a>         <span class="sc">&#39;S&#39;</span><span class="p">,</span> <span class="sc">&#39;h&#39;</span><span class="p">,</span> <span class="sc">&#39;a&#39;</span><span class="p">,</span> <span class="sc">&#39;w&#39;</span><span class="p">,</span> <span class="sc">&#39;\0&#39;</span>
+<a name="code--ex8.c-pyg.html-11"></a>    <span class="p">};</span>
+<a name="code--ex8.c-pyg.html-12"></a>
+<a name="code--ex8.c-pyg.html-13"></a>    <span class="c1">// WARNING: On some systems you may have to change the</span>
+<a name="code--ex8.c-pyg.html-14"></a>    <span class="c1">// %ld in this code to a %u since it will use unsigned ints</span>
+<a name="code--ex8.c-pyg.html-15"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;The size of an int: %ld</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">));</span>
+<a name="code--ex8.c-pyg.html-16"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;The size of areas (int[]): %ld</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex8.c-pyg.html-17"></a>            <span class="k">sizeof</span><span class="p">(</span><span class="n">areas</span><span class="p">));</span>
+<a name="code--ex8.c-pyg.html-18"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;The number of ints in areas: %ld</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex8.c-pyg.html-19"></a>            <span class="k">sizeof</span><span class="p">(</span><span class="n">areas</span><span class="p">)</span> <span class="o">/</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">));</span>
+<a name="code--ex8.c-pyg.html-20"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;The first area is %d, the 2nd %d.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex8.c-pyg.html-21"></a>            <span class="n">areas</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">areas</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+<a name="code--ex8.c-pyg.html-22"></a>
+<a name="code--ex8.c-pyg.html-23"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;The size of a char: %ld</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span><span class="p">));</span>
+<a name="code--ex8.c-pyg.html-24"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;The size of name (char[]): %ld</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex8.c-pyg.html-25"></a>            <span class="k">sizeof</span><span class="p">(</span><span class="n">name</span><span class="p">));</span>
+<a name="code--ex8.c-pyg.html-26"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;The number of chars: %ld</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex8.c-pyg.html-27"></a>            <span class="k">sizeof</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="o">/</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span><span class="p">));</span>
+<a name="code--ex8.c-pyg.html-28"></a>
+<a name="code--ex8.c-pyg.html-29"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;The size of full_name (char[]): %ld</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex8.c-pyg.html-30"></a>            <span class="k">sizeof</span><span class="p">(</span><span class="n">full_name</span><span class="p">));</span>
+<a name="code--ex8.c-pyg.html-31"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;The number of chars: %ld</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex8.c-pyg.html-32"></a>            <span class="k">sizeof</span><span class="p">(</span><span class="n">full_name</span><span class="p">)</span> <span class="o">/</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">char</span><span class="p">));</span>
+<a name="code--ex8.c-pyg.html-33"></a>
+<a name="code--ex8.c-pyg.html-34"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;name=</span><span class="se">\&quot;</span><span class="s">%s</span><span class="se">\&quot;</span><span class="s"> and full_name=</span><span class="se">\&quot;</span><span class="s">%s</span><span class="se">\&quot;\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex8.c-pyg.html-35"></a>            <span class="n">name</span><span class="p">,</span> <span class="n">full_name</span><span class="p">);</span>
+<a name="code--ex8.c-pyg.html-36"></a>
+<a name="code--ex8.c-pyg.html-37"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex8.c-pyg.html-38"></a><span class="p">}</span>
+</pre></div><p>In this code we create a few arrays with different data types in them.  Because
+arrays of data are so central to how C works, there's a huge number of ways to
+create them.  For now, just use the syntax <tt class="docutils literal">type name[] = {initializer};</tt> and
+we'll explore more.  What this syntax means is, &quot;I want an array of type that
+is initialized to {..}.&quot;  When C sees this it does the following:</p>
+<ul class="simple">
+<li>Look at the type, in this first case it's <tt class="docutils literal">int</tt>.</li>
+<li>Look at the <tt class="docutils literal">[]</tt> and see that there's no length given.</li>
+<li>Look at the initializer, <tt class="docutils literal">{10, 12, 13, 14, 20}</tt> and
+figure out that you want those 5 ints in your array.</li>
+<li>Create a piece of memory in the computer, that can hold
+5 integers one after another.</li>
+<li>Take the name you want, <tt class="docutils literal">areas</tt> and assign it this
+location.</li>
+</ul>
+<p>In the case of <tt class="docutils literal">areas</tt> it's creating an array of 5 ints that contain those
+numbers.  When it gets to <tt class="docutils literal">char name[] = &quot;Zed&quot;;</tt> it's doing the same thing,
+except it's creating an array of 3 chars and assigning that to <tt class="docutils literal">name</tt>.  The
+final array we make is <tt class="docutils literal">full_name</tt>, but we use the annoying syntax of
+spelling it out, one character at a time.  To C, <tt class="docutils literal">name</tt> and <tt class="docutils literal">full_name</tt> are
+identical methods of creating a char array.</p>
+<p>The rest of the file, we're using a keyword called <tt class="docutils literal">sizeof</tt> to ask C how big
+things are in <em>bytes</em>.  C is all about the size and location of pieces of
+memory and what you do with them.  To help you keep that straight, it gives you
+<tt class="docutils literal">sizeof</tt> so you can ask how big something is before you work with it.</p>
+<p>This is where stuff gets tricky, so first let's run this and then explain
+further.</p>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<div class="highlight"><pre><a name="code--ex8.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex8
+<a name="code--ex8.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g    ex8.c   -o ex8</span>
+<a name="code--ex8.sh-session-pyg.html-3"></a><span class="gp">$</span> ./ex8
+<a name="code--ex8.sh-session-pyg.html-4"></a><span class="go">The size of an int: 4</span>
+<a name="code--ex8.sh-session-pyg.html-5"></a><span class="go">The size of areas (int[]): 20</span>
+<a name="code--ex8.sh-session-pyg.html-6"></a><span class="go">The number of ints in areas: 5</span>
+<a name="code--ex8.sh-session-pyg.html-7"></a><span class="go">The first area is 10, the 2nd 12.</span>
+<a name="code--ex8.sh-session-pyg.html-8"></a><span class="go">The size of a char: 1</span>
+<a name="code--ex8.sh-session-pyg.html-9"></a><span class="go">The size of name (char[]): 4</span>
+<a name="code--ex8.sh-session-pyg.html-10"></a><span class="go">The number of chars: 4</span>
+<a name="code--ex8.sh-session-pyg.html-11"></a><span class="go">The size of full_name (char[]): 12</span>
+<a name="code--ex8.sh-session-pyg.html-12"></a><span class="go">The number of chars: 12</span>
+<a name="code--ex8.sh-session-pyg.html-13"></a><span class="go">name=&quot;Zed&quot; and full_name=&quot;Zed A. Shaw&quot;</span>
+<a name="code--ex8.sh-session-pyg.html-14"></a><span class="gp">$</span>
+</pre></div><p>Now you see the output of these different <tt class="docutils literal">printf</tt> calls and start to get a
+glimpse of what C is doing.  Your output could actually be totally different
+from mine, since your computer might have different size integers.  I'll go
+through my output:</p>
+<dl class="docutils">
+<dt>5</dt>
+<dd>My computer thinks an <tt class="docutils literal">int</tt> is 4 bytes in size. Your computer
+might use a different size if it's a 32-bit vs. 64-bit.</dd>
+<dt>6</dt>
+<dd>The <tt class="docutils literal">areas</tt> array has 5 integers in it, so it makes
+sense that my computer requires 20 bytes to store it.</dd>
+<dt>7</dt>
+<dd>If we divide the size of <tt class="docutils literal">areas</tt> by size of an <tt class="docutils literal">int</tt>
+then we get 5 elements.  Looking at the code, this matches what
+we put in the initializer.</dd>
+<dt>8</dt>
+<dd>We then did an array access to get <tt class="docutils literal">areas[0]</tt> and
+<tt class="docutils literal">areas[1]</tt> which means C is &quot;zero indexed&quot; like Python
+and Ruby.</dd>
+<dt>9-11</dt>
+<dd>We repeat this for the <tt class="docutils literal">name</tt> array, but notice
+something odd about the size of the array?  It says it's
+<em>4</em> bytes long, but we only typed &quot;Zed&quot; for 3 characters.
+Where's the 4th one coming from?</dd>
+<dt>12-13</dt>
+<dd>We do the same thing with <tt class="docutils literal">full_name</tt> and
+notice it gets this correct.</dd>
+<dt>13</dt>
+<dd>Finally we just print out the <tt class="docutils literal">name</tt> and <tt class="docutils literal">full_name</tt>
+to prove that they actually are &quot;strings&quot; according to printf.</dd>
+</dl>
+<p>Make sure you can go through and see how these output lines match what was
+created.  We'll be building on this and exploring more about arrays and storage
+next.</p>
+</div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<p>Breaking this program is fairly easy.  Try some of these:</p>
+<ul class="simple">
+<li>Get rid of the <tt class="docutils literal">'\0'</tt> at the end of <tt class="docutils literal">full_name</tt>
+and re-run it.  Run it under Valgrind too.  Now, move the definition
+of <tt class="docutils literal">full_name</tt> to the top of <tt class="docutils literal">main</tt> before <tt class="docutils literal">areas</tt>.
+Try running it under Valgrind a few times and see if you get some
+new errors.  In some cases, you might still get lucky and not catch
+any errors.</li>
+<li>Change it so that instead of <tt class="docutils literal">areas[0]</tt> you try to
+print <tt class="docutils literal">areas[10]</tt> and see what Valgrind thinks of that.</li>
+<li>Try other versions of these, doing it to <tt class="docutils literal">name</tt> and
+<tt class="docutils literal">full_name</tt> too.</li>
+</ul>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Try assigning to elements in the <tt class="docutils literal">areas</tt> array with <tt class="docutils literal">areas[0] = 100;</tt> and similar.</li>
+<li>Try assigning to elements of <tt class="docutils literal">name</tt> and <tt class="docutils literal">full_name</tt>.</li>
+<li>Try setting one element of <tt class="docutils literal">areas</tt> to a character from <tt class="docutils literal">name</tt>.</li>
+<li>Go search online for the different sizes used for integers on different
+CPUs.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

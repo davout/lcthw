@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 25: Variable Argument Functions</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 25: Variable Argument Functions</h1>
+            <p>In C you can create your own versions of functions like <tt class="docutils literal">printf</tt> and
+<tt class="docutils literal">scanf</tt> by creating a &quot;variable argument function&quot;.  These functions use
+the header <tt class="docutils literal">stdarg.h</tt> and with them you can create nicer interfaces to
+your library.  They are handy for certain types of &quot;builder&quot; functions,
+formatting functions, and anything that takes variable arguments.</p>
+<p>Understanding &quot;vararg functions&quot; is <em>not</em> essential to creating C programs.
+I think I've used it maybe a 20 times in my code in the years I've been
+programming.  However, knowing how a vararg function works will help you
+debug the ones you use and gives you more understanding of the computer.</p>
+<div class="highlight"><pre><a name="code--ex25.c-pyg.html-1"></a><span class="cm">/** WARNING: This code is fresh and potentially isn&#39;t correct yet. */</span>
+<a name="code--ex25.c-pyg.html-2"></a>
+<a name="code--ex25.c-pyg.html-3"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--ex25.c-pyg.html-4"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex25.c-pyg.html-5"></a><span class="cp">#include &lt;stdarg.h&gt;</span>
+<a name="code--ex25.c-pyg.html-6"></a><span class="cp">#include &quot;dbg.h&quot;</span>
+<a name="code--ex25.c-pyg.html-7"></a>
+<a name="code--ex25.c-pyg.html-8"></a><span class="cp">#define MAX_DATA 100</span>
+<a name="code--ex25.c-pyg.html-9"></a>
+<a name="code--ex25.c-pyg.html-10"></a><span class="kt">int</span> <span class="nf">read_string</span><span class="p">(</span><span class="kt">char</span> <span class="o">**</span><span class="n">out_string</span><span class="p">,</span> <span class="kt">int</span> <span class="n">max_buffer</span><span class="p">)</span>
+<a name="code--ex25.c-pyg.html-11"></a><span class="p">{</span>
+<a name="code--ex25.c-pyg.html-12"></a>    <span class="o">*</span><span class="n">out_string</span> <span class="o">=</span> <span class="n">calloc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_buffer</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-13"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="o">*</span><span class="n">out_string</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-14"></a>
+<a name="code--ex25.c-pyg.html-15"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">result</span> <span class="o">=</span> <span class="n">fgets</span><span class="p">(</span><span class="o">*</span><span class="n">out_string</span><span class="p">,</span> <span class="n">max_buffer</span><span class="p">,</span> <span class="n">stdin</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-16"></a>    <span class="n">check</span><span class="p">(</span><span class="n">result</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Input error.&quot;</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-17"></a>
+<a name="code--ex25.c-pyg.html-18"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-19"></a>
+<a name="code--ex25.c-pyg.html-20"></a><span class="nl">error:</span>
+<a name="code--ex25.c-pyg.html-21"></a>    <span class="k">if</span><span class="p">(</span><span class="o">*</span><span class="n">out_string</span><span class="p">)</span> <span class="n">free</span><span class="p">(</span><span class="o">*</span><span class="n">out_string</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-22"></a>    <span class="o">*</span><span class="n">out_string</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-23"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-24"></a><span class="p">}</span>
+<a name="code--ex25.c-pyg.html-25"></a>
+<a name="code--ex25.c-pyg.html-26"></a><span class="kt">int</span> <span class="nf">read_int</span><span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="n">out_int</span><span class="p">)</span>
+<a name="code--ex25.c-pyg.html-27"></a><span class="p">{</span>
+<a name="code--ex25.c-pyg.html-28"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">input</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-29"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">read_string</span><span class="p">(</span><span class="o">&amp;</span><span class="n">input</span><span class="p">,</span> <span class="n">MAX_DATA</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-30"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to read number.&quot;</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-31"></a>
+<a name="code--ex25.c-pyg.html-32"></a>    <span class="o">*</span><span class="n">out_int</span> <span class="o">=</span> <span class="n">atoi</span><span class="p">(</span><span class="n">input</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-33"></a>
+<a name="code--ex25.c-pyg.html-34"></a>    <span class="n">free</span><span class="p">(</span><span class="n">input</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-35"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-36"></a>
+<a name="code--ex25.c-pyg.html-37"></a><span class="nl">error:</span>
+<a name="code--ex25.c-pyg.html-38"></a>    <span class="k">if</span><span class="p">(</span><span class="n">input</span><span class="p">)</span> <span class="n">free</span><span class="p">(</span><span class="n">input</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-39"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-40"></a><span class="p">}</span>
+<a name="code--ex25.c-pyg.html-41"></a>
+<a name="code--ex25.c-pyg.html-42"></a><span class="kt">int</span> <span class="nf">read_scan</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">fmt</span><span class="p">,</span> <span class="p">...)</span>
+<a name="code--ex25.c-pyg.html-43"></a><span class="p">{</span>
+<a name="code--ex25.c-pyg.html-44"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-45"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-46"></a>    <span class="kt">int</span> <span class="o">*</span><span class="n">out_int</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-47"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">out_char</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-48"></a>    <span class="kt">char</span> <span class="o">**</span><span class="n">out_string</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-49"></a>    <span class="kt">int</span> <span class="n">max_buffer</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-50"></a>
+<a name="code--ex25.c-pyg.html-51"></a>    <span class="kt">va_list</span> <span class="n">argp</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-52"></a>    <span class="n">va_start</span><span class="p">(</span><span class="n">argp</span><span class="p">,</span> <span class="n">fmt</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-53"></a>
+<a name="code--ex25.c-pyg.html-54"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">fmt</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="sc">&#39;\0&#39;</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex25.c-pyg.html-55"></a>        <span class="k">if</span><span class="p">(</span><span class="n">fmt</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="sc">&#39;%&#39;</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex25.c-pyg.html-56"></a>            <span class="n">i</span><span class="o">++</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-57"></a>            <span class="k">switch</span><span class="p">(</span><span class="n">fmt</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="p">{</span>
+<a name="code--ex25.c-pyg.html-58"></a>                <span class="k">case</span> <span class="sc">&#39;\0&#39;</span>:
+<a name="code--ex25.c-pyg.html-59"></a>                    <span class="n">sentinel</span><span class="p">(</span><span class="s">&quot;Invalid format, you ended with %%.&quot;</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-60"></a>                    <span class="k">break</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-61"></a>
+<a name="code--ex25.c-pyg.html-62"></a>                <span class="k">case</span> <span class="sc">&#39;d&#39;</span>:
+<a name="code--ex25.c-pyg.html-63"></a>                    <span class="n">out_int</span> <span class="o">=</span> <span class="n">va_arg</span><span class="p">(</span><span class="n">argp</span><span class="p">,</span> <span class="kt">int</span> <span class="o">*</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-64"></a>                    <span class="n">rc</span> <span class="o">=</span> <span class="n">read_int</span><span class="p">(</span><span class="n">out_int</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-65"></a>                    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to read int.&quot;</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-66"></a>                    <span class="k">break</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-67"></a>
+<a name="code--ex25.c-pyg.html-68"></a>                <span class="k">case</span> <span class="sc">&#39;c&#39;</span>:
+<a name="code--ex25.c-pyg.html-69"></a>                    <span class="n">out_char</span> <span class="o">=</span> <span class="n">va_arg</span><span class="p">(</span><span class="n">argp</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-70"></a>                    <span class="o">*</span><span class="n">out_char</span> <span class="o">=</span> <span class="n">fgetc</span><span class="p">(</span><span class="n">stdin</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-71"></a>                    <span class="k">break</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-72"></a>
+<a name="code--ex25.c-pyg.html-73"></a>                <span class="k">case</span> <span class="sc">&#39;s&#39;</span>:
+<a name="code--ex25.c-pyg.html-74"></a>                    <span class="n">max_buffer</span> <span class="o">=</span> <span class="n">va_arg</span><span class="p">(</span><span class="n">argp</span><span class="p">,</span> <span class="kt">int</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-75"></a>                    <span class="n">out_string</span> <span class="o">=</span> <span class="n">va_arg</span><span class="p">(</span><span class="n">argp</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-76"></a>                    <span class="n">rc</span> <span class="o">=</span> <span class="n">read_string</span><span class="p">(</span><span class="n">out_string</span><span class="p">,</span> <span class="n">max_buffer</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-77"></a>                    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to read string.&quot;</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-78"></a>                    <span class="k">break</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-79"></a>
+<a name="code--ex25.c-pyg.html-80"></a>                <span class="nl">default:</span>
+<a name="code--ex25.c-pyg.html-81"></a>                    <span class="n">sentinel</span><span class="p">(</span><span class="s">&quot;Invalid format.&quot;</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-82"></a>            <span class="p">}</span>
+<a name="code--ex25.c-pyg.html-83"></a>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--ex25.c-pyg.html-84"></a>            <span class="n">fgetc</span><span class="p">(</span><span class="n">stdin</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-85"></a>        <span class="p">}</span>
+<a name="code--ex25.c-pyg.html-86"></a>
+<a name="code--ex25.c-pyg.html-87"></a>        <span class="n">check</span><span class="p">(</span><span class="o">!</span><span class="n">feof</span><span class="p">(</span><span class="n">stdin</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">ferror</span><span class="p">(</span><span class="n">stdin</span><span class="p">),</span> <span class="s">&quot;Input error.&quot;</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-88"></a>    <span class="p">}</span>
+<a name="code--ex25.c-pyg.html-89"></a>
+<a name="code--ex25.c-pyg.html-90"></a>    <span class="n">va_end</span><span class="p">(</span><span class="n">argp</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-91"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-92"></a>
+<a name="code--ex25.c-pyg.html-93"></a><span class="nl">error:</span>
+<a name="code--ex25.c-pyg.html-94"></a>    <span class="n">va_end</span><span class="p">(</span><span class="n">argp</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-95"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-96"></a><span class="p">}</span>
+<a name="code--ex25.c-pyg.html-97"></a>
+<a name="code--ex25.c-pyg.html-98"></a>
+<a name="code--ex25.c-pyg.html-99"></a>
+<a name="code--ex25.c-pyg.html-100"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex25.c-pyg.html-101"></a><span class="p">{</span>
+<a name="code--ex25.c-pyg.html-102"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">first_name</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-103"></a>    <span class="kt">char</span> <span class="n">initial</span> <span class="o">=</span> <span class="sc">&#39; &#39;</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-104"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">last_name</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-105"></a>    <span class="kt">int</span> <span class="n">age</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-106"></a>
+<a name="code--ex25.c-pyg.html-107"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;What&#39;s your first name? &quot;</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-108"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">read_scan</span><span class="p">(</span><span class="s">&quot;%s&quot;</span><span class="p">,</span> <span class="n">MAX_DATA</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">first_name</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-109"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed first name.&quot;</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-110"></a>
+<a name="code--ex25.c-pyg.html-111"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;What&#39;s your initial? &quot;</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-112"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">read_scan</span><span class="p">(</span><span class="s">&quot;%c</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">initial</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-113"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed initial.&quot;</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-114"></a>
+<a name="code--ex25.c-pyg.html-115"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;What&#39;s your last name? &quot;</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-116"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">read_scan</span><span class="p">(</span><span class="s">&quot;%s&quot;</span><span class="p">,</span> <span class="n">MAX_DATA</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">last_name</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-117"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed last name.&quot;</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-118"></a>
+<a name="code--ex25.c-pyg.html-119"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;How old are you? &quot;</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-120"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">read_scan</span><span class="p">(</span><span class="s">&quot;%d&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">age</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-121"></a>
+<a name="code--ex25.c-pyg.html-122"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;---- RESULTS ----</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-123"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;First Name: %s&quot;</span><span class="p">,</span> <span class="n">first_name</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-124"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Initial: &#39;%c&#39;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">initial</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-125"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Last Name: %s&quot;</span><span class="p">,</span> <span class="n">last_name</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-126"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Age: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">age</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-127"></a>
+<a name="code--ex25.c-pyg.html-128"></a>    <span class="n">free</span><span class="p">(</span><span class="n">first_name</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-129"></a>    <span class="n">free</span><span class="p">(</span><span class="n">last_name</span><span class="p">);</span>
+<a name="code--ex25.c-pyg.html-130"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-131"></a><span class="nl">error:</span>
+<a name="code--ex25.c-pyg.html-132"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex25.c-pyg.html-133"></a><span class="p">}</span>
+</pre></div><p>This program is similar to the previous exercise, except I have written
+my own <tt class="docutils literal">scanf</tt> style function that handles strings the way I want.
+The main function should be clear to you, as well as the two functions
+<tt class="docutils literal">read_string</tt> and <tt class="docutils literal">read_int</tt> since they do nothing new.</p>
+<p>The varargs function is called <tt class="docutils literal">read_scan</tt> and it does the same
+thing that <tt class="docutils literal">scanf</tt> is doing using the <tt class="docutils literal">va_list</tt> data
+structure and it's supporting macros and functions.  Here's how it works:</p>
+<ul class="simple">
+<li>I set as the last parameter of the function the keyword <tt class="docutils literal">...</tt>
+which indicates to C that this function will take any number of arguments
+after the <tt class="docutils literal">fmt</tt> argument.  I could put many other arguments before
+this, but I can't put anymore after this.</li>
+<li>After setting up some variables, I create a <tt class="docutils literal">va_list</tt> variable
+and initialize it with <tt class="docutils literal">va_start</tt>.  This configures the gear
+in <tt class="docutils literal">stdarg.h</tt> that handles variable arguments.</li>
+<li>I then use a <tt class="docutils literal"><span class="pre">for-loop</span></tt> to loop through the format string
+<tt class="docutils literal">fmt</tt> and process the same kind of formats that <tt class="docutils literal">scanf</tt>
+has, but much simpler.  I just have integers, characters, and strings.</li>
+<li>When I hit a format, I use the <tt class="docutils literal"><span class="pre">switch-statement</span></tt> to figure out
+what to do.</li>
+<li>Now, to <em>get</em> a variable from the <tt class="docutils literal">va_list argp</tt> I use the
+macro <tt class="docutils literal">va_arg(argp, TYPE)</tt> where TYPE is the exact type of what
+I will assign this function parameter to.  The downside to this design
+is you're flying blind, so if you don't have enough parameters then
+oh well, you'll most likely crash.</li>
+<li>The interesting difference from <tt class="docutils literal">scanf</tt> is I'm assuming that people
+want <tt class="docutils literal">read_scan</tt> to create the strings it reads when it hits a
+<tt class="docutils literal">'s'</tt> format sequence.  When you give this sequence, the function
+takes two parameters off the <tt class="docutils literal">va_list argp</tt> stack: the max function
+size to read, and the output character string pointer.  Using that information
+it just runs <tt class="docutils literal">read_string</tt> to do the real work.</li>
+<li>This makes <tt class="docutils literal">read_scan</tt> more consistent than <tt class="docutils literal">scanf</tt> since you
+<em>always</em> give an address-of <tt class="docutils literal">&amp;</tt> on variables to have them set
+appropriately.</li>
+<li>Finally, if it encounters a character that's not in the format, it just reads
+one char to skip it.  It doesn't care what that char is, just that it should
+skip it.</li>
+</ul>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>When you run this one it's similar to the last one:</p>
+<div class="highlight"><pre><a name="code--ex25.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex25
+<a name="code--ex25.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g -DNDEBUG    ex25.c   -o ex25</span>
+<a name="code--ex25.sh-session-pyg.html-3"></a><span class="gp">$</span> ./ex25
+<a name="code--ex25.sh-session-pyg.html-4"></a><span class="go">What&#39;s your first name? Zed</span>
+<a name="code--ex25.sh-session-pyg.html-5"></a><span class="go">What&#39;s your initial? A</span>
+<a name="code--ex25.sh-session-pyg.html-6"></a><span class="go">What&#39;s your last name? Shaw</span>
+<a name="code--ex25.sh-session-pyg.html-7"></a><span class="go">How old are you? 37</span>
+<a name="code--ex25.sh-session-pyg.html-8"></a><span class="go">---- RESULTS ----</span>
+<a name="code--ex25.sh-session-pyg.html-9"></a><span class="go">First Name: Zed</span>
+<a name="code--ex25.sh-session-pyg.html-10"></a><span class="go">Initial: &#39;A&#39;</span>
+<a name="code--ex25.sh-session-pyg.html-11"></a><span class="go">Last Name: Shaw</span>
+<a name="code--ex25.sh-session-pyg.html-12"></a><span class="go">Age: 37</span>
+</pre></div></div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<p>This program should be more robust against buffer overflows, but it doesn't
+handle the formatted input as well as <tt class="docutils literal">scanf</tt>.  To try breaking this,
+change the code that you forget to pass in the initial size for '%s' formats.
+Try also giving it more data than <tt class="docutils literal">MAX_DATA</tt>, and then see how not
+using <tt class="docutils literal">calloc</tt> in <tt class="docutils literal">read_string</tt> changes how it works.  Finally,
+there's a problem that fgets eats the newlines, so try to fix that using
+<tt class="docutils literal">fgetc</tt> but leave out the <tt class="docutils literal">\0</tt> that ends the string.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Make double and triple sure that you know what each of the <tt class="docutils literal">out_</tt>
+variables are doing.  Most important is <tt class="docutils literal">out_string</tt> and how it's
+a pointer to a pointer, so getting when you're setting the pointer vs. the
+contents is important.  Break down each of the</li>
+<li>Write a similar function to <tt class="docutils literal">printf</tt> that uses the varargs system
+and rewrite <tt class="docutils literal">main</tt> to use it.</li>
+<li>As usual, read the man page on all of this so you know what it does
+on your platform.  Some platforms will use macros and others use
+functions, and some have these do nothing.  It all depends on the
+compiler and the platform you use.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

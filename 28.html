@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 28: Intermediate Makefiles</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 28: Intermediate Makefiles</h1>
+            <p>In the next three Exercises you'll create a skeleton project directory to use
+in building your C programs later.  This skeleton directory will be used in the
+rest of the book, and in this exercise I'll cover just the <tt class="docutils literal">Makefile</tt> so
+you can understand it.</p>
+<p>The purpose of this structure is to make it easy to build medium sized programs
+without having to resort to configure tools.  If done right you can get very far
+with just GNU make and some small shell scripts.</p>
+<div class="section" id="the-basic-project-structure">
+<h1>The Basic Project Structure</h1>
+<p>The first thing to do is make a <tt class="docutils literal"><span class="pre">c-skeleton</span></tt> directory and then put
+a set of basic files and directories in it that many projects have.  Here's
+my starter:</p>
+<div class="highlight"><pre><a name="code--ex28.sh-session-pyg.html-1"></a><span class="gp">$</span> mkdir c-skeleton
+<a name="code--ex28.sh-session-pyg.html-2"></a><span class="gp">$</span> <span class="nb">cd </span>c-skeleton/
+<a name="code--ex28.sh-session-pyg.html-3"></a><span class="gp">$</span> touch LICENSE README.md Makefile
+<a name="code--ex28.sh-session-pyg.html-4"></a><span class="gp">$</span> mkdir bin src tests
+<a name="code--ex28.sh-session-pyg.html-5"></a><span class="gp">$</span> cp dbg.h src/   <span class="c"># this is from Ex20</span>
+<a name="code--ex28.sh-session-pyg.html-6"></a><span class="gp">$</span> ls -l
+<a name="code--ex28.sh-session-pyg.html-7"></a><span class="go">total 8</span>
+<a name="code--ex28.sh-session-pyg.html-8"></a><span class="go">-rw-r--r--  1 zedshaw  staff     0 Mar 31 16:38 LICENSE</span>
+<a name="code--ex28.sh-session-pyg.html-9"></a><span class="go">-rw-r--r--  1 zedshaw  staff  1168 Apr  1 17:00 Makefile</span>
+<a name="code--ex28.sh-session-pyg.html-10"></a><span class="go">-rw-r--r--  1 zedshaw  staff     0 Mar 31 16:38 README.md</span>
+<a name="code--ex28.sh-session-pyg.html-11"></a><span class="go">drwxr-xr-x  2 zedshaw  staff    68 Mar 31 16:38 bin</span>
+<a name="code--ex28.sh-session-pyg.html-12"></a><span class="go">drwxr-xr-x  2 zedshaw  staff    68 Apr  1 10:07 build</span>
+<a name="code--ex28.sh-session-pyg.html-13"></a><span class="go">drwxr-xr-x  3 zedshaw  staff   102 Apr  3 16:28 src</span>
+<a name="code--ex28.sh-session-pyg.html-14"></a><span class="go">drwxr-xr-x  2 zedshaw  staff    68 Mar 31 16:38 tests</span>
+<a name="code--ex28.sh-session-pyg.html-15"></a><span class="gp">$</span> ls -l src
+<a name="code--ex28.sh-session-pyg.html-16"></a><span class="go">total 8</span>
+<a name="code--ex28.sh-session-pyg.html-17"></a><span class="go">-rw-r--r--  1 zedshaw  staff  982 Apr  3 16:28 dbg.h</span>
+<a name="code--ex28.sh-session-pyg.html-18"></a><span class="gp">$</span>
+</pre></div><p>At the end you see me do an <tt class="docutils literal">ls <span class="pre">-l</span></tt> so you can see the final results.</p>
+<p>Here's what each of these does:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">LICENSE</tt></dt>
+<dd>If you release the source of your projects you'll want to
+include a license.  If you don't though, the code is copyright by you
+and nobody has rights to it by default.</dd>
+<dt><tt class="docutils literal">README.md</tt></dt>
+<dd>Basic instructions for using your project go here.  It ends
+in <tt class="docutils literal">.md</tt> so that it will be interpreted as markdown.</dd>
+<dt><tt class="docutils literal">Makefile</tt></dt>
+<dd>The main build file for the project.</dd>
+<dt><tt class="docutils literal">bin/</tt></dt>
+<dd>Where programs that users can run go. This is usually empty and the Makefile will create it if it's not there.</dd>
+<dt><tt class="docutils literal">build/</tt></dt>
+<dd>Where libraries and other build artifacts go. Also empty and the Makefile will create it if it's not there.</dd>
+<dt><tt class="docutils literal">src/</tt></dt>
+<dd>Where the source code goes, usually <tt class="docutils literal">.c</tt> and <tt class="docutils literal">.h</tt> files.</dd>
+<dt><tt class="docutils literal">tests/</tt></dt>
+<dd>Where automated tests go.</dd>
+<dt><tt class="docutils literal">src/dbg.h</tt></dt>
+<dd>I copied the <tt class="docutils literal">dbg.h</tt> from Exercise 20 into <tt class="docutils literal">src/</tt> for later.</dd>
+</dl>
+<p>I'll now break down each of the components of this skeleton project
+so you can understand how it works.</p>
+</div>
+<div class="section" id="makefile">
+<h1>Makefile</h1>
+<p>The first thing I'll cover is the Makefile because from that you can understand
+how everything else works.  The Makefile in this exercise is much more detailed
+than ones you've used so far, so I'm going to break it down after you type it
+in:</p>
+<div class="highlight"><pre><a name="code--c-skeleton--Makefile-pyg.html-1"></a><span class="nv">CFLAGS</span><span class="o">=</span>-g -O2 -Wall -Wextra -Isrc -rdynamic -DNDEBUG <span class="k">$(</span>OPTFLAGS<span class="k">)</span>
+<a name="code--c-skeleton--Makefile-pyg.html-2"></a><span class="nv">LIBS</span><span class="o">=</span>-ldl <span class="k">$(</span>OPTLIBS<span class="k">)</span>
+<a name="code--c-skeleton--Makefile-pyg.html-3"></a><span class="nv">PREFIX</span><span class="o">?=</span>/usr/local
+<a name="code--c-skeleton--Makefile-pyg.html-4"></a>
+<a name="code--c-skeleton--Makefile-pyg.html-5"></a><span class="nv">SOURCES</span><span class="o">=</span><span class="k">$(</span>wildcard src/**/*.c src/*.c<span class="k">)</span>
+<a name="code--c-skeleton--Makefile-pyg.html-6"></a><span class="nv">OBJECTS</span><span class="o">=</span><span class="k">$(</span>patsubst %.c,%.o,<span class="k">$(</span>SOURCES<span class="k">))</span>
+<a name="code--c-skeleton--Makefile-pyg.html-7"></a>
+<a name="code--c-skeleton--Makefile-pyg.html-8"></a><span class="nv">TEST_SRC</span><span class="o">=</span><span class="k">$(</span>wildcard tests/*_tests.c<span class="k">)</span>
+<a name="code--c-skeleton--Makefile-pyg.html-9"></a><span class="nv">TESTS</span><span class="o">=</span><span class="k">$(</span>patsubst %.c,%,<span class="k">$(</span>TEST_SRC<span class="k">))</span>
+<a name="code--c-skeleton--Makefile-pyg.html-10"></a>
+<a name="code--c-skeleton--Makefile-pyg.html-11"></a><span class="nv">TARGET</span><span class="o">=</span>build/libYOUR_LIBRARY.a
+<a name="code--c-skeleton--Makefile-pyg.html-12"></a><span class="nv">SO_TARGET</span><span class="o">=</span><span class="k">$(</span>patsubst %.a,%.so,<span class="k">$(</span>TARGET<span class="k">))</span>
+<a name="code--c-skeleton--Makefile-pyg.html-13"></a>
+<a name="code--c-skeleton--Makefile-pyg.html-14"></a><span class="c"># The Target Build</span>
+<a name="code--c-skeleton--Makefile-pyg.html-15"></a><span class="nf">all</span><span class="o">:</span> <span class="m">$(TARGET) $(SO_TARGET) tests</span>
+<a name="code--c-skeleton--Makefile-pyg.html-16"></a>
+<a name="code--c-skeleton--Makefile-pyg.html-17"></a><span class="nf">dev</span><span class="o">:</span> <span class="m">CFLAGS=-g -Wall -Isrc -Wall -Wextra $(OPTFLAGS)</span>
+<a name="code--c-skeleton--Makefile-pyg.html-18"></a><span class="nf">dev</span><span class="o">:</span> <span class="m">all</span>
+<a name="code--c-skeleton--Makefile-pyg.html-19"></a>
+<a name="code--c-skeleton--Makefile-pyg.html-20"></a><span class="k">$(</span>TARGET<span class="k">)</span>: CFLAGS +<span class="o">=</span> -fPIC
+<a name="code--c-skeleton--Makefile-pyg.html-21"></a><span class="k">$(</span>TARGET<span class="k">)</span>: build <span class="k">$(</span>OBJECTS<span class="k">)</span>
+<a name="code--c-skeleton--Makefile-pyg.html-22"></a>       ar rcs <span class="nv">$@</span> <span class="k">$(</span>OBJECTS<span class="k">)</span>
+<a name="code--c-skeleton--Makefile-pyg.html-23"></a>       ranlib <span class="nv">$@</span>
+<a name="code--c-skeleton--Makefile-pyg.html-24"></a>
+<a name="code--c-skeleton--Makefile-pyg.html-25"></a><span class="k">$(</span>SO_TARGET<span class="k">)</span>: <span class="k">$(</span>TARGET<span class="k">)</span> <span class="k">$(</span>OBJECTS<span class="k">)</span>
+<a name="code--c-skeleton--Makefile-pyg.html-26"></a>       <span class="k">$(</span>CC<span class="k">)</span> -shared -o <span class="nv">$@</span> <span class="k">$(</span>OBJECTS<span class="k">)</span>
+<a name="code--c-skeleton--Makefile-pyg.html-27"></a>
+<a name="code--c-skeleton--Makefile-pyg.html-28"></a>build:
+<a name="code--c-skeleton--Makefile-pyg.html-29"></a>       @mkdir -p build
+<a name="code--c-skeleton--Makefile-pyg.html-30"></a>       @mkdir -p bin
+<a name="code--c-skeleton--Makefile-pyg.html-31"></a>
+<a name="code--c-skeleton--Makefile-pyg.html-32"></a><span class="c"># The Unit Tests</span>
+<a name="code--c-skeleton--Makefile-pyg.html-33"></a>.PHONY: tests
+<a name="code--c-skeleton--Makefile-pyg.html-34"></a>tests: CFLAGS +<span class="o">=</span> <span class="k">$(</span>TARGET<span class="k">)</span>
+<a name="code--c-skeleton--Makefile-pyg.html-35"></a>tests: <span class="k">$(</span>TESTS<span class="k">)</span>
+<a name="code--c-skeleton--Makefile-pyg.html-36"></a>       sh ./tests/runtests.sh
+<a name="code--c-skeleton--Makefile-pyg.html-37"></a>
+<a name="code--c-skeleton--Makefile-pyg.html-38"></a>valgrind:
+<a name="code--c-skeleton--Makefile-pyg.html-39"></a>       <span class="nv">VALGRIND</span><span class="o">=</span><span class="s2">&quot;valgrind --log-file=/tmp/valgrind-%p.log&quot;</span> <span class="k">$(</span>MAKE<span class="k">)</span>
+<a name="code--c-skeleton--Makefile-pyg.html-40"></a>
+<a name="code--c-skeleton--Makefile-pyg.html-41"></a><span class="c"># The Cleaner</span>
+<a name="code--c-skeleton--Makefile-pyg.html-42"></a>clean:
+<a name="code--c-skeleton--Makefile-pyg.html-43"></a>       rm -rf build <span class="k">$(</span>OBJECTS<span class="k">)</span> <span class="k">$(</span>TESTS<span class="k">)</span>
+<a name="code--c-skeleton--Makefile-pyg.html-44"></a>       rm -f tests/tests.log
+<a name="code--c-skeleton--Makefile-pyg.html-45"></a>       find . -name <span class="s2">&quot;*.gc*&quot;</span> -exec rm <span class="o">{}</span> <span class="se">\;</span>
+<a name="code--c-skeleton--Makefile-pyg.html-46"></a>       rm -rf <span class="sb">`</span>find . -name <span class="s2">&quot;*.dSYM&quot;</span> -print<span class="sb">`</span>
+<a name="code--c-skeleton--Makefile-pyg.html-47"></a>
+<a name="code--c-skeleton--Makefile-pyg.html-48"></a><span class="c"># The Install</span>
+<a name="code--c-skeleton--Makefile-pyg.html-49"></a>install: all
+<a name="code--c-skeleton--Makefile-pyg.html-50"></a>       install -d <span class="k">$(</span>DESTDIR<span class="k">)</span>/<span class="k">$(</span>PREFIX<span class="k">)</span>/lib/
+<a name="code--c-skeleton--Makefile-pyg.html-51"></a>       install <span class="k">$(</span>TARGET<span class="k">)</span> <span class="k">$(</span>DESTDIR<span class="k">)</span>/<span class="k">$(</span>PREFIX<span class="k">)</span>/lib/
+<a name="code--c-skeleton--Makefile-pyg.html-52"></a>
+<a name="code--c-skeleton--Makefile-pyg.html-53"></a><span class="c"># The Checker</span>
+<a name="code--c-skeleton--Makefile-pyg.html-54"></a><span class="nv">BADFUNCS</span><span class="o">=</span><span class="s1">&#39;[^_.&gt;a-zA-Z0-9](str(n?cpy|n?cat|xfrm|n?dup|str|pbrk|tok|_)|stpn?cpy|a?sn?printf|byte_)&#39;</span>
+<a name="code--c-skeleton--Makefile-pyg.html-55"></a>check:
+<a name="code--c-skeleton--Makefile-pyg.html-56"></a>       @echo Files with potentially dangerous functions.
+<a name="code--c-skeleton--Makefile-pyg.html-57"></a>       @egrep <span class="k">$(</span>BADFUNCS<span class="k">)</span> <span class="k">$(</span>SOURCES<span class="k">)</span> <span class="o">||</span> <span class="nb">true</span>
+</pre></div><p>Remember that you need to indent the Makefile consistently with tab characters.
+Your editor should know that and do the right thing, but if it doesn't then get
+a different text editor.  No programmer should use an editor that fails at
+something so simple.</p>
+</div>
+<div class="section" id="the-header">
+<h1>The Header</h1>
+<p>This makefile is designed to build a library we'll be working on later and
+to do so reliably on almost any platform by using special features of <tt class="docutils literal">GNU make</tt>.  I'll break down each part in sections, starting with the header.</p>
+<dl class="docutils">
+<dt>Makefile:1</dt>
+<dd>These are the usual <tt class="docutils literal">CFLAGS</tt> that you set in all of your
+projects, but with a few others that may be needed to build libraries.
+<em>You may need to adjust these for different platforms</em>.  Notice
+the <tt class="docutils literal">OPTFLAGS</tt> variable at the end which lets people augment the
+build options as needed.</dd>
+<dt>Makefile:2</dt>
+<dd>Options used when linking a library, and allows someone else
+to augment the linking options using the <tt class="docutils literal">OPTLIBS</tt> variable.</dd>
+<dt>Makefile:3</dt>
+<dd>Setting an <em>optional</em> variable called <tt class="docutils literal">PREFIX</tt> that
+will only have this value if the person running the Makefile didn't
+already give a <tt class="docutils literal">PREFIX</tt> setting.  That's what the <tt class="docutils literal"><span class="pre">?=</span></tt> does.</dd>
+<dt>Makefile:5</dt>
+<dd>This fancy line of awesome <em>dynamically</em> creates the <tt class="docutils literal">SOURCES</tt> variable by doing a <tt class="docutils literal">wildcard</tt> search for all <tt class="docutils literal">*.c</tt> files in the
+<tt class="docutils literal">src/</tt> directory. You have to give both <tt class="docutils literal"><span class="pre">src/**/*.c</span></tt> and
+<tt class="docutils literal"><span class="pre">src/*.c</span></tt> so that GNU make will include the files in <tt class="docutils literal">src</tt> and
+also the ones below it.</dd>
+<dt>Makefile:6</dt>
+<dd>Once you have the list of source files, you can then use the
+<tt class="docutils literal">patsubst</tt> to take the <tt class="docutils literal">SOURCES</tt> list of <tt class="docutils literal">*.c</tt> files and
+make a <em>new</em> list of all the object files.  You do this by telling
+<tt class="docutils literal">patsubst</tt> to change all <tt class="docutils literal">%.c</tt> extensions to <tt class="docutils literal">%.o</tt> and
+then those are assigned to <tt class="docutils literal">OBJECTS</tt>.</dd>
+<dt>Makefile:8</dt>
+<dd>Using the <tt class="docutils literal">wildcard</tt> again to find all the test
+source files for the unit tests.  These are separate from the library's
+source files.</dd>
+<dt>Makefile:9</dt>
+<dd>Then using the same <tt class="docutils literal">patsubst</tt> trick to dynamically
+get all the <tt class="docutils literal">TEST</tt> targets.  In this case I'm stripping away the
+<tt class="docutils literal">.c</tt> extension so that a full program will be made with the same
+name.  Previously I had replaced the <tt class="docutils literal">.c</tt> with {.o} so an object
+file is created.</dd>
+<dt>Makefile:11</dt>
+<dd>Finally, we say the ultimate target is <tt class="docutils literal">build/libYOUR_LIBRARY.a</tt>, which you will change to be whatever library you are actually trying to build.</dd>
+</dl>
+<p>This completes the top of the Makefile, but I should explain what I mean by
+&quot;lets people augment the build&quot;.  When you run make you can do this:</p>
+<pre class="literal-block">
+# WARNING! Just a demonstration, won't really work right now.
+# this installs the library into /tmp
+$ make PREFIX=/tmp install
+# this tells it to add pthreads
+$ make OPTFLAGS=-pthread
+</pre>
+<p>If you pass in options that match the same kind of variables you have in
+your <tt class="docutils literal">Makefile</tt>, then those will show up in your build.  You can then
+use this to change how the <tt class="docutils literal">Makefile</tt> runs.  The first one alters the
+<tt class="docutils literal">PREFIX</tt> so that it installs into <tt class="docutils literal">/tmp</tt> instead.  The second
+one sets <tt class="docutils literal">OPTFLAGS</tt> so that the <tt class="docutils literal"><span class="pre">-pthread</span></tt> option is present.</p>
+<div class="section" id="the-target-build">
+<h2>The Target Build</h2>
+<p>Continuing with the breakdown of the <tt class="docutils literal">Makefile</tt> I have actually building
+the object files and targets:</p>
+<dl class="docutils">
+<dt>Makefile:14</dt>
+<dd>Remember that the first target is what <tt class="docutils literal">make</tt> will
+run by default when no target is given.  In this case it's called <tt class="docutils literal">all:</tt>
+and it gives <tt class="docutils literal">$(TARGET) tests</tt> as the targets to build.  Look up at
+the <tt class="docutils literal">TARGET</tt> variable and you see that's the library, so <tt class="docutils literal">all:</tt>
+will first build the library.  The <tt class="docutils literal">tests</tt> target is then further
+down in the <tt class="docutils literal">Makefile</tt> and builds the unit tests.</dd>
+<dt>Makefile:16</dt>
+<dd>Another target for making &quot;developer builds&quot; that introduces
+a technique for changing options for just one target.  If I do a &quot;dev build&quot;
+I want the <tt class="docutils literal">CFLAGS</tt> to include options like <tt class="docutils literal"><span class="pre">-Wextra</span></tt> that are
+useful for finding bugs.  If you place them on the target line as options
+like this, then give another line that says the original target (in this
+case <tt class="docutils literal">all</tt>) then it will change the options you set.  I use this for
+setting different flags on different platforms that need it.</dd>
+<dt>Makefile:19</dt>
+<dd>Builds the <tt class="docutils literal">TARGET</tt> library, whatever that is, and also
+uses the same trick from line 15 of giving a target with just options changes
+to alter them for this run.  In this case I'm adding <tt class="docutils literal"><span class="pre">-fPIC</span></tt> just for
+the library build using the <tt class="docutils literal">+=</tt> syntax to add it on.</dd>
+<dt>Makefile:20</dt>
+<dd>Now the real target where I say first make the <tt class="docutils literal">build</tt>
+directory, then compile all the <tt class="docutils literal">OBJECTS</tt>.</dd>
+<dt>Makefile:21</dt>
+<dd>Runs the <tt class="docutils literal">ar</tt> command which actually makes the
+<tt class="docutils literal">TARGET</tt>.  The syntax <tt class="docutils literal">$&#64; $(OBJECTS)</tt> is a way of saying,
+&quot;put the target for this Makefile source here and all the OBJECTS after that&quot;.
+In this case the <tt class="docutils literal">$&#64;</tt> maps back to the <tt class="docutils literal">$(TARGET)</tt> on line 19,
+which maps to <tt class="docutils literal">build/libYOUR_LIBRARY.a</tt>.  It seems like a lot to
+keep track of this indirection, and it can be, but once you get it working
+this means you just change <tt class="docutils literal">TARGET</tt> at the top and build a whole
+new library.</dd>
+<dt>Makefile:22</dt>
+<dd>Finally, to make the library you run <tt class="docutils literal">ranlib</tt> on the
+<tt class="docutils literal">TARGET</tt> and it's built.</dd>
+<dt>Makefile:24-24</dt>
+<dd>This just makes the <tt class="docutils literal">build/</tt> or <tt class="docutils literal">bin/</tt> directories
+if they don't exist.  This is then referenced from line 19 when it gives the
+<tt class="docutils literal">build</tt> target to make sure the <tt class="docutils literal">build/</tt> directory is made.</dd>
+</dl>
+<p>You now have all the stuff you need to build the software, so we'll create a
+way to build and run unit tests to do automated testing.</p>
+</div>
+</div>
+<div class="section" id="the-unit-tests">
+<h1>The Unit Tests</h1>
+<p>C is different from other languages because it's easier to create one tiny little
+program for each thing you're testing.  Some testing frameworks try to emulate
+the module concept other languages have and do dynamic loading, but this doesn't
+work well in C.  It's also unnecessary because you can just make a single program
+that's run for each test instead.</p>
+<p>I'll cover this part of the Makefile, and then later you'll see the contents of
+the <tt class="docutils literal">tests/</tt> directory that make it actually work.</p>
+<dl class="docutils">
+<dt>Makefile:29</dt>
+<dd>If you have a target that's not &quot;real&quot;, but there is a directory
+or file with that name, then you need to tag the target with <tt class="docutils literal">.PHONY:</tt>
+so <tt class="docutils literal">make</tt> will ignore the file and always run.</dd>
+<dt>Makefile:30</dt>
+<dd>I use the same trick for modifying the <tt class="docutils literal">CFLAGS</tt> variable
+to add the <tt class="docutils literal">TARGET</tt> to the build so that each of the test programs
+will be linked with the <tt class="docutils literal">TARGET</tt> library.  In this case it will add
+<tt class="docutils literal">build/libYOUR_LIBRARY.a</tt> to the linking.</dd>
+<dt>Makefile:31</dt>
+<dd>Then I have the actual <tt class="docutils literal">tests:</tt> target which depends
+on all the programs listed in the <tt class="docutils literal">TESTS</tt> variable we created
+in the header.  This one line actually says, &quot;Make, use what you know
+about building programs and the current CFLAGS settings to build each
+program in <tt class="docutils literal">TESTS</tt>.&quot;</dd>
+<dt>Makefile:32</dt>
+<dd>Finally, when all of the <tt class="docutils literal">TESTS</tt> are built, there's
+a simple shell script I'll create later that knows how to run them all
+and report their output.  This line actually runs it so you can see
+the test results.</dd>
+<dt>Makefile:34-35</dt>
+<dd>In order to be able to dynamically rerun the tests
+with Valgrind there's a <tt class="docutils literal">valgrind:</tt> target that sets the right
+variable and runs itself again.  This puts the valgrind logs into
+<tt class="docutils literal"><span class="pre">/tmp/valgrind-*.log</span></tt> so you can go look and see what might be
+going on.  The <tt class="docutils literal">tests/runtests.sh</tt> then knows to run the
+test programs under Valgrind when it sees this <tt class="docutils literal">VALGRIND</tt> variable.</dd>
+</dl>
+<p>For the unit testing to work you'll need to create a little shell script
+that knows how to run the programs.  Go ahead and create this <tt class="docutils literal">tests/runtests.sh</tt> script:</p>
+<div class="highlight"><pre><a name="code--c-skeleton--tests--runtests.sh-pyg.html-1"></a><span class="nb">echo</span> <span class="s2">&quot;Running unit tests:&quot;</span>
+<a name="code--c-skeleton--tests--runtests.sh-pyg.html-2"></a>
+<a name="code--c-skeleton--tests--runtests.sh-pyg.html-3"></a><span class="k">for </span>i in tests/*_tests
+<a name="code--c-skeleton--tests--runtests.sh-pyg.html-4"></a><span class="k">do</span>
+<a name="code--c-skeleton--tests--runtests.sh-pyg.html-5"></a><span class="k">    if </span><span class="nb">test</span> -f <span class="nv">$i</span>
+<a name="code--c-skeleton--tests--runtests.sh-pyg.html-6"></a>    <span class="k">then</span>
+<a name="code--c-skeleton--tests--runtests.sh-pyg.html-7"></a><span class="k">        if</span> <span class="nv">$VALGRIND</span> ./<span class="nv">$i</span> 2&gt;&gt; tests/tests.log
+<a name="code--c-skeleton--tests--runtests.sh-pyg.html-8"></a>        <span class="k">then</span>
+<a name="code--c-skeleton--tests--runtests.sh-pyg.html-9"></a><span class="k">            </span><span class="nb">echo</span> <span class="nv">$i</span> PASS
+<a name="code--c-skeleton--tests--runtests.sh-pyg.html-10"></a>        <span class="k">else</span>
+<a name="code--c-skeleton--tests--runtests.sh-pyg.html-11"></a><span class="k">            </span><span class="nb">echo</span> <span class="s2">&quot;ERROR in test $i: here&#39;s tests/tests.log&quot;</span>
+<a name="code--c-skeleton--tests--runtests.sh-pyg.html-12"></a>            <span class="nb">echo</span> <span class="s2">&quot;------&quot;</span>
+<a name="code--c-skeleton--tests--runtests.sh-pyg.html-13"></a>            tail tests/tests.log
+<a name="code--c-skeleton--tests--runtests.sh-pyg.html-14"></a>            <span class="nb">exit </span>1
+<a name="code--c-skeleton--tests--runtests.sh-pyg.html-15"></a>        <span class="k">fi</span>
+<a name="code--c-skeleton--tests--runtests.sh-pyg.html-16"></a><span class="k">    fi</span>
+<a name="code--c-skeleton--tests--runtests.sh-pyg.html-17"></a><span class="k">done</span>
+<a name="code--c-skeleton--tests--runtests.sh-pyg.html-18"></a>
+<a name="code--c-skeleton--tests--runtests.sh-pyg.html-19"></a><span class="nb">echo</span> <span class="s2">&quot;&quot;</span>
+</pre></div><p>I'll be using this later when I cover how unit tests work.</p>
+</div>
+<div class="section" id="the-cleaner">
+<h1>The Cleaner</h1>
+<p>I now have fully working unit tests, so next up is making things clean when
+I need to reset everything.</p>
+<dl class="docutils">
+<dt>Makefile:38</dt>
+<dd>The <tt class="docutils literal">clean:</tt> target starts things off whenever we
+need to clean up the project.</dd>
+<dt>Makefile:39-42</dt>
+<dd>This cleans out most of the junk that various compilers
+and tools leave behind.  It also gets rid of the <tt class="docutils literal">build/</tt> directory
+and uses a trick at the end to cleanly erase the weird <tt class="docutils literal">*.dSYM</tt>
+directories Apple's XCode leaves behind for debugging purposes.</dd>
+</dl>
+<p>If you run into junk that you need to clean out, simply augment the list of things
+being deleted in this target.</p>
+</div>
+<div class="section" id="the-install">
+<h1>The Install</h1>
+<p>After that I'll need a way to install the project, and for a <tt class="docutils literal">Makefile</tt> that's
+building a library I just need to put something in the common <tt class="docutils literal">PREFIX</tt>
+directory, which is usually <tt class="docutils literal">/usr/local/lib</tt>.</p>
+<dl class="docutils">
+<dt>Makefile:45</dt>
+<dd>This makes <tt class="docutils literal">install:</tt> depend on the <tt class="docutils literal">all:</tt> target
+so that when you run <tt class="docutils literal">make install</tt> it will be sure to build everything.</dd>
+<dt>Makefile:46</dt>
+<dd>I then use the program <tt class="docutils literal">install</tt> to create the target
+<tt class="docutils literal">lib</tt> directory if it doesn't exist.  In this case I'm trying to make
+the install as flexible as possible by using two variables that are conventions
+for installers.  <tt class="docutils literal">DESTDIR</tt> is handed to make by installers that
+do their builds in secure or odd locations to build packages.  <tt class="docutils literal">PREFIX</tt>
+is used when people want the project to be installed in someplace other
+than <tt class="docutils literal">/usr/local</tt>.</dd>
+<dt>Makefile:47</dt>
+<dd>After that I'm just using <tt class="docutils literal">install</tt> to actually install
+the library where it needs to go.</dd>
+</dl>
+<p>The purpose of the <tt class="docutils literal">install</tt> program is to make sure things have the
+right permissions set.  When you run <tt class="docutils literal">make install</tt> you usually have to
+do it as the root user, so the typical build process is <tt class="docutils literal">make &amp;&amp; sudo make install</tt>.</p>
+</div>
+<div class="section" id="the-checker">
+<h1>The Checker</h1>
+<p>The very last part of this <tt class="docutils literal">Makefile</tt> is a bonus that I include in my
+C projects to help me dig out any attempts to use the &quot;bad&quot; functions in C.
+Namely the string functions and other &quot;unprotected buffer&quot; functions.</p>
+<dl class="docutils">
+<dt>Makefile:50</dt>
+<dd>Sets a variable which is a big regex looking for bad
+functions like <tt class="docutils literal">strcpy</tt>.</dd>
+<dt>Makefile:51</dt>
+<dd>The <tt class="docutils literal">check:</tt> target so you can run a check whenever
+you need.</dd>
+<dt>Makefile:52</dt>
+<dd>Just a way to print a message, but doing <tt class="docutils literal">&#64;echo</tt> tells
+<tt class="docutils literal">make</tt> to not print the command, just its output.</dd>
+<dt>Makefile:53</dt>
+<dd>Run the <tt class="docutils literal">egrep</tt> command on the source files
+looking for any bad patterns.  The <tt class="docutils literal">|| true</tt> at the end is a way
+to prevent <tt class="docutils literal">make</tt> from thinking that <tt class="docutils literal">egrep</tt> not finding
+things is a failure.</dd>
+</dl>
+<p>When you run this it will have the odd effect that you'll get an error when there
+is nothing bad going on.</p>
+</div>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>I have two more exercises to go before I'm done building the project skeleton
+directory, but here's me testing out the features of the <tt class="docutils literal">Makefile</tt>.</p>
+<div class="highlight"><pre><a name="code--ex28.wyss.sh-session-pyg.html-1"></a><span class="gp">$</span> make clean
+<a name="code--ex28.wyss.sh-session-pyg.html-2"></a><span class="go">rm -rf build  </span>
+<a name="code--ex28.wyss.sh-session-pyg.html-3"></a><span class="go">rm -f tests/tests.log </span>
+<a name="code--ex28.wyss.sh-session-pyg.html-4"></a><span class="go">find . -name &quot;*.gc*&quot; -exec rm {} \;</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-5"></a><span class="go">rm -rf `find . -name &quot;*.dSYM&quot; -print`</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-6"></a><span class="gp">$</span> make check
+<a name="code--ex28.wyss.sh-session-pyg.html-7"></a><span class="go">Files with potentially dangerous functions.</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-8"></a><span class="go">^Cmake: *** [check] Interrupt: 2</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-9"></a>
+<a name="code--ex28.wyss.sh-session-pyg.html-10"></a><span class="gp">$</span> make
+<a name="code--ex28.wyss.sh-session-pyg.html-11"></a><span class="go">ar rcs build/libYOUR_LIBRARY.a </span>
+<a name="code--ex28.wyss.sh-session-pyg.html-12"></a><span class="go">ar: no archive members specified</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-13"></a><span class="go">usage:  ar -d [-TLsv] archive file ...</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-14"></a><span class="go">      ar -m [-TLsv] archive file ...</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-15"></a><span class="go">      ar -m [-abiTLsv] position archive file ...</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-16"></a><span class="go">      ar -p [-TLsv] archive [file ...]</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-17"></a><span class="go">      ar -q [-cTLsv] archive file ...</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-18"></a><span class="go">      ar -r [-cuTLsv] archive file ...</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-19"></a><span class="go">      ar -r [-abciuTLsv] position archive file ...</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-20"></a><span class="go">      ar -t [-TLsv] archive [file ...]</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-21"></a><span class="go">      ar -x [-ouTLsv] archive [file ...]</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-22"></a><span class="go">make: *** [build/libYOUR_LIBRARY.a] Error 1</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-23"></a><span class="gp">$</span> make valgrind
+<a name="code--ex28.wyss.sh-session-pyg.html-24"></a><span class="go">VALGRIND=&quot;valgrind --log-file=/tmp/valgrind-%p.log&quot; make</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-25"></a><span class="go">ar rcs build/libYOUR_LIBRARY.a </span>
+<a name="code--ex28.wyss.sh-session-pyg.html-26"></a><span class="go">ar: no archive members specified</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-27"></a><span class="go">usage:  ar -d [-TLsv] archive file ...</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-28"></a><span class="go">      ar -m [-TLsv] archive file ...</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-29"></a><span class="go">      ar -m [-abiTLsv] position archive file ...</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-30"></a><span class="go">      ar -p [-TLsv] archive [file ...]</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-31"></a><span class="go">      ar -q [-cTLsv] archive file ...</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-32"></a><span class="go">      ar -r [-cuTLsv] archive file ...</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-33"></a><span class="go">      ar -r [-abciuTLsv] position archive file ...</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-34"></a><span class="go">      ar -t [-TLsv] archive [file ...]</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-35"></a><span class="go">      ar -x [-ouTLsv] archive [file ...]</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-36"></a><span class="go">make[1]: *** [build/libYOUR_LIBRARY.a] Error 1</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-37"></a><span class="go">make: *** [valgrind] Error 2</span>
+<a name="code--ex28.wyss.sh-session-pyg.html-38"></a><span class="gp">$</span>
+</pre></div><p>When I run the <tt class="docutils literal">clean:</tt> target that works, but because I don't have
+any source files in the <tt class="docutils literal">src/</tt> directory none of the other commands
+really work.  I'll finish that up in the next exercises.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Try to get the <tt class="docutils literal">Makefile</tt> to actually work by putting a source
+and header file in <tt class="docutils literal">src/</tt> and making the library.  You shouldn't
+need a <tt class="docutils literal">main</tt> function in the source file.</li>
+<li>Research what functions the <tt class="docutils literal">check:</tt> target is looking for in the
+<tt class="docutils literal">BADFUNCS</tt> regular expression it's using.</li>
+<li>If you don't do automated unit testing, then go read about it so you're
+prepared later.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

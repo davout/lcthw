@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 0: The Setup</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 0: The Setup</h1>
+            <p>In this chapter you get your system setup to do C programming.  The
+good news for anyone using Linux or Mac OSX is that you are on a
+system designed <em>for</em> programming in C.  The authors of the
+C language were also instrumental in the creation of the Unix operating
+system, and both Linux and OSX are based on Unix.  In fact, the install
+will be incredibly easy.</p>
+<p>I have some bad news for users of Windows:  learning C on Windows
+is painful.  You can write C code for Windows, that's not a problem.
+The problem is all of the libraries, functions, and tools are just
+a little &quot;off&quot; from everyone else in the C world.  C came from
+Unix and is much easier on a Unix platform.  It's just a fact
+of life that you'll have to accept I'm afraid.</p>
+<p>I wanted to get this bad news out right away so that you don't
+panic.  I'm not saying to avoid Windows entirely.  I am however
+saying that, if you want to have the easiest time learning C, then
+it's time to bust out some Unix and get dirty.  This could also
+be really good for you, since knowing a little bit of Unix will
+also teach you some of the idioms of C programming and expand
+your skills.</p>
+<p>This also means that for everyone you'll be using the
+<em>command line</em>.  Yep, I said it.  You've gotta get in there and
+type commands at the computer.  Don't be afraid though because
+I'll be telling you what to type and what it should look like,
+so you'll actually be learning quite a few mind expanding
+skills at the same time.</p>
+<div class="section" id="linux">
+<h1>Linux</h1>
+<p>On most Linux systems you just have to install a few packages.  For
+Debian based systems, like Ubuntu you should just have to install
+a few things using these commands:</p>
+<pre class="literal-block">
+$ sudo apt-get install build-essential
+</pre>
+<p>The above is an example of a command line prompt, so to get to where
+you can run that, find your &quot;Terminal&quot; program and run it first.  Then
+you'll get a shell prompt similar to the <tt class="docutils literal">$</tt> above and can type that
+command into it.  <em>Do not type the ``$``, just the stuff after it.</em></p>
+<p>Here's how you would install the same setup on an RPM based Linux
+like Fedora:</p>
+<pre class="literal-block">
+$ su -c &quot;yum groupinstall development-tools&quot;
+</pre>
+<p>Once you've run that, you should be able to do the first Exercise in
+this book and it'll work.  If not then let me know.</p>
+</div>
+<div class="section" id="mac-osx">
+<h1>Mac OSX</h1>
+<p>On Mac OSX the install is even easier.  First, you'll need to either
+download the latest <tt class="docutils literal">XCode</tt> from Apple, or find your install
+DVD and install it from there.  The download will be massive and could
+take forever, so I recommend installing from the DVD.  Also, search
+online for &quot;installing xcode&quot; for instructions on how to do it.</p>
+<p>Once you're done installing XCode, and probably restarting your computer
+if it didn't make you do that, you can go find your Terminal program
+and get it put into your Dock.  You'll be using Terminal a lot in
+the book, so it's good to put it in a handy location.</p>
+</div>
+<div class="section" id="windows">
+<h1>Windows</h1>
+<p>For Windows users I'll show you how to get a basic Ubuntu Linux system up and
+running in a virtual machine so that you can still do all of my exercises, but
+avoid all the painful Windows installation problems.</p>
+<p>... have to figure this one out.</p>
+</div>
+<div class="section" id="text-editor">
+<h1>Text Editor</h1>
+<p>The choice of text editor for a programmer is a tough one.  For beginners
+I tell them to just use <a class="reference external" href="http://projects.gnome.org/gedit/">Gedit</a> since
+it's simple and works for code.  However, it doesn't work in certain
+internationalized situations, and chances are you already have a favorite
+text editor if you've been programming for a while.</p>
+<p>With this in mind, I want you to try out a few of the standard programmer
+text editors for your platform and then stick with the one that you like
+best.  If you've been using GEdit and like it then stick with it.  If you
+want to try something different, then try it out real quick and pick one.</p>
+<p>The most important thing is <em>do not get stuck picking the perfect editor</em>.
+Text editors all just kind of suck in odd ways.  Just pick one, stick with it,
+and if you find something else you like try it out.  Don't spend days
+on end configuring it and making it perfect.</p>
+<p>Some text editors to try out are:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://projects.gnome.org/gedit/">Gedit</a> on Linux and OSX.</li>
+<li><a class="reference external" href="http://www.barebones.com/products/textwrangler/">TextWrangler</a> on OSX.</li>
+<li><a class="reference external" href="http://www.nano-editor.org/">Nano</a> which runs in Terminal and works nearly everywhere.</li>
+<li><a class="reference external" href="http://www.gnu.org/software/emacs/">Emacs</a> and <a class="reference external" href="http://emacsformacosx.com/">Emacs for OSX</a>.  Be prepared to do some learning though.</li>
+<li><a class="reference external" href="http://www.vim.org/">Vim</a> and <a class="reference external" href="http://code.google.com/p/macvim/">MacVim</a></li>
+</ul>
+<p>There is probably a different editor for every person out there, but these are
+just a few of the free ones that I know work.  Try a few out, and maybe some
+commercial ones until you find one that you like.</p>
+<div class="section" id="warning-do-not-use-an-ide">
+<h2>WARNING: Do Not Use An IDE</h2>
+<p>An IDE, or &quot;Integrated Development Environment&quot; will turn you stupid.  They are
+the worst tools if you want to be a good programmer because they hide what's
+going on from you, and your job is to know what's going on.  They are useful
+if you're trying to get something done and the platform is designed around
+a particular IDE, but for learning to code C (and many other languages) they
+are pointless.</p>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p>If you've played guitar then you know what tablature is, but for everyone else
+let me explain.  In music there's an established notation called the &quot;staff
+notation&quot;.  It's a generic, very old, and universal way to write down what
+someone should play on an instrument.  If you play piano this notation is
+fairly easy to use, since it was created mostly for piano and composers.</p>
+<p>Guitar however is a weird instrument that doesn't really work with notation, so
+guitarists have an alternative notation called &quot;tablature&quot;.  What tablature
+does is, rather than tell you the note to play, it tells you the fret and
+string you should play at that time.  You could learn whole songs without ever
+knowing about a single thing you're playing.  Many people do it this way, but
+if you want to know <em>what</em> you're playing, then tablature is pointless.</p>
+<p>It may be harder than tablature, but traditional notation tells you how to play the
+<em>music</em> rather than just how to play the guitar.  With traditional
+notation I can walk over to a piano and play the same song.  I can play it on a
+bass.  I can put it into a computer and design whole scores around it.  With
+tablature I can just play it on a guitar.</p>
+<p>IDEs are like tablature.  Sure, you can code pretty quickly, but you can only
+code in that one language on that one platform.  This is why companies love
+selling them to you.  They know you're lazy, and since it only works on their
+platform they've got you locked in because you are lazy.</p>
+<p class="last">The way you break the cycle is you suck it up and finally learn to code without
+an IDE.  A plain editor, or a programmer's editor like Vim or Emacs, makes you
+work with the code.  It's a little harder, but the end result is you can work
+with <em>any</em> code, on any computer, in any language, and you know what's
+going on.</p>
+</div>
+</div>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 30: Automated Testing</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 30: Automated Testing</h1>
+            <p>Automated testing is used frequently in other languages like Python and Ruby, but
+rarely used in C.  Part of the reason comes from the difficulty of automatically
+loading and testing pieces of C code.  In this chapter we'll create a very small
+little testing &quot;framework&quot; and get your skeleton directory building an example
+test case.</p>
+<p>The frameworks I'm going to use, and which you'll include in your <tt class="docutils literal"><span class="pre">c-skeleton</span></tt>
+skeleton is called &quot;minunit&quot; which started with code from a tiny snippet
+of code by <a class="reference external" href="http://www.jera.com/techinfo/jtns/jtn002.html">Jera Design</a>.  I then
+evolved it further, to be this:</p>
+<div class="highlight"><pre><a name="code--c-skeleton--tests--minunit.h-pyg.html-1"></a><span class="cp">#undef NDEBUG</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-2"></a><span class="cp">#ifndef _minunit_h</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-3"></a><span class="cp">#define _minunit_h</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-4"></a>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-5"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-6"></a><span class="cp">#include &lt;dbg.h&gt;</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-7"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-8"></a>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-9"></a><span class="cp">#define mu_suite_start() char *message = NULL</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-10"></a>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-11"></a><span class="cp">#define mu_assert(test, message) if (!(test)) { log_err(message); return message; }</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-12"></a><span class="cp">#define mu_run_test(test) debug(&quot;\n-----%s&quot;, &quot; &quot; #test); \</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-13"></a><span class="cp">    message = test(); tests_run++; if (message) return message;</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-14"></a>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-15"></a><span class="cp">#define RUN_TESTS(name) int main(int argc, char *argv[]) {\</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-16"></a><span class="cp">    argc = 1; \</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-17"></a><span class="cp">    debug(&quot;----- RUNNING: %s&quot;, argv[0]);\</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-18"></a><span class="cp">        printf(&quot;----\nRUNNING: %s\n&quot;, argv[0]);\</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-19"></a><span class="cp">        char *result = name();\</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-20"></a><span class="cp">        if (result != 0) {\</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-21"></a><span class="cp">            printf(&quot;FAILED: %s\n&quot;, result);\</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-22"></a><span class="cp">        }\</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-23"></a><span class="cp">        else {\</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-24"></a><span class="cp">            printf(&quot;ALL TESTS PASSED\n&quot;);\</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-25"></a><span class="cp">        }\</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-26"></a><span class="cp">    printf(&quot;Tests run: %d\n&quot;, tests_run);\</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-27"></a><span class="cp">        exit(result != 0);\</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-28"></a><span class="cp">}</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-29"></a>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-30"></a>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-31"></a><span class="kt">int</span> <span class="n">tests_run</span><span class="p">;</span>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-32"></a>
+<a name="code--c-skeleton--tests--minunit.h-pyg.html-33"></a><span class="cp">#endif</span>
+</pre></div><p>There's mostly nothing left of the original, as now I'm using the <tt class="docutils literal">dbg.h</tt>
+macros and I've created a large macro at the end for the boilerplate test
+runner.  Even with this tiny amount of code we'll create a fully functioning
+unit test system you can use in your C code once it's combined with a
+shell script to run the tests.</p>
+<div class="section" id="wiring-up-the-test-framework">
+<h1>Wiring Up The Test Framework</h1>
+<p>To continue this exercise, you should have your <tt class="docutils literal">src/libex29.c</tt> working
+and that you completed the Exercise 29 extra credit where you got the
+<tt class="docutils literal">ex29.c</tt> loader program to properly run.  In Exercise 29 I had
+an extra credit to make it work like a unit test, but I'm going to start
+over and show you how to do that with <tt class="docutils literal">minunit.h</tt>.</p>
+<p>The first thing to do is create a simple empty unit test name <tt class="docutils literal">tests/libex29_tests.c</tt> with this in it:</p>
+<div class="highlight"><pre><a name="code--ex30.c-pyg.html-1"></a><span class="cp">#include &quot;minunit.h&quot;</span>
+<a name="code--ex30.c-pyg.html-2"></a>
+<a name="code--ex30.c-pyg.html-3"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_dlopen</span><span class="p">()</span>
+<a name="code--ex30.c-pyg.html-4"></a><span class="p">{</span>
+<a name="code--ex30.c-pyg.html-5"></a>
+<a name="code--ex30.c-pyg.html-6"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex30.c-pyg.html-7"></a><span class="p">}</span>
+<a name="code--ex30.c-pyg.html-8"></a>
+<a name="code--ex30.c-pyg.html-9"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_functions</span><span class="p">()</span>
+<a name="code--ex30.c-pyg.html-10"></a><span class="p">{</span>
+<a name="code--ex30.c-pyg.html-11"></a>
+<a name="code--ex30.c-pyg.html-12"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex30.c-pyg.html-13"></a><span class="p">}</span>
+<a name="code--ex30.c-pyg.html-14"></a>
+<a name="code--ex30.c-pyg.html-15"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_failures</span><span class="p">()</span>
+<a name="code--ex30.c-pyg.html-16"></a><span class="p">{</span>
+<a name="code--ex30.c-pyg.html-17"></a>
+<a name="code--ex30.c-pyg.html-18"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex30.c-pyg.html-19"></a><span class="p">}</span>
+<a name="code--ex30.c-pyg.html-20"></a>
+<a name="code--ex30.c-pyg.html-21"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_dlclose</span><span class="p">()</span>
+<a name="code--ex30.c-pyg.html-22"></a><span class="p">{</span>
+<a name="code--ex30.c-pyg.html-23"></a>
+<a name="code--ex30.c-pyg.html-24"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex30.c-pyg.html-25"></a><span class="p">}</span>
+<a name="code--ex30.c-pyg.html-26"></a>
+<a name="code--ex30.c-pyg.html-27"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">all_tests</span><span class="p">()</span> <span class="p">{</span>
+<a name="code--ex30.c-pyg.html-28"></a>    <span class="n">mu_suite_start</span><span class="p">();</span>
+<a name="code--ex30.c-pyg.html-29"></a>
+<a name="code--ex30.c-pyg.html-30"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_dlopen</span><span class="p">);</span>
+<a name="code--ex30.c-pyg.html-31"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_functions</span><span class="p">);</span>
+<a name="code--ex30.c-pyg.html-32"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_failures</span><span class="p">);</span>
+<a name="code--ex30.c-pyg.html-33"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_dlclose</span><span class="p">);</span>
+<a name="code--ex30.c-pyg.html-34"></a>
+<a name="code--ex30.c-pyg.html-35"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex30.c-pyg.html-36"></a><span class="p">}</span>
+<a name="code--ex30.c-pyg.html-37"></a>
+<a name="code--ex30.c-pyg.html-38"></a><span class="n">RUN_TESTS</span><span class="p">(</span><span class="n">all_tests</span><span class="p">);</span>
+</pre></div><p>This code is demonstrating the <tt class="docutils literal">RUN_TESTS</tt> macro in <tt class="docutils literal">tests/minunit.h</tt>
+and how to use the other test runner macros.  I have the actual test functions
+stubbed out so that you can see how to structure a unit test.  I'll break
+this file down first:</p>
+<dl class="docutils">
+<dt>libex29_tests.c:1</dt>
+<dd>Include the <tt class="docutils literal">minunit.h</tt> framework.</dd>
+<dt>libex29_tests.c:3-7</dt>
+<dd>A first test.  Tests are structured so they take no
+arguments and return a <tt class="docutils literal">char *</tt> which is <tt class="docutils literal">NULL</tt> on <em>success</em>.
+This is important because the other macros will be used to return an error
+message to the test runner.</dd>
+<dt>libex29_tests.c:9-25</dt>
+<dd>More tests that are the same as the first one.</dd>
+<dt>libex29_tests.c:27</dt>
+<dd>The runner function that will control all the other
+tests.  It has the same form as any other test case, but it gets configured
+with some additional gear.</dd>
+<dt>libex29_tests.c:28</dt>
+<dd>Sets up some common stuff for a test with <tt class="docutils literal">mu_suite_start</tt>.</dd>
+<dt>libex29_tests.c:30</dt>
+<dd>This is how you say what test to run, using the <tt class="docutils literal">mu_run_test</tt> macro.</dd>
+<dt>libex29_tests.c:35</dt>
+<dd>After you say what tests to run, you then return <tt class="docutils literal">NULL</tt> just like a normal test function.</dd>
+<dt>libex29_tests.c:38</dt>
+<dd>Finally, you just use the big <tt class="docutils literal">RUN_TESTS</tt> macro
+to wire up the <tt class="docutils literal">main</tt> method with all the goodies and tell it to run
+the <tt class="docutils literal">all_tests</tt> starter.</dd>
+</dl>
+<p>That's all there is to running a test, now you should try getting just this to run
+within the project skeleton.  Here's what it looks like when I do it:</p>
+<div class="highlight"><pre><a name="code--ex30.sh-session-pyg.html-1"></a><span class="go">not printable</span>
+</pre></div><p>I first did a <tt class="docutils literal">make clean</tt> and then I ran the build, which remade the template
+<tt class="docutils literal">libYOUR_LIBRARY.a</tt> and <tt class="docutils literal">libYOUR_LIBRARY.so</tt> files.  Remember that you
+had to do this in the extra credit for Exercise 29, but just in case you didn't figure
+it out, here's the diff for the <tt class="docutils literal">Makefile</tt> I'm using now:</p>
+<div class="highlight"><pre><a name="code--ex30.Makefile.diff-pyg.html-1"></a><span class="gh">diff --git a/code/c-skeleton/Makefile b/code/c-skeleton/Makefile</span>
+<a name="code--ex30.Makefile.diff-pyg.html-2"></a><span class="gh">index 135d538..21b92bf 100644</span>
+<a name="code--ex30.Makefile.diff-pyg.html-3"></a><span class="gd">--- a/code/c-skeleton/Makefile</span>
+<a name="code--ex30.Makefile.diff-pyg.html-4"></a><span class="gi">+++ b/code/c-skeleton/Makefile</span>
+<a name="code--ex30.Makefile.diff-pyg.html-5"></a><span class="gu">@@ -9,9 +9,10 @@ TEST_SRC=$(wildcard tests/*_tests.c)</span>
+<a name="code--ex30.Makefile.diff-pyg.html-6"></a> TESTS=$(patsubst %.c,%,$(TEST_SRC))
+<a name="code--ex30.Makefile.diff-pyg.html-7"></a>
+<a name="code--ex30.Makefile.diff-pyg.html-8"></a> TARGET=build/libYOUR_LIBRARY.a
+<a name="code--ex30.Makefile.diff-pyg.html-9"></a><span class="gi">+SO_TARGET=$(patsubst %.a,%.so,$(TARGET))</span>
+<a name="code--ex30.Makefile.diff-pyg.html-10"></a>
+<a name="code--ex30.Makefile.diff-pyg.html-11"></a> # The Target Build
+<a name="code--ex30.Makefile.diff-pyg.html-12"></a><span class="gd">-all: $(TARGET) tests</span>
+<a name="code--ex30.Makefile.diff-pyg.html-13"></a><span class="gi">+all: $(TARGET) $(SO_TARGET) tests</span>
+<a name="code--ex30.Makefile.diff-pyg.html-14"></a>
+<a name="code--ex30.Makefile.diff-pyg.html-15"></a> dev: CFLAGS=-g -Wall -Isrc -Wall -Wextra $(OPTFLAGS)
+<a name="code--ex30.Makefile.diff-pyg.html-16"></a> dev: all
+<a name="code--ex30.Makefile.diff-pyg.html-17"></a><span class="gu">@@ -21,6 +22,9 @@ $(TARGET): build $(OBJECTS)</span>
+<a name="code--ex30.Makefile.diff-pyg.html-18"></a>         ar rcs $@ $(OBJECTS)
+<a name="code--ex30.Makefile.diff-pyg.html-19"></a>         ranlib $@
+<a name="code--ex30.Makefile.diff-pyg.html-20"></a>
+<a name="code--ex30.Makefile.diff-pyg.html-21"></a><span class="gi">+$(SO_TARGET): $(TARGET) $(OBJECTS)</span>
+<a name="code--ex30.Makefile.diff-pyg.html-22"></a><span class="gi">+       $(CC) -shared -o $@ $(OBJECTS)</span>
+<a name="code--ex30.Makefile.diff-pyg.html-23"></a><span class="gi">+</span>
+<a name="code--ex30.Makefile.diff-pyg.html-24"></a> build:
+<a name="code--ex30.Makefile.diff-pyg.html-25"></a>         @mkdir -p build
+<a name="code--ex30.Makefile.diff-pyg.html-26"></a>         @mkdir -p bin
+</pre></div><p>With those changes you should be now building everything and you can finally
+fill in the remaining unit test functions:</p>
+<div class="highlight"><pre><a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-1"></a><span class="cp">#include &quot;minunit.h&quot;</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-2"></a><span class="cp">#include &lt;dlfcn.h&gt;</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-3"></a>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-4"></a><span class="k">typedef</span> <span class="nf">int</span> <span class="p">(</span><span class="o">*</span><span class="n">lib_function</span><span class="p">)(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">data</span><span class="p">);</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-5"></a><span class="kt">char</span> <span class="o">*</span><span class="n">lib_file</span> <span class="o">=</span> <span class="s">&quot;build/libYOUR_LIBRARY.so&quot;</span><span class="p">;</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-6"></a><span class="kt">void</span> <span class="o">*</span><span class="n">lib</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-7"></a>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-8"></a><span class="kt">int</span> <span class="nf">check_function</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">func_to_run</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span> <span class="kt">int</span> <span class="n">expected</span><span class="p">)</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-9"></a><span class="p">{</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-10"></a>    <span class="n">lib_function</span> <span class="n">func</span> <span class="o">=</span> <span class="n">dlsym</span><span class="p">(</span><span class="n">lib</span><span class="p">,</span> <span class="n">func_to_run</span><span class="p">);</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-11"></a>    <span class="n">check</span><span class="p">(</span><span class="n">func</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Did not find %s function in the library %s: %s&quot;</span><span class="p">,</span> <span class="n">func_to_run</span><span class="p">,</span> <span class="n">lib_file</span><span class="p">,</span> <span class="n">dlerror</span><span class="p">());</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-12"></a>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-13"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-14"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="n">expected</span><span class="p">,</span> <span class="s">&quot;Function %s return %d for data: %s&quot;</span><span class="p">,</span> <span class="n">func_to_run</span><span class="p">,</span> <span class="n">rc</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-15"></a>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-16"></a>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-17"></a><span class="nl">error:</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-18"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-19"></a><span class="p">}</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-20"></a>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-21"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_dlopen</span><span class="p">()</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-22"></a><span class="p">{</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-23"></a>    <span class="n">lib</span> <span class="o">=</span> <span class="n">dlopen</span><span class="p">(</span><span class="n">lib_file</span><span class="p">,</span> <span class="n">RTLD_NOW</span><span class="p">);</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-24"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">lib</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to open the library to test.&quot;</span><span class="p">);</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-25"></a>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-26"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-27"></a><span class="p">}</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-28"></a>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-29"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_functions</span><span class="p">()</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-30"></a><span class="p">{</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-31"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">check_function</span><span class="p">(</span><span class="s">&quot;print_a_message&quot;</span><span class="p">,</span> <span class="s">&quot;Hello&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="s">&quot;print_a_message failed.&quot;</span><span class="p">);</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-32"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">check_function</span><span class="p">(</span><span class="s">&quot;uppercase&quot;</span><span class="p">,</span> <span class="s">&quot;Hello&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="s">&quot;uppercase failed.&quot;</span><span class="p">);</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-33"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">check_function</span><span class="p">(</span><span class="s">&quot;lowercase&quot;</span><span class="p">,</span> <span class="s">&quot;Hello&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="s">&quot;lowercase failed.&quot;</span><span class="p">);</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-34"></a>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-35"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-36"></a><span class="p">}</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-37"></a>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-38"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_failures</span><span class="p">()</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-39"></a><span class="p">{</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-40"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">check_function</span><span class="p">(</span><span class="s">&quot;fail_on_purpose&quot;</span><span class="p">,</span> <span class="s">&quot;Hello&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="s">&quot;fail_on_purpose should fail.&quot;</span><span class="p">);</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-41"></a>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-42"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-43"></a><span class="p">}</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-44"></a>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-45"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_dlclose</span><span class="p">()</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-46"></a><span class="p">{</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-47"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">dlclose</span><span class="p">(</span><span class="n">lib</span><span class="p">);</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-48"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to close lib.&quot;</span><span class="p">);</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-49"></a>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-50"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-51"></a><span class="p">}</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-52"></a>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-53"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">all_tests</span><span class="p">()</span> <span class="p">{</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-54"></a>    <span class="n">mu_suite_start</span><span class="p">();</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-55"></a>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-56"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_dlopen</span><span class="p">);</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-57"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_functions</span><span class="p">);</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-58"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_failures</span><span class="p">);</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-59"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_dlclose</span><span class="p">);</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-60"></a>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-61"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-62"></a><span class="p">}</span>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-63"></a>
+<a name="code--c-skeleton--tests--libex29_tests.c-pyg.html-64"></a><span class="n">RUN_TESTS</span><span class="p">(</span><span class="n">all_tests</span><span class="p">);</span>
+</pre></div><p>Hopefully by now you can figure out what's going on, since there's nothing
+new in this except for the <tt class="docutils literal">check_function</tt> function.  This is a common
+pattern where I see that I'll be doing a chunk of code repeatedly, and then
+simply automate it either by creating a function or a macro for it.  In this
+case I'm going to run functions in the <tt class="docutils literal">.so</tt> I load so I just made
+a little function to do it.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>This works but it's probably a bit messy.  Clean the <tt class="docutils literal"><span class="pre">c-skeleton</span></tt>
+directory up so that it has all these files, but remove any of the code
+related to Exercise 29.  You should be able to copy this directory
+over and kickstart new projects without much editing.</li>
+<li>Study the <tt class="docutils literal">runtests.sh</tt> and go read about <tt class="docutils literal">bash</tt> syntax
+so you know what it does.  Think you could write a C version of this
+script?</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

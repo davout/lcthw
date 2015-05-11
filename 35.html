@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 35: Sorting And Searching</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 35: Sorting And Searching</h1>
+            <p>In this exercise I'm going to cover four sorting algorithms and one
+search algorithm.  The sorting algorithms are going to be quick sort,
+heap sort, merge sort, and radix sort.  I'm then going to show you
+how to binary search after you've done a radix sort.</p>
+<p>However, I'm a lazy guy, and in most standard C libraries you have existing
+implementations of the heapsort, quicksort, and mergesort algorithms.  Here's
+how you use them:</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--darray_algos.c-pyg.html-1"></a><span class="cp">#include &lt;lcthw/darray_algos.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.c-pyg.html-2"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.c-pyg.html-3"></a>
+<a name="code--liblcthw--src--lcthw--darray_algos.c-pyg.html-4"></a><span class="kt">int</span> <span class="nf">DArray_qsort</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">DArray_compare</span> <span class="n">cmp</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.c-pyg.html-5"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.c-pyg.html-6"></a>    <span class="n">qsort</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">,</span> <span class="n">DArray_count</span><span class="p">(</span><span class="n">array</span><span class="p">),</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">),</span> <span class="n">cmp</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.c-pyg.html-7"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.c-pyg.html-8"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.c-pyg.html-9"></a>
+<a name="code--liblcthw--src--lcthw--darray_algos.c-pyg.html-10"></a><span class="kt">int</span> <span class="nf">DArray_heapsort</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">DArray_compare</span> <span class="n">cmp</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.c-pyg.html-11"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.c-pyg.html-12"></a>    <span class="k">return</span> <span class="n">heapsort</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">,</span> <span class="n">DArray_count</span><span class="p">(</span><span class="n">array</span><span class="p">),</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">),</span> <span class="n">cmp</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.c-pyg.html-13"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.c-pyg.html-14"></a>
+<a name="code--liblcthw--src--lcthw--darray_algos.c-pyg.html-15"></a><span class="kt">int</span> <span class="nf">DArray_mergesort</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">DArray_compare</span> <span class="n">cmp</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.c-pyg.html-16"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.c-pyg.html-17"></a>    <span class="k">return</span> <span class="n">mergesort</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">,</span> <span class="n">DArray_count</span><span class="p">(</span><span class="n">array</span><span class="p">),</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">),</span> <span class="n">cmp</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.c-pyg.html-18"></a><span class="p">}</span>
+</pre></div><p>That's the whole implementation of the <tt class="docutils literal">darray_algos.c</tt> file, and it
+should work on most modern Unix systems.  What each of these does is sort the
+<tt class="docutils literal">contents</tt> store of void pointers using the <tt class="docutils literal">DArray_compare</tt> you
+give it.  I'll show you the header file for this too:</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--darray_algos.h-pyg.html-1"></a><span class="cp">#ifndef darray_algos_h</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.h-pyg.html-2"></a><span class="cp">#define darray_algos_h</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.h-pyg.html-3"></a>
+<a name="code--liblcthw--src--lcthw--darray_algos.h-pyg.html-4"></a><span class="cp">#include &lt;lcthw/darray.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.h-pyg.html-5"></a>
+<a name="code--liblcthw--src--lcthw--darray_algos.h-pyg.html-6"></a><span class="k">typedef</span> <span class="nf">int</span> <span class="p">(</span><span class="o">*</span><span class="n">DArray_compare</span><span class="p">)(</span><span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">b</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.h-pyg.html-7"></a>
+<a name="code--liblcthw--src--lcthw--darray_algos.h-pyg.html-8"></a><span class="kt">int</span> <span class="nf">DArray_qsort</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">DArray_compare</span> <span class="n">cmp</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.h-pyg.html-9"></a>
+<a name="code--liblcthw--src--lcthw--darray_algos.h-pyg.html-10"></a><span class="kt">int</span> <span class="nf">DArray_heapsort</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">DArray_compare</span> <span class="n">cmp</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.h-pyg.html-11"></a>
+<a name="code--liblcthw--src--lcthw--darray_algos.h-pyg.html-12"></a><span class="kt">int</span> <span class="nf">DArray_mergesort</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="n">DArray_compare</span> <span class="n">cmp</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray_algos.h-pyg.html-13"></a>
+<a name="code--liblcthw--src--lcthw--darray_algos.h-pyg.html-14"></a><span class="cp">#endif</span>
+</pre></div><p>About the same size and should be what you expect.  Next you can see how these
+functions are used in the unit test for these three:</p>
+<div class="highlight"><pre><a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-1"></a><span class="cp">#include &quot;minunit.h&quot;</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-2"></a><span class="cp">#include &lt;lcthw/darray_algos.h&gt;</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-3"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-4"></a><span class="kt">int</span> <span class="nf">testcmp</span><span class="p">(</span><span class="kt">char</span> <span class="o">**</span><span class="n">a</span><span class="p">,</span> <span class="kt">char</span> <span class="o">**</span><span class="n">b</span><span class="p">)</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-5"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-6"></a>    <span class="k">return</span> <span class="n">strcmp</span><span class="p">(</span><span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="o">*</span><span class="n">b</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-7"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-8"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-9"></a><span class="n">DArray</span> <span class="o">*</span><span class="nf">create_words</span><span class="p">()</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-10"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-11"></a>    <span class="n">DArray</span> <span class="o">*</span><span class="n">result</span> <span class="o">=</span> <span class="n">DArray_create</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-12"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">words</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;asdfasfd&quot;</span><span class="p">,</span> <span class="s">&quot;werwar&quot;</span><span class="p">,</span> <span class="s">&quot;13234&quot;</span><span class="p">,</span> <span class="s">&quot;asdfasfd&quot;</span><span class="p">,</span> <span class="s">&quot;oioj&quot;</span><span class="p">};</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-13"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-14"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-15"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-16"></a>        <span class="n">DArray_push</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">words</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-17"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-18"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-19"></a>    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-20"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-21"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-22"></a><span class="kt">int</span> <span class="nf">is_sorted</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">)</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-23"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-24"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-25"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-26"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">DArray_count</span><span class="p">(</span><span class="n">array</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-27"></a>        <span class="k">if</span><span class="p">(</span><span class="n">strcmp</span><span class="p">(</span><span class="n">DArray_get</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">i</span><span class="p">),</span> <span class="n">DArray_get</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-28"></a>            <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-29"></a>        <span class="p">}</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-30"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-31"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-32"></a>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-33"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-34"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-35"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">run_sort_test</span><span class="p">(</span><span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">func</span><span class="p">)(</span><span class="n">DArray</span> <span class="o">*</span><span class="p">,</span> <span class="n">DArray_compare</span><span class="p">),</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">)</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-36"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-37"></a>    <span class="n">DArray</span> <span class="o">*</span><span class="n">words</span> <span class="o">=</span> <span class="n">create_words</span><span class="p">();</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-38"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="o">!</span><span class="n">is_sorted</span><span class="p">(</span><span class="n">words</span><span class="p">),</span> <span class="s">&quot;Words should start not sorted.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-39"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-40"></a>    <span class="n">debug</span><span class="p">(</span><span class="s">&quot;--- Testing %s sorting algorithm&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-41"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">words</span><span class="p">,</span> <span class="p">(</span><span class="n">DArray_compare</span><span class="p">)</span><span class="n">testcmp</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-42"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;sort failed&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-43"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">is_sorted</span><span class="p">(</span><span class="n">words</span><span class="p">),</span> <span class="s">&quot;didn&#39;t sort it&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-44"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-45"></a>    <span class="n">DArray_destroy</span><span class="p">(</span><span class="n">words</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-46"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-47"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-48"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-49"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-50"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_qsort</span><span class="p">()</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-51"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-52"></a>    <span class="k">return</span> <span class="n">run_sort_test</span><span class="p">(</span><span class="n">DArray_qsort</span><span class="p">,</span> <span class="s">&quot;qsort&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-53"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-54"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-55"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_heapsort</span><span class="p">()</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-56"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-57"></a>    <span class="k">return</span> <span class="n">run_sort_test</span><span class="p">(</span><span class="n">DArray_heapsort</span><span class="p">,</span> <span class="s">&quot;heapsort&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-58"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-59"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-60"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_mergesort</span><span class="p">()</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-61"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-62"></a>    <span class="k">return</span> <span class="n">run_sort_test</span><span class="p">(</span><span class="n">DArray_mergesort</span><span class="p">,</span> <span class="s">&quot;mergesort&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-63"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-64"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-65"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-66"></a><span class="kt">char</span> <span class="o">*</span> <span class="nf">all_tests</span><span class="p">()</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-67"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-68"></a>    <span class="n">mu_suite_start</span><span class="p">();</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-69"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-70"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_qsort</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-71"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_heapsort</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-72"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_mergesort</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-73"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-74"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-75"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-76"></a>
+<a name="code--liblcthw--tests--darray_algos_tests.c-pyg.html-77"></a><span class="n">RUN_TESTS</span><span class="p">(</span><span class="n">all_tests</span><span class="p">);</span>
+</pre></div><p>The thing to notice, and actually what tripped me up for a whole day, is
+the definition of <tt class="docutils literal">testcmp</tt> on line 4.  You have to use a <tt class="docutils literal">char **</tt>
+and <em>not</em> a <tt class="docutils literal">char *</tt> because qsort is going to give you a pointer
+to <em>the pointers</em> in the <tt class="docutils literal">contents</tt> array.  The reason is qsort
+and friends are scanning the array, and handing <em>pointers</em> to each element
+in the array to your comparison function.  Since what I have in the <tt class="docutils literal">contents</tt>
+array is pointers, that means you get a pointer to a pointer.</p>
+<p>With that out of the way you have to just implemented three difficult
+sorting algorithms in about 20 lines of code.  You could stop there,
+but part of this book is learning how these algorithms work so the
+extra credit is going to involve implementing each of these.</p>
+<div class="section" id="radix-sort-and-binary-search">
+<h1>Radix Sort And Binary Search</h1>
+<p>Since you're going to implement quicksort, heapsort, and mergesort on your own,
+I'm going to show you a funky algorithm called Radix Sort.  It has a
+slightly narrow usefulness in sorting arrays of integers, and seems to
+work like magic.  In this case I'm going to create a special data
+structure called a <tt class="docutils literal">RadixMap</tt> that is used to map one integer
+to another.</p>
+<p>Here's the header file for the new algorithm that is both algorithm
+and data structure in one:</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-1"></a><span class="cp">#ifndef _radixmap_h</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-2"></a><span class="cp">#include &lt;stdint.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-3"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-4"></a><span class="k">typedef</span> <span class="k">union</span> <span class="n">RMElement</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-5"></a>    <span class="kt">uint64_t</span> <span class="n">raw</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-6"></a>    <span class="k">struct</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-7"></a>        <span class="kt">uint32_t</span> <span class="n">key</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-8"></a>        <span class="kt">uint32_t</span> <span class="n">value</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-9"></a>    <span class="p">}</span> <span class="n">data</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-10"></a><span class="p">}</span> <span class="n">RMElement</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-11"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-12"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="n">RadixMap</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-13"></a>    <span class="kt">size_t</span> <span class="n">max</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-14"></a>    <span class="kt">size_t</span> <span class="n">end</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-15"></a>    <span class="kt">uint32_t</span> <span class="n">counter</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-16"></a>    <span class="n">RMElement</span> <span class="o">*</span><span class="n">contents</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-17"></a>    <span class="n">RMElement</span> <span class="o">*</span><span class="n">temp</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-18"></a><span class="p">}</span> <span class="n">RadixMap</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-19"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-20"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-21"></a><span class="n">RadixMap</span> <span class="o">*</span><span class="nf">RadixMap_create</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">max</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-22"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-23"></a><span class="kt">void</span> <span class="nf">RadixMap_destroy</span><span class="p">(</span><span class="n">RadixMap</span> <span class="o">*</span><span class="n">map</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-24"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-25"></a><span class="kt">void</span> <span class="nf">RadixMap_sort</span><span class="p">(</span><span class="n">RadixMap</span> <span class="o">*</span><span class="n">map</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-26"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-27"></a><span class="n">RMElement</span> <span class="o">*</span><span class="nf">RadixMap_find</span><span class="p">(</span><span class="n">RadixMap</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-28"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-29"></a><span class="kt">int</span> <span class="nf">RadixMap_add</span><span class="p">(</span><span class="n">RadixMap</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">key</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">value</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-30"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-31"></a><span class="kt">int</span> <span class="nf">RadixMap_delete</span><span class="p">(</span><span class="n">RadixMap</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="n">RMElement</span> <span class="o">*</span><span class="n">el</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-32"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.h-pyg.html-33"></a><span class="cp">#endif</span>
+</pre></div><p>You see I have a lot of the same operations as in a <tt class="docutils literal">Dynamic Array</tt> or
+a <tt class="docutils literal">List</tt> data structure, the difference is I'm working only with
+fixed size 32 bit <tt class="docutils literal">uin32_t</tt> integers.  I'm also introducing you to
+a new C concept called the <tt class="docutils literal">union</tt> here.</p>
+<div class="section" id="c-unions">
+<h2>C Unions</h2>
+<p>A union is a way to refer to the same piece of memory in a number of different
+ways.  How they work is you define them like a <tt class="docutils literal">struct</tt> except every
+element is sharing the same space with all of the others.  You can think
+of a union as a picture of the memory, and the elements in the union as
+different colored lenses to view the picture.</p>
+<p>What they are used for is to either save memory, or to convert chunks of memory
+between formats.  The first usage is typically done with &quot;variant types&quot;, where
+you create a struct that has &quot;tag&quot; for the type, and then a union inside it
+for each type.  When used for converting between formats of memory, you simply
+define the two structures, and then access the right one.</p>
+<p>First let me show you how to make a variant type with C unions:</p>
+<div class="highlight"><pre><a name="code--ex35.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex35.c-pyg.html-2"></a>
+<a name="code--ex35.c-pyg.html-3"></a><span class="k">typedef</span> <span class="k">enum</span> <span class="p">{</span>
+<a name="code--ex35.c-pyg.html-4"></a>    <span class="n">TYPE_INT</span><span class="p">,</span>
+<a name="code--ex35.c-pyg.html-5"></a>    <span class="n">TYPE_FLOAT</span><span class="p">,</span>
+<a name="code--ex35.c-pyg.html-6"></a>    <span class="n">TYPE_STRING</span><span class="p">,</span>
+<a name="code--ex35.c-pyg.html-7"></a><span class="p">}</span> <span class="n">VariantType</span><span class="p">;</span>
+<a name="code--ex35.c-pyg.html-8"></a>
+<a name="code--ex35.c-pyg.html-9"></a><span class="k">struct</span> <span class="n">Variant</span> <span class="p">{</span>
+<a name="code--ex35.c-pyg.html-10"></a>    <span class="n">VariantType</span> <span class="n">type</span><span class="p">;</span>
+<a name="code--ex35.c-pyg.html-11"></a>    <span class="k">union</span> <span class="p">{</span>
+<a name="code--ex35.c-pyg.html-12"></a>        <span class="kt">int</span> <span class="n">as_integer</span><span class="p">;</span>
+<a name="code--ex35.c-pyg.html-13"></a>        <span class="kt">float</span> <span class="n">as_float</span><span class="p">;</span>
+<a name="code--ex35.c-pyg.html-14"></a>        <span class="kt">char</span> <span class="o">*</span><span class="n">as_string</span><span class="p">;</span>
+<a name="code--ex35.c-pyg.html-15"></a>    <span class="p">}</span> <span class="n">data</span><span class="p">;</span>
+<a name="code--ex35.c-pyg.html-16"></a><span class="p">};</span>
+<a name="code--ex35.c-pyg.html-17"></a>
+<a name="code--ex35.c-pyg.html-18"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="n">Variant</span> <span class="n">Variant</span><span class="p">;</span>
+<a name="code--ex35.c-pyg.html-19"></a>
+<a name="code--ex35.c-pyg.html-20"></a><span class="kt">void</span> <span class="nf">Variant_print</span><span class="p">(</span><span class="n">Variant</span> <span class="o">*</span><span class="n">var</span><span class="p">)</span>
+<a name="code--ex35.c-pyg.html-21"></a><span class="p">{</span>
+<a name="code--ex35.c-pyg.html-22"></a>    <span class="k">switch</span><span class="p">(</span><span class="n">var</span><span class="o">-&gt;</span><span class="n">type</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex35.c-pyg.html-23"></a>        <span class="k">case</span> <span class="n">TYPE_INT</span>:
+<a name="code--ex35.c-pyg.html-24"></a>           <span class="n">printf</span><span class="p">(</span><span class="s">&quot;INT: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">var</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">as_integer</span><span class="p">);</span>
+<a name="code--ex35.c-pyg.html-25"></a>           <span class="k">break</span><span class="p">;</span>
+<a name="code--ex35.c-pyg.html-26"></a>        <span class="k">case</span> <span class="n">TYPE_FLOAT</span>:
+<a name="code--ex35.c-pyg.html-27"></a>           <span class="n">printf</span><span class="p">(</span><span class="s">&quot;FLOAT: %f</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">var</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">as_float</span><span class="p">);</span>
+<a name="code--ex35.c-pyg.html-28"></a>           <span class="k">break</span><span class="p">;</span>
+<a name="code--ex35.c-pyg.html-29"></a>        <span class="k">case</span> <span class="n">TYPE_STRING</span>:
+<a name="code--ex35.c-pyg.html-30"></a>           <span class="n">printf</span><span class="p">(</span><span class="s">&quot;STRING: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">var</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">as_string</span><span class="p">);</span>
+<a name="code--ex35.c-pyg.html-31"></a>           <span class="k">break</span><span class="p">;</span>
+<a name="code--ex35.c-pyg.html-32"></a>        <span class="nl">default:</span>
+<a name="code--ex35.c-pyg.html-33"></a>           <span class="n">printf</span><span class="p">(</span><span class="s">&quot;UNKNOWN TYPE: %d&quot;</span><span class="p">,</span> <span class="n">var</span><span class="o">-&gt;</span><span class="n">type</span><span class="p">);</span>
+<a name="code--ex35.c-pyg.html-34"></a>    <span class="p">}</span>
+<a name="code--ex35.c-pyg.html-35"></a><span class="p">}</span>
+<a name="code--ex35.c-pyg.html-36"></a>
+<a name="code--ex35.c-pyg.html-37"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex35.c-pyg.html-38"></a><span class="p">{</span>
+<a name="code--ex35.c-pyg.html-39"></a>    <span class="n">Variant</span> <span class="n">a_int</span> <span class="o">=</span> <span class="p">{.</span><span class="n">type</span> <span class="o">=</span> <span class="n">TYPE_INT</span><span class="p">,</span> <span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">as_integer</span> <span class="o">=</span> <span class="mi">100</span><span class="p">};</span>
+<a name="code--ex35.c-pyg.html-40"></a>    <span class="n">Variant</span> <span class="n">a_float</span> <span class="o">=</span> <span class="p">{.</span><span class="n">type</span> <span class="o">=</span> <span class="n">TYPE_FLOAT</span><span class="p">,</span> <span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">as_float</span> <span class="o">=</span> <span class="mf">100.34</span><span class="p">};</span>
+<a name="code--ex35.c-pyg.html-41"></a>    <span class="n">Variant</span> <span class="n">a_string</span> <span class="o">=</span> <span class="p">{.</span><span class="n">type</span> <span class="o">=</span> <span class="n">TYPE_STRING</span><span class="p">,</span> <span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">as_string</span> <span class="o">=</span> <span class="s">&quot;YO DUDE!&quot;</span><span class="p">};</span>
+<a name="code--ex35.c-pyg.html-42"></a>
+<a name="code--ex35.c-pyg.html-43"></a>    <span class="n">Variant_print</span><span class="p">(</span><span class="o">&amp;</span><span class="n">a_int</span><span class="p">);</span>
+<a name="code--ex35.c-pyg.html-44"></a>    <span class="n">Variant_print</span><span class="p">(</span><span class="o">&amp;</span><span class="n">a_float</span><span class="p">);</span>
+<a name="code--ex35.c-pyg.html-45"></a>    <span class="n">Variant_print</span><span class="p">(</span><span class="o">&amp;</span><span class="n">a_string</span><span class="p">);</span>
+<a name="code--ex35.c-pyg.html-46"></a>
+<a name="code--ex35.c-pyg.html-47"></a>    <span class="c1">// here&#39;s how you access them</span>
+<a name="code--ex35.c-pyg.html-48"></a>    <span class="n">a_int</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">as_integer</span> <span class="o">=</span> <span class="mi">200</span><span class="p">;</span>
+<a name="code--ex35.c-pyg.html-49"></a>    <span class="n">a_float</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">as_float</span> <span class="o">=</span> <span class="mf">2.345</span><span class="p">;</span>
+<a name="code--ex35.c-pyg.html-50"></a>    <span class="n">a_string</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">as_string</span> <span class="o">=</span> <span class="s">&quot;Hi there.&quot;</span><span class="p">;</span>
+<a name="code--ex35.c-pyg.html-51"></a>
+<a name="code--ex35.c-pyg.html-52"></a>    <span class="n">Variant_print</span><span class="p">(</span><span class="o">&amp;</span><span class="n">a_int</span><span class="p">);</span>
+<a name="code--ex35.c-pyg.html-53"></a>    <span class="n">Variant_print</span><span class="p">(</span><span class="o">&amp;</span><span class="n">a_float</span><span class="p">);</span>
+<a name="code--ex35.c-pyg.html-54"></a>    <span class="n">Variant_print</span><span class="p">(</span><span class="o">&amp;</span><span class="n">a_string</span><span class="p">);</span>
+<a name="code--ex35.c-pyg.html-55"></a>
+<a name="code--ex35.c-pyg.html-56"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex35.c-pyg.html-57"></a><span class="p">}</span>
+</pre></div><p>You find this in many implementations of dynamic languages.  The language will
+define some base variant type with tags for all the base types of the language,
+and then usually there's a generic &quot;object&quot; tag for the types you create.
+The advantage of doing this is that the <tt class="docutils literal">Variant</tt> only takes up as much
+space as the <tt class="docutils literal">VariantType type</tt> tag and the largest member of the
+union.  This is because C is &quot;layering&quot; each element of the <tt class="docutils literal">Variant.data</tt>
+union together so they overlap, and to do that it sizes it big enough to
+hold the largest element.</p>
+<p>In the <tt class="docutils literal">radixmap.h</tt> file I have the <tt class="docutils literal">RMElement</tt> union which
+demonstrates using a union to convert blocks of memory between types.  In
+this case, I want to store a <tt class="docutils literal">uint64_t</tt> sized integer for sorting
+purposes, but I want a two <tt class="docutils literal">uint32_t</tt> integers for the data to
+represent a <tt class="docutils literal">key</tt> and <tt class="docutils literal">value</tt> pair.  By using a union I'm
+able to access the same block of memory in the two different ways
+I need cleanly.</p>
+</div>
+<div class="section" id="the-implementation">
+<h2>The Implementation</h2>
+<p>I next have the actual <tt class="docutils literal">RadixMap</tt> implementation for each of these
+operations:</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-1"></a><span class="cm">/*</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-2"></a><span class="cm">* Based on code by Andre Reinald then heavily modified by Zed A. Shaw.</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-3"></a><span class="cm">*/</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-4"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-5"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-6"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-7"></a><span class="cp">#include &lt;assert.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-8"></a><span class="cp">#include &lt;lcthw/radixmap.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-9"></a><span class="cp">#include &lt;lcthw/dbg.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-10"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-11"></a><span class="n">RadixMap</span> <span class="o">*</span><span class="nf">RadixMap_create</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">max</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-12"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-13"></a>    <span class="n">RadixMap</span> <span class="o">*</span><span class="n">map</span> <span class="o">=</span> <span class="n">calloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">RadixMap</span><span class="p">),</span> <span class="mi">1</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-14"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">map</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-15"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-16"></a>    <span class="n">map</span><span class="o">-&gt;</span><span class="n">contents</span> <span class="o">=</span> <span class="n">calloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">RMElement</span><span class="p">),</span> <span class="n">max</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-17"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-18"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-19"></a>    <span class="n">map</span><span class="o">-&gt;</span><span class="n">temp</span> <span class="o">=</span> <span class="n">calloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">RMElement</span><span class="p">),</span> <span class="n">max</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-20"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">temp</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-21"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-22"></a>    <span class="n">map</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">=</span> <span class="n">max</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-23"></a>    <span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-24"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-25"></a>    <span class="k">return</span> <span class="n">map</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-26"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-27"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-28"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-29"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-30"></a><span class="kt">void</span> <span class="nf">RadixMap_destroy</span><span class="p">(</span><span class="n">RadixMap</span> <span class="o">*</span><span class="n">map</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-31"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-32"></a>    <span class="k">if</span><span class="p">(</span><span class="n">map</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-33"></a>        <span class="n">free</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-34"></a>        <span class="n">free</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">temp</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-35"></a>        <span class="n">free</span><span class="p">(</span><span class="n">map</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-36"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-37"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-38"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-39"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-40"></a><span class="cp">#define ByteOf(x,y) (((uint8_t *)x)[(y)])</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-41"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-42"></a><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">radix_sort</span><span class="p">(</span><span class="kt">short</span> <span class="n">offset</span><span class="p">,</span> <span class="kt">uint64_t</span> <span class="n">max</span><span class="p">,</span> <span class="kt">uint64_t</span> <span class="o">*</span><span class="n">source</span><span class="p">,</span> <span class="kt">uint64_t</span> <span class="o">*</span><span class="n">dest</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-43"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-44"></a>    <span class="kt">uint64_t</span> <span class="n">count</span><span class="p">[</span><span class="mi">256</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-45"></a>    <span class="kt">uint64_t</span> <span class="o">*</span><span class="n">cp</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-46"></a>    <span class="kt">uint64_t</span> <span class="o">*</span><span class="n">sp</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-47"></a>    <span class="kt">uint64_t</span> <span class="o">*</span><span class="n">end</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-48"></a>    <span class="kt">uint64_t</span> <span class="n">s</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-49"></a>    <span class="kt">uint64_t</span> <span class="n">c</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-50"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-51"></a>    <span class="c1">// count occurences of every byte value</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-52"></a>    <span class="k">for</span> <span class="p">(</span><span class="n">sp</span> <span class="o">=</span> <span class="n">source</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">source</span> <span class="o">+</span> <span class="n">max</span><span class="p">;</span> <span class="n">sp</span> <span class="o">&lt;</span> <span class="n">end</span><span class="p">;</span> <span class="n">sp</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-53"></a>        <span class="n">count</span><span class="p">[</span><span class="n">ByteOf</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="n">offset</span><span class="p">)]</span><span class="o">++</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-54"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-55"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-56"></a>    <span class="c1">// transform count into index by summing elements and storing into same array</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-57"></a>    <span class="k">for</span> <span class="p">(</span><span class="n">s</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">cp</span> <span class="o">=</span> <span class="n">count</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">count</span> <span class="o">+</span> <span class="mi">256</span><span class="p">;</span> <span class="n">cp</span> <span class="o">&lt;</span> <span class="n">end</span><span class="p">;</span> <span class="n">cp</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-58"></a>        <span class="n">c</span> <span class="o">=</span> <span class="o">*</span><span class="n">cp</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-59"></a>        <span class="o">*</span><span class="n">cp</span> <span class="o">=</span> <span class="n">s</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-60"></a>        <span class="n">s</span> <span class="o">+=</span> <span class="n">c</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-61"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-62"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-63"></a>    <span class="c1">// fill dest with the right values in the right place</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-64"></a>    <span class="k">for</span> <span class="p">(</span><span class="n">sp</span> <span class="o">=</span> <span class="n">source</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">source</span> <span class="o">+</span> <span class="n">max</span><span class="p">;</span> <span class="n">sp</span> <span class="o">&lt;</span> <span class="n">end</span><span class="p">;</span> <span class="n">sp</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-65"></a>        <span class="n">cp</span> <span class="o">=</span> <span class="n">count</span> <span class="o">+</span> <span class="n">ByteOf</span><span class="p">(</span><span class="n">sp</span><span class="p">,</span> <span class="n">offset</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-66"></a>        <span class="n">dest</span><span class="p">[</span><span class="o">*</span><span class="n">cp</span><span class="p">]</span> <span class="o">=</span> <span class="o">*</span><span class="n">sp</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-67"></a>        <span class="o">++</span><span class="p">(</span><span class="o">*</span><span class="n">cp</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-68"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-69"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-70"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-71"></a><span class="kt">void</span> <span class="nf">RadixMap_sort</span><span class="p">(</span><span class="n">RadixMap</span> <span class="o">*</span><span class="n">map</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-72"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-73"></a>    <span class="kt">uint64_t</span> <span class="o">*</span><span class="n">source</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">raw</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-74"></a>    <span class="kt">uint64_t</span> <span class="o">*</span><span class="n">temp</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">temp</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="n">raw</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-75"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-76"></a>    <span class="n">radix_sort</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">temp</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-77"></a>    <span class="n">radix_sort</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">source</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-78"></a>    <span class="n">radix_sort</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">temp</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-79"></a>    <span class="n">radix_sort</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">source</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-80"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-81"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-82"></a><span class="n">RMElement</span> <span class="o">*</span><span class="nf">RadixMap_find</span><span class="p">(</span><span class="n">RadixMap</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">to_find</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-83"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-84"></a>    <span class="kt">int</span> <span class="n">low</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-85"></a>    <span class="kt">int</span> <span class="n">high</span> <span class="o">=</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-86"></a>    <span class="n">RMElement</span> <span class="o">*</span><span class="n">data</span> <span class="o">=</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-87"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-88"></a>    <span class="k">while</span> <span class="p">(</span><span class="n">low</span> <span class="o">&lt;=</span> <span class="n">high</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-89"></a>        <span class="kt">int</span> <span class="n">middle</span> <span class="o">=</span> <span class="n">low</span> <span class="o">+</span> <span class="p">(</span><span class="n">high</span> <span class="o">-</span> <span class="n">low</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-90"></a>        <span class="kt">uint32_t</span> <span class="n">key</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">middle</span><span class="p">].</span><span class="n">data</span><span class="p">.</span><span class="n">key</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-91"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-92"></a>        <span class="k">if</span> <span class="p">(</span><span class="n">to_find</span> <span class="o">&lt;</span> <span class="n">key</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-93"></a>            <span class="n">high</span> <span class="o">=</span> <span class="n">middle</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-94"></a>        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">to_find</span> <span class="o">&gt;</span> <span class="n">key</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-95"></a>            <span class="n">low</span> <span class="o">=</span> <span class="n">middle</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-96"></a>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-97"></a>            <span class="k">return</span> <span class="o">&amp;</span><span class="n">data</span><span class="p">[</span><span class="n">middle</span><span class="p">];</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-98"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-99"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-100"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-101"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-102"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-103"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-104"></a><span class="kt">int</span> <span class="nf">RadixMap_add</span><span class="p">(</span><span class="n">RadixMap</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">key</span><span class="p">,</span> <span class="kt">uint32_t</span> <span class="n">value</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-105"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-106"></a>    <span class="n">check</span><span class="p">(</span><span class="n">key</span> <span class="o">&lt;</span> <span class="n">UINT32_MAX</span><span class="p">,</span> <span class="s">&quot;Key can&#39;t be equal to UINT32_MAX.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-107"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-108"></a>    <span class="n">RMElement</span> <span class="n">element</span> <span class="o">=</span> <span class="p">{.</span><span class="n">data</span> <span class="o">=</span> <span class="p">{.</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="p">,</span> <span class="p">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="p">}};</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-109"></a>    <span class="n">check</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">max</span><span class="p">,</span> <span class="s">&quot;RadixMap is full.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-110"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-111"></a>    <span class="n">map</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">[</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span><span class="o">++</span><span class="p">]</span> <span class="o">=</span> <span class="n">element</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-112"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-113"></a>    <span class="n">RadixMap_sort</span><span class="p">(</span><span class="n">map</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-114"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-115"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-116"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-117"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-118"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-119"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-120"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-121"></a><span class="kt">int</span> <span class="nf">RadixMap_delete</span><span class="p">(</span><span class="n">RadixMap</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="n">RMElement</span> <span class="o">*</span><span class="n">el</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-122"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-123"></a>    <span class="n">check</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;There is nothing to delete.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-124"></a>    <span class="n">check</span><span class="p">(</span><span class="n">el</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Can&#39;t delete a NULL element.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-125"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-126"></a>    <span class="n">el</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">UINT32_MAX</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-127"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-128"></a>    <span class="k">if</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-129"></a>        <span class="c1">// don&#39;t bother resorting a map of 1 length</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-130"></a>        <span class="n">RadixMap_sort</span><span class="p">(</span><span class="n">map</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-131"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-132"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-133"></a>    <span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span><span class="o">--</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-134"></a>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-135"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-136"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-137"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--radixmap.c-pyg.html-138"></a><span class="p">}</span>
+</pre></div><p>As usual enter this in and get it working along with the unit test
+then I'll explain what's happening.  Take <em>special</em> care with the
+<tt class="docutils literal">radix_sort</tt> function as it's very particular in how it's
+implemented.</p>
+<div class="highlight"><pre><a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-1"></a><span class="cp">#include &quot;minunit.h&quot;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-2"></a><span class="cp">#include &lt;lcthw/radixmap.h&gt;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-3"></a><span class="cp">#include &lt;time.h&gt;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-4"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-5"></a><span class="k">static</span> <span class="kt">int</span> <span class="nf">make_random</span><span class="p">(</span><span class="n">RadixMap</span> <span class="o">*</span><span class="n">map</span><span class="p">)</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-6"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-7"></a>    <span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-8"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-9"></a>    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-10"></a>        <span class="kt">uint32_t</span> <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="kt">uint32_t</span><span class="p">)(</span><span class="n">rand</span><span class="p">()</span> <span class="o">|</span> <span class="p">(</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="mi">16</span><span class="p">));</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-11"></a>        <span class="n">check</span><span class="p">(</span><span class="n">RadixMap_add</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to add key %u.&quot;</span><span class="p">,</span> <span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-12"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-13"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-14"></a>    <span class="k">return</span> <span class="n">i</span><span class="p">;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-15"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-16"></a><span class="nl">error:</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-17"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-18"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-19"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-20"></a><span class="k">static</span> <span class="kt">int</span> <span class="nf">check_order</span><span class="p">(</span><span class="n">RadixMap</span> <span class="o">*</span><span class="n">map</span><span class="p">)</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-21"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-22"></a>    <span class="n">RMElement</span> <span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-23"></a>    <span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-24"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-25"></a>    <span class="c1">// only signal errors if any (should not be)</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-26"></a>    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span><span class="o">-</span><span class="mi">1</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-27"></a>        <span class="n">d1</span> <span class="o">=</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-28"></a>        <span class="n">d2</span> <span class="o">=</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">];</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-29"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-30"></a>        <span class="k">if</span><span class="p">(</span><span class="n">d1</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">key</span> <span class="o">&gt;</span> <span class="n">d2</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">key</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-31"></a>            <span class="n">debug</span><span class="p">(</span><span class="s">&quot;FAIL:i=%u, key: %u, value: %u, equals max? %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">d1</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">key</span><span class="p">,</span> <span class="n">d1</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">value</span><span class="p">,</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-32"></a>                    <span class="n">d2</span><span class="p">.</span><span class="n">data</span><span class="p">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">UINT32_MAX</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-33"></a>            <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-34"></a>        <span class="p">}</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-35"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-36"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-37"></a>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-38"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-39"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-40"></a><span class="k">static</span> <span class="kt">int</span> <span class="nf">test_search</span><span class="p">(</span><span class="n">RadixMap</span> <span class="o">*</span><span class="n">map</span><span class="p">)</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-41"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-42"></a>    <span class="kt">unsigned</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-43"></a>    <span class="n">RMElement</span> <span class="o">*</span><span class="n">d</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-44"></a>    <span class="n">RMElement</span> <span class="o">*</span><span class="n">found</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-45"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-46"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">/</span> <span class="mi">2</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-47"></a>        <span class="n">d</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-48"></a>        <span class="n">found</span> <span class="o">=</span> <span class="n">RadixMap_find</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">d</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-49"></a>        <span class="n">check</span><span class="p">(</span><span class="n">found</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Didn&#39;t find %u at %u.&quot;</span><span class="p">,</span> <span class="n">d</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">key</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-50"></a>        <span class="n">check</span><span class="p">(</span><span class="n">found</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">d</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">key</span><span class="p">,</span> <span class="s">&quot;Got the wrong result: %p:%u looking for %u at %u&quot;</span><span class="p">,</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-51"></a>                <span class="n">found</span><span class="p">,</span> <span class="n">found</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">key</span><span class="p">,</span> <span class="n">d</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">.</span><span class="n">key</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-52"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-53"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-54"></a>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-55"></a><span class="nl">error:</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-56"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-57"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-58"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-59"></a><span class="c1">// test for big number of elements</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-60"></a><span class="k">static</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">test_operations</span><span class="p">()</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-61"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-62"></a>    <span class="kt">size_t</span> <span class="n">N</span> <span class="o">=</span> <span class="mi">200</span><span class="p">;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-63"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-64"></a>    <span class="n">RadixMap</span> <span class="o">*</span><span class="n">map</span> <span class="o">=</span> <span class="n">RadixMap_create</span><span class="p">(</span><span class="n">N</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-65"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">map</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to make the map.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-66"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">make_random</span><span class="p">(</span><span class="n">map</span><span class="p">),</span> <span class="s">&quot;Didn&#39;t make a random fake radix map.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-67"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-68"></a>    <span class="n">RadixMap_sort</span><span class="p">(</span><span class="n">map</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-69"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">check_order</span><span class="p">(</span><span class="n">map</span><span class="p">),</span> <span class="s">&quot;Failed to properly sort the RadixMap.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-70"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-71"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">test_search</span><span class="p">(</span><span class="n">map</span><span class="p">),</span> <span class="s">&quot;Failed the search test.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-72"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">check_order</span><span class="p">(</span><span class="n">map</span><span class="p">),</span> <span class="s">&quot;RadixMap didn&#39;t stay sorted after search.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-73"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-74"></a>    <span class="k">while</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-75"></a>        <span class="n">RMElement</span> <span class="o">*</span><span class="n">el</span> <span class="o">=</span> <span class="n">RadixMap_find</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">[</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">/</span> <span class="mi">2</span><span class="p">].</span><span class="n">data</span><span class="p">.</span><span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-76"></a>        <span class="n">mu_assert</span><span class="p">(</span><span class="n">el</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Should get a result.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-77"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-78"></a>        <span class="kt">size_t</span> <span class="n">old_end</span> <span class="o">=</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span><span class="p">;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-79"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-80"></a>        <span class="n">mu_assert</span><span class="p">(</span><span class="n">RadixMap_delete</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">el</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Didn&#39;t delete it.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-81"></a>        <span class="n">mu_assert</span><span class="p">(</span><span class="n">old_end</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">==</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">end</span><span class="p">,</span> <span class="s">&quot;Wrong size after delete.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-82"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-83"></a>        <span class="c1">// test that the end is now the old value, but uint32 max so it trails off</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-84"></a>        <span class="n">mu_assert</span><span class="p">(</span><span class="n">check_order</span><span class="p">(</span><span class="n">map</span><span class="p">),</span> <span class="s">&quot;RadixMap didn&#39;t stay sorted after delete.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-85"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-86"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-87"></a>    <span class="n">RadixMap_destroy</span><span class="p">(</span><span class="n">map</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-88"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-89"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-90"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-91"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-92"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-93"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">all_tests</span><span class="p">()</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-94"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-95"></a>    <span class="n">mu_suite_start</span><span class="p">();</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-96"></a>    <span class="n">srand</span><span class="p">(</span><span class="n">time</span><span class="p">(</span><span class="nb">NULL</span><span class="p">));</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-97"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-98"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_operations</span><span class="p">);</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-99"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-100"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-101"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-102"></a>
+<a name="code--liblcthw--tests--radixmap_tests.c-pyg.html-103"></a><span class="n">RUN_TESTS</span><span class="p">(</span><span class="n">all_tests</span><span class="p">);</span>
+</pre></div><p>I shouldn't have to explain too much about the test.  It's simply
+simulating placing random integers into the <tt class="docutils literal">RadixMap</tt> and then
+making sure it can get them out reliably.  Not too interesting.</p>
+<p>In the <tt class="docutils literal">radixmap.c</tt> file most of the operations are easy to understand
+if you read the code.   Here's a description of what the basic functions
+are doing and how they work:</p>
+<dl class="docutils">
+<dt>RadixMap_create</dt>
+<dd>As usual I'm allocating all the memory needed for
+the structures defined in <tt class="docutils literal">radixmap.h</tt>.  I'll be using the
+<tt class="docutils literal">temp</tt> and <tt class="docutils literal">contents</tt> later when I talk about <tt class="docutils literal">radix_sort</tt>.</dd>
+<dt>RadixMap_destroy</dt>
+<dd>Again, just destroying what was created.</dd>
+<dt>radix_sort</dt>
+<dd>The meat of the data structure, but I'll explain what
+it's doing in the next section.</dd>
+<dt>RadixMap_sort</dt>
+<dd>This uses the <tt class="docutils literal">radix_sort</tt> function to actually
+sort the <tt class="docutils literal">contents</tt>.  It does this by sorting between the <tt class="docutils literal">contents</tt>
+and <tt class="docutils literal">temp</tt> until finally <tt class="docutils literal">contents</tt> is sorted.  You'll see how
+this works when I describe <tt class="docutils literal">radix_sort</tt> later.</dd>
+<dt>RadixMap_find</dt>
+<dd>This is using a binary search algorithm to find a key
+you give it.  I'll explain how this works shortly.</dd>
+<dt>RadixMap_add</dt>
+<dd>Using the <tt class="docutils literal">RadixMap_sort</tt> function, this will
+add the key and value you request at the end, then simply sort it again
+so that everything is in the right place.  Once everything is sorted,
+the <tt class="docutils literal">RadixMap_find</tt> will work properly because it's a binary search.</dd>
+<dt>RadixMap_delete</dt>
+<dd>Works the same as <tt class="docutils literal">RadixMap_add</tt> except &quot;deletes&quot;
+elements of the structure by setting their values to the max for a unsigned
+32 bit integer, <tt class="docutils literal">UINT32_MAX</tt>.  This means you can't use that value
+as an key value, but it makes deleting elements easy.  Simply set it to
+that and then sort and it'll get moved to the end.  Now it's deleted.</dd>
+</dl>
+<p>Study the code for the ones I described, and then that just leaves
+<tt class="docutils literal">RadixMap_sort</tt>, <tt class="docutils literal">radix_sort</tt>, and <tt class="docutils literal">RadixMap_find</tt>
+to understand.</p>
+</div>
+<div class="section" id="radixmap-find-and-binary-search">
+<h2>RadixMap_find And Binary Search</h2>
+<p>I'll start with how the binary search is implemented.  Binary search is
+simple algorithm that most people can understand intuitively.
+In fact, you could take a deck of playing cards (or cards with numbers)
+and do this manually.  Here's how this function works, and how a binary
+search works:</p>
+<ul class="simple">
+<li>Set a high and low mark based on the size of the array.</li>
+<li>Get the middle element between the low and high marks.</li>
+<li>If the key is less-than, then the key must be below the middle.  Set high to one less than middle.</li>
+<li>If the key is greater-than, then the key must be above the middle.  Set the low mark one greater than the middle.</li>
+<li>If it's equal then you found it, stop.</li>
+<li>Keep looping until low and high pass each other.  You don't find it if you exit the loop.</li>
+</ul>
+<p>What you are effectively doing is guessing where the key might be by picking
+the middle and comparing it.  Since the data is sorted, you know that the
+the key has to be above or below this.  If it's below, then you just divided
+the search space in half.  You keep going until you either find it or you
+overlap the boundaries and exhaust the search space.</p>
+</div>
+<div class="section" id="radixmap-sort-and-radix-sort">
+<h2>RadixMap_sort And radix_sort</h2>
+<p>A radix sort is easy to understand if you try to do it manually first.  What
+this algorithm does is exploit the fact that numbers are stored with a
+sequence of digits that go from &quot;least significant&quot; to &quot;most significant&quot;.
+It then takes the numbers and buckets them by the digit, and when it has
+processed all the digits the numbers come out sorted.  At first it
+seems like magic, and honestly looking at the code sure seems like it is,
+but try doing it manually once.</p>
+<p>To do this algorithm write out a bunch of three digit numbers, in a random
+order, let's say we do 223, 912, 275, 100, 633, 120, and 380.</p>
+<ul class="simple">
+<li>Place the number in buckets by their 1's digit:
+<tt class="docutils literal">[380, 100, 120], [912], [633, 223], [275]</tt>.</li>
+<li>I now have to go through each of these buckets in order, and then sort it into 10's buckets:
+<tt class="docutils literal">[100], [912], [120, 223], [633], [275], [380]</tt>.</li>
+<li>Now each bucket contains numbers that are sorted by the 1's then 10's digit.  I need to then go through these in order and fill the final 100's buckets:
+<tt class="docutils literal">[100, 120], [223, 275], [380], [633], [912]</tt>.</li>
+<li>At this point each bucket is sorted by 100's, 10's, then 1's and if I
+take each bucket in order I get the final sorted list:
+<tt class="docutils literal">100, 120, 223, 275, 380, 633, 912</tt>.</li>
+</ul>
+<p>Make sure you do this a few times so you understand how it works.  It really is
+a slick little algorithm and most importantly it will work on numbers of
+arbitrary size, so you can sort really huge numbers because you are just doing
+them one byte at a time.</p>
+<p>In my situation the &quot;digits&quot; are individual 8 bit bytes, so I need 256 buckets
+to store the distribution of the numbers by their digits.  I also need a way
+to store them such that I don't use too much space.  If you look at
+<tt class="docutils literal">radix_sort</tt> first thing I do is build a <tt class="docutils literal">count</tt> histogram so I
+know how many occurances of each digit there are for the given <tt class="docutils literal">offset</tt>.</p>
+<p>Once I know the counts for each digit (all 256 of them) I can then use that
+as distribution points into a target array.  For example, if I have 10 bytes
+that are 0x00, then I know I can place them in the first 10 slots of the
+target array.  This gives me an index for where they go in the target
+array, which is the second for-loop in <tt class="docutils literal">radix_sort</tt>.</p>
+<p>Finally, once I know where they can go in the target array, I simply go
+through all the digits in the <tt class="docutils literal">source</tt> array, for this <tt class="docutils literal">offset</tt>
+and place the numbers in their slots in order.  Using the <tt class="docutils literal">ByteOf</tt>
+macro helps keep the code clean since there's a bit of pointer hackery
+to make it work, but the end result is all of the integers will be
+placed in the bucket for their digit when the final for-loop is done.</p>
+<p>What becomes interesting is then how I use this in <tt class="docutils literal">RadixMap_sort</tt>
+to sort these 64 bit integers by just the first 32 bits.  Remember how
+I have the key and value in a union for the <tt class="docutils literal">RMElement</tt> type?
+That means to sort this array by the key I only need to sort the first
+4 bytes (32 bits / 8 bits per byte) of every integer.</p>
+<p>If you look at the <tt class="docutils literal">RadixMap_sort</tt> you see that I grab a quick
+pointer to the <tt class="docutils literal">contents</tt> and <tt class="docutils literal">temp</tt> to for source and
+target arrays, and then I call <tt class="docutils literal">radix_sort</tt> four times.  Each
+time I call it, I alternate source and target and do the next byte.
+When I'm done, the <tt class="docutils literal">radix_sort</tt> has done its job and the final
+copy has been done into the <tt class="docutils literal">contents</tt>.</p>
+</div>
+</div>
+<div class="section" id="how-to-improve-it">
+<h1>How To Improve It</h1>
+<p>There is a big disadvantage to this implementation because it has to
+process the entire array four times on every insertion.  It does do
+it fast, but it'd be better if you could limit the amount of sorting
+by the size of what needs to be sorted.</p>
+<p>There's two ways you can improve this implementation:</p>
+<ul class="simple">
+<li>Use a binary search to find the minimum position for the
+new element, then only sort from there to the end.  You find the
+minimum, put the new element on the end, then just sort from
+the minimum on.   This will cut your sort space down
+considerably most of the time.</li>
+<li>Keep track of the biggest key currently being used, and then only
+sort enough digits to handle that key.  You can also keep track
+of the smallest number, and then only sort the digits necessary
+for the range.  To do this you'll have to start caring about
+CPU integer ordering (endianess).</li>
+</ul>
+<p>Try these optimizations, but after you augment the unit test with some
+timing information so you can see if you're actually improving the
+speed of the implementation.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Implement quicksort, heapsort, and mergesort and provide a <tt class="docutils literal">#define</tt>
+that lets you pick between the two, or create a second set of functions
+you can call.  Use the technique I taught you to read the Wikipedia page
+for the algorithm and then implement it with the psuedo-code.</li>
+<li>Compare the performance of your implementations to the original ones.</li>
+<li>Use these sorting functions to create a <tt class="docutils literal">DArray_sort_add</tt> that
+adds elements to the <tt class="docutils literal">DArray</tt> but sorts the array after.</li>
+<li>Write a <tt class="docutils literal">DArray_find</tt> that uses the binary search algorithm from
+<tt class="docutils literal">RadixMap_find</tt> and the <tt class="docutils literal">DArray_compare</tt> to find elements
+in a sorted <tt class="docutils literal">DArray</tt>.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

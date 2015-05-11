@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 47: A Fast URL Router</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 47: A Fast URL Router</h1>
+            <p>I'm going to now show you how I use the <tt class="docutils literal">TSTree</tt> to do fast URL routing in
+web servers I've written.  This works for simple URL routing you might use at
+the edge of an application, not really for the more complex (and sometimes
+unecessary) routing found in many web application frameworks.</p>
+<p>To play with routing I'm going to make a little command line tool I'm calling
+<tt class="docutils literal">urlor</tt> that reads a simple file of routes, and then prompts the user to
+enter in URLs to look up.</p>
+<div class="highlight"><pre><a name="code--liblcthw--bin--urlor.c-pyg.html-1"></a><span class="cp">#include &lt;lcthw/tstree.h&gt;</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-2"></a><span class="cp">#include &lt;lcthw/bstrlib.h&gt;</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-3"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-4"></a><span class="n">TSTree</span> <span class="o">*</span><span class="nf">add_route_data</span><span class="p">(</span><span class="n">TSTree</span> <span class="o">*</span><span class="n">routes</span><span class="p">,</span> <span class="n">bstring</span> <span class="n">line</span><span class="p">)</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-5"></a><span class="p">{</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-6"></a>    <span class="k">struct</span> <span class="n">bstrList</span> <span class="o">*</span><span class="n">data</span> <span class="o">=</span> <span class="n">bsplit</span><span class="p">(</span><span class="n">line</span><span class="p">,</span> <span class="sc">&#39; &#39;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-7"></a>    <span class="n">check</span><span class="p">(</span><span class="n">data</span><span class="o">-&gt;</span><span class="n">qty</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;Line &#39;%s&#39; does not have 2 columns&quot;</span><span class="p">,</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-8"></a>            <span class="n">bdata</span><span class="p">(</span><span class="n">line</span><span class="p">));</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-9"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-10"></a>    <span class="n">routes</span> <span class="o">=</span> <span class="n">TSTree_insert</span><span class="p">(</span><span class="n">routes</span><span class="p">,</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-11"></a>            <span class="n">bdata</span><span class="p">(</span><span class="n">data</span><span class="o">-&gt;</span><span class="n">entry</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">blength</span><span class="p">(</span><span class="n">data</span><span class="o">-&gt;</span><span class="n">entry</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-12"></a>            <span class="n">bstrcpy</span><span class="p">(</span><span class="n">data</span><span class="o">-&gt;</span><span class="n">entry</span><span class="p">[</span><span class="mi">1</span><span class="p">]));</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-13"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-14"></a>    <span class="n">bstrListDestroy</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-15"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-16"></a>    <span class="k">return</span> <span class="n">routes</span><span class="p">;</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-17"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-18"></a><span class="nl">error:</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-19"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-20"></a><span class="p">}</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-21"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-22"></a><span class="n">TSTree</span> <span class="o">*</span><span class="nf">load_routes</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">file</span><span class="p">)</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-23"></a><span class="p">{</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-24"></a>    <span class="n">TSTree</span> <span class="o">*</span><span class="n">routes</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-25"></a>    <span class="n">bstring</span> <span class="n">line</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-26"></a>    <span class="kt">FILE</span> <span class="o">*</span><span class="n">routes_map</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-27"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-28"></a>    <span class="n">routes_map</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="s">&quot;r&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-29"></a>    <span class="n">check</span><span class="p">(</span><span class="n">routes_map</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to open routes: %s&quot;</span><span class="p">,</span> <span class="n">file</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-30"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-31"></a>    <span class="k">while</span><span class="p">((</span><span class="n">line</span> <span class="o">=</span> <span class="n">bgets</span><span class="p">((</span><span class="n">bNgetc</span><span class="p">)</span><span class="n">fgetc</span><span class="p">,</span> <span class="n">routes_map</span><span class="p">,</span> <span class="sc">&#39;\n&#39;</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-32"></a>        <span class="n">check</span><span class="p">(</span><span class="n">btrimws</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="o">==</span> <span class="n">BSTR_OK</span><span class="p">,</span> <span class="s">&quot;Failed to trim line.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-33"></a>        <span class="n">routes</span> <span class="o">=</span> <span class="n">add_route_data</span><span class="p">(</span><span class="n">routes</span><span class="p">,</span> <span class="n">line</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-34"></a>        <span class="n">check</span><span class="p">(</span><span class="n">routes</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to add route.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-35"></a>        <span class="n">bdestroy</span><span class="p">(</span><span class="n">line</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-36"></a>    <span class="p">}</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-37"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-38"></a>    <span class="n">fclose</span><span class="p">(</span><span class="n">routes_map</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-39"></a>    <span class="k">return</span> <span class="n">routes</span><span class="p">;</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-40"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-41"></a><span class="nl">error:</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-42"></a>    <span class="k">if</span><span class="p">(</span><span class="n">routes_map</span><span class="p">)</span> <span class="n">fclose</span><span class="p">(</span><span class="n">routes_map</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-43"></a>    <span class="k">if</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="n">bdestroy</span><span class="p">(</span><span class="n">line</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-44"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-45"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-46"></a><span class="p">}</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-47"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-48"></a><span class="n">bstring</span> <span class="nf">match_url</span><span class="p">(</span><span class="n">TSTree</span> <span class="o">*</span><span class="n">routes</span><span class="p">,</span> <span class="n">bstring</span> <span class="n">url</span><span class="p">)</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-49"></a><span class="p">{</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-50"></a>    <span class="n">bstring</span> <span class="n">route</span> <span class="o">=</span> <span class="n">TSTree_search</span><span class="p">(</span><span class="n">routes</span><span class="p">,</span> <span class="n">bdata</span><span class="p">(</span><span class="n">url</span><span class="p">),</span> <span class="n">blength</span><span class="p">(</span><span class="n">url</span><span class="p">));</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-51"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-52"></a>    <span class="k">if</span><span class="p">(</span><span class="n">route</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-53"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;No exact match found, trying prefix.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-54"></a>        <span class="n">route</span> <span class="o">=</span> <span class="n">TSTree_search_prefix</span><span class="p">(</span><span class="n">routes</span><span class="p">,</span> <span class="n">bdata</span><span class="p">(</span><span class="n">url</span><span class="p">),</span> <span class="n">blength</span><span class="p">(</span><span class="n">url</span><span class="p">));</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-55"></a>    <span class="p">}</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-56"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-57"></a>    <span class="k">return</span> <span class="n">route</span><span class="p">;</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-58"></a><span class="p">}</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-59"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-60"></a><span class="n">bstring</span> <span class="nf">read_line</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">prompt</span><span class="p">)</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-61"></a><span class="p">{</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-62"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%s&quot;</span><span class="p">,</span> <span class="n">prompt</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-63"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-64"></a>    <span class="n">bstring</span> <span class="n">result</span> <span class="o">=</span> <span class="n">bgets</span><span class="p">((</span><span class="n">bNgetc</span><span class="p">)</span><span class="n">fgetc</span><span class="p">,</span> <span class="n">stdin</span><span class="p">,</span> <span class="sc">&#39;\n&#39;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-65"></a>    <span class="n">check_debug</span><span class="p">(</span><span class="n">result</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;stdin closed.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-66"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-67"></a>    <span class="n">check</span><span class="p">(</span><span class="n">btrimws</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="n">BSTR_OK</span><span class="p">,</span> <span class="s">&quot;Failed to trim.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-68"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-69"></a>    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-70"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-71"></a><span class="nl">error:</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-72"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-73"></a><span class="p">}</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-74"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-75"></a><span class="kt">void</span> <span class="nf">bdestroy_cb</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">ignored</span><span class="p">)</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-76"></a><span class="p">{</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-77"></a>    <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">ignored</span><span class="p">;</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-78"></a>    <span class="n">bdestroy</span><span class="p">((</span><span class="n">bstring</span><span class="p">)</span><span class="n">value</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-79"></a><span class="p">}</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-80"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-81"></a><span class="kt">void</span> <span class="nf">destroy_routes</span><span class="p">(</span><span class="n">TSTree</span> <span class="o">*</span><span class="n">routes</span><span class="p">)</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-82"></a><span class="p">{</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-83"></a>    <span class="n">TSTree_traverse</span><span class="p">(</span><span class="n">routes</span><span class="p">,</span> <span class="n">bdestroy_cb</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-84"></a>    <span class="n">TSTree_destroy</span><span class="p">(</span><span class="n">routes</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-85"></a><span class="p">}</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-86"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-87"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-88"></a><span class="p">{</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-89"></a>    <span class="n">bstring</span> <span class="n">url</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-90"></a>    <span class="n">bstring</span> <span class="n">route</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-91"></a>    <span class="n">check</span><span class="p">(</span><span class="n">argc</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;USAGE: urlor &lt;urlfile&gt;&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-92"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-93"></a>    <span class="n">TSTree</span> <span class="o">*</span><span class="n">routes</span> <span class="o">=</span> <span class="n">load_routes</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-94"></a>    <span class="n">check</span><span class="p">(</span><span class="n">routes</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Your route file has an error.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-95"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-96"></a>    <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-97"></a>        <span class="n">url</span> <span class="o">=</span> <span class="n">read_line</span><span class="p">(</span><span class="s">&quot;URL&gt; &quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-98"></a>        <span class="n">check_debug</span><span class="p">(</span><span class="n">url</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;goodbye.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-99"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-100"></a>        <span class="n">route</span> <span class="o">=</span> <span class="n">match_url</span><span class="p">(</span><span class="n">routes</span><span class="p">,</span> <span class="n">url</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-101"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-102"></a>        <span class="k">if</span><span class="p">(</span><span class="n">route</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-103"></a>            <span class="n">printf</span><span class="p">(</span><span class="s">&quot;MATCH: %s == %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">bdata</span><span class="p">(</span><span class="n">url</span><span class="p">),</span> <span class="n">bdata</span><span class="p">(</span><span class="n">route</span><span class="p">));</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-104"></a>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-105"></a>            <span class="n">printf</span><span class="p">(</span><span class="s">&quot;FAIL: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">bdata</span><span class="p">(</span><span class="n">url</span><span class="p">));</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-106"></a>        <span class="p">}</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-107"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-108"></a>        <span class="n">bdestroy</span><span class="p">(</span><span class="n">url</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-109"></a>    <span class="p">}</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-110"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-111"></a>    <span class="n">destroy_routes</span><span class="p">(</span><span class="n">routes</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-112"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-113"></a>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-114"></a><span class="nl">error:</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-115"></a>    <span class="n">destroy_routes</span><span class="p">(</span><span class="n">routes</span><span class="p">);</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-116"></a>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--bin--urlor.c-pyg.html-117"></a><span class="p">}</span>
+</pre></div><p>I'll then make a simple file with some fake routes to play with:</p>
+<p>/ MainApp
+/hello Hello
+/hello/ Hello
+/signup Signup
+/logout Logout
+/album/ Album</p>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>Once you have <tt class="docutils literal">urlor</tt> working and a routes file, you can try it out:</p>
+<div class="highlight"><pre><a name="code--ex47.sh-session-pyg.html-1"></a><span class="gp">$</span> ./bin/urlor urls.txt
+<a name="code--ex47.sh-session-pyg.html-2"></a><span class="go">URL&gt; /</span>
+<a name="code--ex47.sh-session-pyg.html-3"></a><span class="go">MATCH: / == MainApp</span>
+<a name="code--ex47.sh-session-pyg.html-4"></a><span class="go">URL&gt; /hello</span>
+<a name="code--ex47.sh-session-pyg.html-5"></a><span class="go">MATCH: /hello == Hello</span>
+<a name="code--ex47.sh-session-pyg.html-6"></a><span class="go">URL&gt; /hello/zed  </span>
+<a name="code--ex47.sh-session-pyg.html-7"></a><span class="go">No exact match found, trying prefix.</span>
+<a name="code--ex47.sh-session-pyg.html-8"></a><span class="go">MATCH: /hello/zed == Hello</span>
+<a name="code--ex47.sh-session-pyg.html-9"></a><span class="go">URL&gt; /album</span>
+<a name="code--ex47.sh-session-pyg.html-10"></a><span class="go">No exact match found, trying prefix.</span>
+<a name="code--ex47.sh-session-pyg.html-11"></a><span class="go">MATCH: /album == Album</span>
+<a name="code--ex47.sh-session-pyg.html-12"></a><span class="go">URL&gt; /album/12345</span>
+<a name="code--ex47.sh-session-pyg.html-13"></a><span class="go">No exact match found, trying prefix.</span>
+<a name="code--ex47.sh-session-pyg.html-14"></a><span class="go">MATCH: /album/12345 == Album</span>
+<a name="code--ex47.sh-session-pyg.html-15"></a><span class="go">URL&gt; asdfasfdasfd</span>
+<a name="code--ex47.sh-session-pyg.html-16"></a><span class="go">No exact match found, trying prefix.</span>
+<a name="code--ex47.sh-session-pyg.html-17"></a><span class="go">FAIL: asdfasfdasfd</span>
+<a name="code--ex47.sh-session-pyg.html-18"></a><span class="go">URL&gt; /asdfasdfasf</span>
+<a name="code--ex47.sh-session-pyg.html-19"></a><span class="go">No exact match found, trying prefix.</span>
+<a name="code--ex47.sh-session-pyg.html-20"></a><span class="go">MATCH: /asdfasdfasf == MainApp</span>
+<a name="code--ex47.sh-session-pyg.html-21"></a><span class="go">URL&gt;</span>
+<a name="code--ex47.sh-session-pyg.html-22"></a><span class="gp">$</span>
+</pre></div><p>You can see that the routing system first tries an exact match, and then if it
+can't find one it will give a prefix match.  This is mostly to try out the
+difference between the two.  Depending on the semantics of your URLs you may
+want to always match exactly, always to prefixes, or do both and pick the
+&quot;best&quot; one.</p>
+</div>
+<div class="section" id="how-to-improve-it">
+<h1>How To Improve It</h1>
+<p>URLs are weird because people want them to magically handle all of the insane
+things their web applications do, even if that's not very logical.  In this
+simple demonstration of how to use the <tt class="docutils literal">TSTree</tt> to do routing, it has some
+flaws that people wouldn't be able to articulate.  For example, it will match
+<tt class="docutils literal">/al</tt> to <tt class="docutils literal">Album</tt>, which generall isn't what they want.  They want
+<tt class="docutils literal">/album/*</tt> to match <tt class="docutils literal">Album</tt> and <tt class="docutils literal">/al</tt> to be a 404 error.</p>
+<p>This isn't difficult to implement though, since you could change the prefix
+algorithm to match any way you want.  If you change the matching algorithm to
+find <em>all</em> matching prefixes, and then pick the &quot;best&quot; one, you'll be able to
+do it easily.  In this case, <tt class="docutils literal">/al</tt> could match <tt class="docutils literal">MainApp</tt> or <tt class="docutils literal">Album</tt>.
+Take those results then do a little logic on which is &quot;best&quot;.</p>
+<p>Another thing you can do in a real routing system is use the <tt class="docutils literal">TSTree</tt> to
+finall possible matches, but that these matches are a small set of patterns to
+check.  In many web applications there's a list of regex that have to be
+matched against URLs on each request.  Running all the regex can be time
+consuming, so you can use a <tt class="docutils literal">TSTree</tt> to find all the possible ones by their
+prefixes.  Then you narrow the patterns to try down to a few very quickly.</p>
+<p>Using this method, your URLs will match exactly since you are actually running
+real regex patterns, and they'll match much faster since you're finding them by
+possible prefixes.</p>
+<p>This kind of algorithm also works for anything else that needs to have flexible
+user-visible routing mechanisms.  Domain names, IP address, registries and
+directories, files, or URLs.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Instead of just storing the string for the handler, create an actual engine that uses an
+<tt class="docutils literal">Handler</tt> struct to store the application.  The struct would store the URL it is
+attached to, the name, and anything else you'd need to make an actual routing system.</li>
+<li>Instead of mapping URLs to arbitrary names, map them to .so files and use the <tt class="docutils literal">dlopen</tt>
+system to load handlers on the fly and call callbacks they contain.  Put these callbacks
+in your <tt class="docutils literal">Handler</tt> struct and then you have yourself a fully dynamic callback
+handler system in C.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

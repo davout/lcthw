@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 44: Ring Buffer</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 44: Ring Buffer</h1>
+            <p>Ring buffers are incredibly useful when processing asynchronous IO.  They allow
+one side to receive data in random intervals of random sizes, but feed cohesive
+chunks to another side in set sizes or intervals.  They are a variant on the
+<tt class="docutils literal">Queue</tt> data structure but it focuses on blocks of bytes instead of a list of
+pointers.  In this exercise I'm going to show you the <tt class="docutils literal">RingBuffer</tt> code, and
+then you have to make a full unit test for it.</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-1"></a><span class="cp">#ifndef _lcthw_RingBuffer_h</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-2"></a><span class="cp">#define _lcthw_RingBuffer_h</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-3"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-4"></a><span class="cp">#include &lt;lcthw/bstrlib.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-5"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-6"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-7"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">buffer</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-8"></a>    <span class="kt">int</span> <span class="n">length</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-9"></a>    <span class="kt">int</span> <span class="n">start</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-10"></a>    <span class="kt">int</span> <span class="n">end</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-11"></a><span class="p">}</span> <span class="n">RingBuffer</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-12"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-13"></a><span class="n">RingBuffer</span> <span class="o">*</span><span class="nf">RingBuffer_create</span><span class="p">(</span><span class="kt">int</span> <span class="n">length</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-14"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-15"></a><span class="kt">void</span> <span class="nf">RingBuffer_destroy</span><span class="p">(</span><span class="n">RingBuffer</span> <span class="o">*</span><span class="n">buffer</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-16"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-17"></a><span class="kt">int</span> <span class="nf">RingBuffer_read</span><span class="p">(</span><span class="n">RingBuffer</span> <span class="o">*</span><span class="n">buffer</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">target</span><span class="p">,</span> <span class="kt">int</span> <span class="n">amount</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-18"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-19"></a><span class="kt">int</span> <span class="nf">RingBuffer_write</span><span class="p">(</span><span class="n">RingBuffer</span> <span class="o">*</span><span class="n">buffer</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span> <span class="kt">int</span> <span class="n">length</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-20"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-21"></a><span class="kt">int</span> <span class="nf">RingBuffer_empty</span><span class="p">(</span><span class="n">RingBuffer</span> <span class="o">*</span><span class="n">buffer</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-22"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-23"></a><span class="kt">int</span> <span class="nf">RingBuffer_full</span><span class="p">(</span><span class="n">RingBuffer</span> <span class="o">*</span><span class="n">buffer</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-24"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-25"></a><span class="kt">int</span> <span class="nf">RingBuffer_available_data</span><span class="p">(</span><span class="n">RingBuffer</span> <span class="o">*</span><span class="n">buffer</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-26"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-27"></a><span class="kt">int</span> <span class="nf">RingBuffer_available_space</span><span class="p">(</span><span class="n">RingBuffer</span> <span class="o">*</span><span class="n">buffer</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-28"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-29"></a><span class="n">bstring</span> <span class="nf">RingBuffer_gets</span><span class="p">(</span><span class="n">RingBuffer</span> <span class="o">*</span><span class="n">buffer</span><span class="p">,</span> <span class="kt">int</span> <span class="n">amount</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-30"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-31"></a><span class="cp">#define RingBuffer_available_data(B) (((B)-&gt;end + 1) % (B)-&gt;length - (B)-&gt;start - 1)</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-32"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-33"></a><span class="cp">#define RingBuffer_available_space(B) ((B)-&gt;length - (B)-&gt;end - 1)</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-34"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-35"></a><span class="cp">#define RingBuffer_full(B) (RingBuffer_available_data((B)) - (B)-&gt;length == 0)</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-36"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-37"></a><span class="cp">#define RingBuffer_empty(B) (RingBuffer_available_data((B)) == 0)</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-38"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-39"></a><span class="cp">#define RingBuffer_puts(B, D) RingBuffer_write((B), bdata((D)), blength((D)))</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-40"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-41"></a><span class="cp">#define RingBuffer_get_all(B) RingBuffer_gets((B), RingBuffer_available_data((B)))</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-42"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-43"></a><span class="cp">#define RingBuffer_starts_at(B) ((B)-&gt;buffer + (B)-&gt;start)</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-44"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-45"></a><span class="cp">#define RingBuffer_ends_at(B) ((B)-&gt;buffer + (B)-&gt;end)</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-46"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-47"></a><span class="cp">#define RingBuffer_commit_read(B, A) ((B)-&gt;start = ((B)-&gt;start + (A)) % (B)-&gt;length)</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-48"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-49"></a><span class="cp">#define RingBuffer_commit_write(B, A) ((B)-&gt;end = ((B)-&gt;end + (A)) % (B)-&gt;length)</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-50"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.h-pyg.html-51"></a><span class="cp">#endif</span>
+</pre></div><p>Looking at the data structure you see I have a <tt class="docutils literal">buffer</tt>, <tt class="docutils literal">start</tt> and
+<tt class="docutils literal">end</tt>.  A <tt class="docutils literal">RingBuffer</tt> does nothing more than move the <tt class="docutils literal">start</tt> and
+<tt class="docutils literal">end</tt> around the buffer so that it &quot;loops&quot; whenever it reaches the buffer's
+end.  Doing this gives the illusion of an infinite read device in a small
+space.  I then have a bunch of macros that do various calculations based on
+this.</p>
+<p>Here's the implementation which is a much better explanation of how
+this works:</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-1"></a><span class="cp">#undef NDEBUG</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-2"></a><span class="cp">#include &lt;assert.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-3"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-4"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-5"></a><span class="cp">#include &lt;string.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-6"></a><span class="cp">#include &lt;lcthw/dbg.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-7"></a><span class="cp">#include &lt;lcthw/ringbuffer.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-8"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-9"></a><span class="n">RingBuffer</span> <span class="o">*</span><span class="nf">RingBuffer_create</span><span class="p">(</span><span class="kt">int</span> <span class="n">length</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-10"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-11"></a>    <span class="n">RingBuffer</span> <span class="o">*</span><span class="n">buffer</span> <span class="o">=</span> <span class="n">calloc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">RingBuffer</span><span class="p">));</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-12"></a>    <span class="n">buffer</span><span class="o">-&gt;</span><span class="n">length</span>  <span class="o">=</span> <span class="n">length</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-13"></a>    <span class="n">buffer</span><span class="o">-&gt;</span><span class="n">start</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-14"></a>    <span class="n">buffer</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-15"></a>    <span class="n">buffer</span><span class="o">-&gt;</span><span class="n">buffer</span> <span class="o">=</span> <span class="n">calloc</span><span class="p">(</span><span class="n">buffer</span><span class="o">-&gt;</span><span class="n">length</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-16"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-17"></a>    <span class="k">return</span> <span class="n">buffer</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-18"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-19"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-20"></a><span class="kt">void</span> <span class="nf">RingBuffer_destroy</span><span class="p">(</span><span class="n">RingBuffer</span> <span class="o">*</span><span class="n">buffer</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-21"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-22"></a>    <span class="k">if</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-23"></a>        <span class="n">free</span><span class="p">(</span><span class="n">buffer</span><span class="o">-&gt;</span><span class="n">buffer</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-24"></a>        <span class="n">free</span><span class="p">(</span><span class="n">buffer</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-25"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-26"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-27"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-28"></a><span class="kt">int</span> <span class="nf">RingBuffer_write</span><span class="p">(</span><span class="n">RingBuffer</span> <span class="o">*</span><span class="n">buffer</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span> <span class="kt">int</span> <span class="n">length</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-29"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-30"></a>    <span class="k">if</span><span class="p">(</span><span class="n">RingBuffer_available_data</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-31"></a>        <span class="n">buffer</span><span class="o">-&gt;</span><span class="n">start</span> <span class="o">=</span> <span class="n">buffer</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-32"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-33"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-34"></a>    <span class="n">check</span><span class="p">(</span><span class="n">length</span> <span class="o">&lt;=</span> <span class="n">RingBuffer_available_space</span><span class="p">(</span><span class="n">buffer</span><span class="p">),</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-35"></a>            <span class="s">&quot;Not enough space: %d request, %d available&quot;</span><span class="p">,</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-36"></a>            <span class="n">RingBuffer_available_data</span><span class="p">(</span><span class="n">buffer</span><span class="p">),</span> <span class="n">length</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-37"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-38"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">result</span> <span class="o">=</span> <span class="n">memcpy</span><span class="p">(</span><span class="n">RingBuffer_ends_at</span><span class="p">(</span><span class="n">buffer</span><span class="p">),</span> <span class="n">data</span><span class="p">,</span> <span class="n">length</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-39"></a>    <span class="n">check</span><span class="p">(</span><span class="n">result</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to write data into buffer.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-40"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-41"></a>    <span class="n">RingBuffer_commit_write</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="n">length</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-42"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-43"></a>    <span class="k">return</span> <span class="n">length</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-44"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-45"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-46"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-47"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-48"></a><span class="kt">int</span> <span class="nf">RingBuffer_read</span><span class="p">(</span><span class="n">RingBuffer</span> <span class="o">*</span><span class="n">buffer</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">target</span><span class="p">,</span> <span class="kt">int</span> <span class="n">amount</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-49"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-50"></a>    <span class="n">check_debug</span><span class="p">(</span><span class="n">amount</span> <span class="o">&lt;=</span> <span class="n">RingBuffer_available_data</span><span class="p">(</span><span class="n">buffer</span><span class="p">),</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-51"></a>            <span class="s">&quot;Not enough in the buffer: has %d, needs %d&quot;</span><span class="p">,</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-52"></a>            <span class="n">RingBuffer_available_data</span><span class="p">(</span><span class="n">buffer</span><span class="p">),</span> <span class="n">amount</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-53"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-54"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">result</span> <span class="o">=</span> <span class="n">memcpy</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">RingBuffer_starts_at</span><span class="p">(</span><span class="n">buffer</span><span class="p">),</span> <span class="n">amount</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-55"></a>    <span class="n">check</span><span class="p">(</span><span class="n">result</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to write buffer into data.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-56"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-57"></a>    <span class="n">RingBuffer_commit_read</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="n">amount</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-58"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-59"></a>    <span class="k">if</span><span class="p">(</span><span class="n">buffer</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">==</span> <span class="n">buffer</span><span class="o">-&gt;</span><span class="n">start</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-60"></a>        <span class="n">buffer</span><span class="o">-&gt;</span><span class="n">start</span> <span class="o">=</span> <span class="n">buffer</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-61"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-62"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-63"></a>    <span class="k">return</span> <span class="n">amount</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-64"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-65"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-66"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-67"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-68"></a><span class="n">bstring</span> <span class="nf">RingBuffer_gets</span><span class="p">(</span><span class="n">RingBuffer</span> <span class="o">*</span><span class="n">buffer</span><span class="p">,</span> <span class="kt">int</span> <span class="n">amount</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-69"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-70"></a>    <span class="n">check</span><span class="p">(</span><span class="n">amount</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Need more than 0 for gets, you gave: %d &quot;</span><span class="p">,</span> <span class="n">amount</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-71"></a>    <span class="n">check_debug</span><span class="p">(</span><span class="n">amount</span> <span class="o">&lt;=</span> <span class="n">RingBuffer_available_data</span><span class="p">(</span><span class="n">buffer</span><span class="p">),</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-72"></a>            <span class="s">&quot;Not enough in the buffer.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-73"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-74"></a>    <span class="n">bstring</span> <span class="n">result</span> <span class="o">=</span> <span class="n">blk2bstr</span><span class="p">(</span><span class="n">RingBuffer_starts_at</span><span class="p">(</span><span class="n">buffer</span><span class="p">),</span> <span class="n">amount</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-75"></a>    <span class="n">check</span><span class="p">(</span><span class="n">result</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to create gets result.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-76"></a>    <span class="n">check</span><span class="p">(</span><span class="n">blength</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">==</span> <span class="n">amount</span><span class="p">,</span> <span class="s">&quot;Wrong result length.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-77"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-78"></a>    <span class="n">RingBuffer_commit_read</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="n">amount</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-79"></a>    <span class="n">assert</span><span class="p">(</span><span class="n">RingBuffer_available_data</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="s">&quot;Error in read commit.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-80"></a>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-81"></a>    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-82"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-83"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--ringbuffer.c-pyg.html-84"></a><span class="p">}</span>
+</pre></div><p>This is all there is to a basic <tt class="docutils literal">RingBuffer</tt> implementation.  You can read
+and write blocks of data to it.  You can ask how much is in it and how much
+space it has.  There are some fancier ring buffers that use tricks in the OS to
+create an imaginary infinite store, but those aren't portable.</p>
+<p>Since my <tt class="docutils literal">RingBuffer</tt> deals with reading and writing blocks of memory, I'm
+making sure that any time <tt class="docutils literal">end == start</tt> then I reset them to 0 (zero) so
+that they go to the beginning of the buffer.  In the Wikipedia version it
+wasn't writing blocks of data, so it only had to move <tt class="docutils literal">end</tt> and <tt class="docutils literal">start</tt>
+around in a circle.  To better handle blocks you have to drop to the beginning
+of the internal buffer whenever the data is empty.</p>
+<div class="section" id="the-unit-test">
+<h1>The Unit Test</h1>
+<p>For your unit test, you'll want to test as many possible conditions as you can.
+Easiest way to do that is to preconstruct different <tt class="docutils literal">RingBuffer</tt> structs and
+then manually check that the functions and math work right.  For example, you
+could make one where <tt class="docutils literal">end</tt> is right at the end of the buffer and <tt class="docutils literal">start</tt> is
+right before it, then see how it fails.</p>
+</div>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>Here's my <tt class="docutils literal">ringbuffer_tests</tt> run:</p>
+<div class="highlight"><pre><a name="code--ex44.1.sh-session-pyg.html-1"></a><span class="gp">$</span> ./tests/ringbuffer_tests
+<a name="code--ex44.1.sh-session-pyg.html-2"></a><span class="go">DEBUG tests/ringbuffer_tests.c:60: ----- RUNNING: ./tests/ringbuffer_tests</span>
+<a name="code--ex44.1.sh-session-pyg.html-3"></a><span class="go">----</span>
+<a name="code--ex44.1.sh-session-pyg.html-4"></a><span class="go">RUNNING: ./tests/ringbuffer_tests</span>
+<a name="code--ex44.1.sh-session-pyg.html-5"></a><span class="go">DEBUG tests/ringbuffer_tests.c:53: </span>
+<a name="code--ex44.1.sh-session-pyg.html-6"></a><span class="go">----- test_create</span>
+<a name="code--ex44.1.sh-session-pyg.html-7"></a><span class="go">DEBUG tests/ringbuffer_tests.c:54: </span>
+<a name="code--ex44.1.sh-session-pyg.html-8"></a><span class="go">----- test_read_write</span>
+<a name="code--ex44.1.sh-session-pyg.html-9"></a><span class="go">DEBUG tests/ringbuffer_tests.c:55: </span>
+<a name="code--ex44.1.sh-session-pyg.html-10"></a><span class="go">----- test_destroy</span>
+<a name="code--ex44.1.sh-session-pyg.html-11"></a><span class="go">ALL TESTS PASSED</span>
+<a name="code--ex44.1.sh-session-pyg.html-12"></a><span class="go">Tests run: 3</span>
+<a name="code--ex44.1.sh-session-pyg.html-13"></a><span class="gp">$</span>
+</pre></div><p>You should have at least three tests that confirm all the basic operations,
+and then see how much more you can test beyond what I've done.</p>
+</div>
+<div class="section" id="how-to-improve-it">
+<h1>How To Improve It</h1>
+<p>As usual you should go back and add the defensive programming checks to this
+exercise.  Hopefully you've been doing this because the base code in most of
+<tt class="docutils literal">liblcthw</tt> doesn't check for common defensive programming that I'm teaching
+you.  I leave this to you so that you get used to improving code with these
+extra checks.</p>
+<p>For example, in this ring buffer there's not a lot of checking that an
+access will actually be inside the buffer.</p>
+<p>If you read the <a class="reference external" href="http://en.wikipedia.org/wiki/Ring_buffer">Ring Buffer Wikipedia page</a> you'll see the &quot;Optimized POSIX
+implementation&quot; that uses POSIX specific calls to create an infinite space.
+Study that as I'll have you try it in the extra credit.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Create an alternative implementation of <tt class="docutils literal">RingBuffer</tt> that uses
+the POSIX trick and a unit test for it.</li>
+<li>Add a performance comparison test to this unit test that compares the
+two versions by fuzzing them with random data and random read/write operations.
+Make sure that you setup this fuzzing so that the same operations are done
+to each so you can compare them between runs.</li>
+<li>Use <tt class="docutils literal">callgrind</tt> and <tt class="docutils literal">cachegrind</tt> to compare the
+performance of these two.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

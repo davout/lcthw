@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 4: Introducing Valgrind</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 4: Introducing Valgrind</h1>
+            <p>It's time to learn about another tool you will live and die by as you
+learn C called <tt class="docutils literal">Valgrind</tt>.  I'm introducing <tt class="docutils literal">Valgrind</tt> to you
+now because you're going to use it from now on in the &quot;How To Break It&quot;
+sections of each exercise.  <tt class="docutils literal">Valgrind</tt> is a program that runs your programs,
+and then reports on all of the horrible mistakes you made.  It's a wonderful
+free piece of software that I use constantly while I write C code.</p>
+<p>Remember in the last exercise that I told you to break your code by
+removing one of the arguments to <tt class="docutils literal">printf</tt>?  It printed out some
+funky results, but I didn't tell you why it printed those results out.
+In this exercise we're going to use <tt class="docutils literal">Valgrind</tt> to find out
+why.</p>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p>These first few exercises are mixing some essential tools the rest
+of the book needs with learning a little bit of code.  The reason is
+that most of the folks who read this book are not familiar with compiled
+languages, and definitely not with automation and helpful tools.  By
+getting you to use <tt class="docutils literal">make</tt> and <tt class="docutils literal">Valgrind</tt> right now I can
+then use them to teach you C faster and help you find all your bugs
+early.</p>
+<p class="last">After this exercise we won't do many more tools, it'll be mostly
+code and syntax for a while.  But, we'll also have a few tools we
+can use to really see what's going on and get a good understanding
+of common mistakes and problems.</p>
+</div>
+<div class="section" id="installing-valgrind">
+<h1>Installing Valgrind</h1>
+<p>You could install <tt class="docutils literal">Valgrind</tt> with the package manager for your
+OS, but I want you to learn to install things from source.  This involves
+the following process:</p>
+<ul class="simple">
+<li>Download a source archive file to get the source.</li>
+<li>Unpack the archive to extract the files onto your computer.</li>
+<li>Run <tt class="docutils literal">./configure</tt> to setup build configurations.</li>
+<li>Run <tt class="docutils literal">make</tt> to make it build, just like you've been doing.</li>
+<li>Run <tt class="docutils literal">sudo make install</tt> to install it onto your computer.</li>
+</ul>
+<p>Here's a script of me doing this very process, which I want you to
+try to replicate:</p>
+<div class="highlight"><pre><a name="code--ex4.sh-pyg.html-1"></a><span class="c"># 1) Download it (use wget if you don&#39;t have curl)</span>
+<a name="code--ex4.sh-pyg.html-2"></a>curl -O http://valgrind.org/downloads/valgrind-3.6.1.tar.bz2
+<a name="code--ex4.sh-pyg.html-3"></a>
+<a name="code--ex4.sh-pyg.html-4"></a><span class="c"># use md5sum to make sure it matches the one on the site</span>
+<a name="code--ex4.sh-pyg.html-5"></a>md5sum valgrind-3.6.1.tar.bz2
+<a name="code--ex4.sh-pyg.html-6"></a>
+<a name="code--ex4.sh-pyg.html-7"></a><span class="c"># 2) Unpack it.</span>
+<a name="code--ex4.sh-pyg.html-8"></a>tar -xjvf valgrind-3.6.1.tar.bz2
+<a name="code--ex4.sh-pyg.html-9"></a>
+<a name="code--ex4.sh-pyg.html-10"></a><span class="c"># cd into the newly created directory</span>
+<a name="code--ex4.sh-pyg.html-11"></a><span class="nb">cd </span>valgrind-3.6.1
+<a name="code--ex4.sh-pyg.html-12"></a>
+<a name="code--ex4.sh-pyg.html-13"></a><span class="c"># 3) configure it</span>
+<a name="code--ex4.sh-pyg.html-14"></a>./configure
+<a name="code--ex4.sh-pyg.html-15"></a>
+<a name="code--ex4.sh-pyg.html-16"></a><span class="c"># 4) make it</span>
+<a name="code--ex4.sh-pyg.html-17"></a>make
+<a name="code--ex4.sh-pyg.html-18"></a>
+<a name="code--ex4.sh-pyg.html-19"></a><span class="c"># 5) install it (need root)</span>
+<a name="code--ex4.sh-pyg.html-20"></a>sudo make install
+</pre></div><p>Follow this, but obviously update it for new Valgrind versions.  If it
+doesn't build then try digging into why as well.</p>
+</div>
+<div class="section" id="using-valgrind">
+<h1>Using Valgrind</h1>
+<p>Using <tt class="docutils literal">Valgrind</tt> is easy, you just run <tt class="docutils literal">valgrind theprogram</tt> and
+it runs your program, then prints out all the errors your program made while it
+was running.  In this exercise we'll break down one of the error outputs and
+you can get an instant crash course in &quot;Valgrind hell&quot;.  Then we'll fix the
+program.</p>
+<p>First, here's a purposefully broken version of the <tt class="docutils literal">ex3.c</tt> code
+for you to build, now called <tt class="docutils literal">ex4.c</tt>.  For practice, type it
+in again:</p>
+<div class="highlight"><pre><a name="code--ex4.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex4.c-pyg.html-2"></a>
+<a name="code--ex4.c-pyg.html-3"></a><span class="cm">/* Warning: This program is wrong on purpose. */</span>
+<a name="code--ex4.c-pyg.html-4"></a>
+<a name="code--ex4.c-pyg.html-5"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+<a name="code--ex4.c-pyg.html-6"></a><span class="p">{</span>
+<a name="code--ex4.c-pyg.html-7"></a>    <span class="kt">int</span> <span class="n">age</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+<a name="code--ex4.c-pyg.html-8"></a>    <span class="kt">int</span> <span class="n">height</span><span class="p">;</span>
+<a name="code--ex4.c-pyg.html-9"></a>
+<a name="code--ex4.c-pyg.html-10"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;I am %d years old.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex4.c-pyg.html-11"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;I am %d inches tall.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">height</span><span class="p">);</span>
+<a name="code--ex4.c-pyg.html-12"></a>
+<a name="code--ex4.c-pyg.html-13"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex4.c-pyg.html-14"></a><span class="p">}</span>
+</pre></div><p>You'll see it's the same except I've made two classic mistakes:</p>
+<ul class="simple">
+<li>I've failed to initialize the <tt class="docutils literal">height</tt> variable.</li>
+<li>I've forgot to give the first <tt class="docutils literal">printf</tt> the <tt class="docutils literal">age</tt> variable.</li>
+</ul>
+</div>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>Now we will build this just like normal, but instead of running it
+directly, we'll run it with <tt class="docutils literal">Valgrind</tt> (see Source: &quot;Building and running ex4.c with Valgrind&quot;):</p>
+<div class="highlight"><pre><a name="code--ex4.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex4
+<a name="code--ex4.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g    ex4.c   -o ex4</span>
+<a name="code--ex4.sh-session-pyg.html-3"></a><span class="go">ex4.c: In function &#39;main&#39;:</span>
+<a name="code--ex4.sh-session-pyg.html-4"></a><span class="go">ex4.c:10: warning: too few arguments for format</span>
+<a name="code--ex4.sh-session-pyg.html-5"></a><span class="go">ex4.c:7: warning: unused variable &#39;age&#39;</span>
+<a name="code--ex4.sh-session-pyg.html-6"></a><span class="go">ex4.c:11: warning: &#39;height&#39; is used uninitialized in this function</span>
+<a name="code--ex4.sh-session-pyg.html-7"></a><span class="gp">$</span> valgrind ./ex4
+<a name="code--ex4.sh-session-pyg.html-8"></a><span class="go">==3082== Memcheck, a memory error detector</span>
+<a name="code--ex4.sh-session-pyg.html-9"></a><span class="go">==3082== Copyright (C) 2002-2010, and GNU GPL&#39;d, by Julian Seward et al.</span>
+<a name="code--ex4.sh-session-pyg.html-10"></a><span class="go">==3082== Using Valgrind-3.6.0.SVN-Debian and LibVEX; rerun with -h for copyright info</span>
+<a name="code--ex4.sh-session-pyg.html-11"></a><span class="go">==3082== Command: ./ex4</span>
+<a name="code--ex4.sh-session-pyg.html-12"></a><span class="go">==3082== </span>
+<a name="code--ex4.sh-session-pyg.html-13"></a><span class="go">I am -16775432 years old.</span>
+<a name="code--ex4.sh-session-pyg.html-14"></a><span class="go">==3082== Use of uninitialised value of size 8</span>
+<a name="code--ex4.sh-session-pyg.html-15"></a><span class="go">==3082==    at 0x4E730EB: _itoa_word (_itoa.c:195)</span>
+<a name="code--ex4.sh-session-pyg.html-16"></a><span class="go">==3082==    by 0x4E743D8: vfprintf (vfprintf.c:1613)</span>
+<a name="code--ex4.sh-session-pyg.html-17"></a><span class="go">==3082==    by 0x4E7E6F9: printf (printf.c:35)</span>
+<a name="code--ex4.sh-session-pyg.html-18"></a><span class="go">==3082==    by 0x40052B: main (ex4.c:11)</span>
+<a name="code--ex4.sh-session-pyg.html-19"></a><span class="go">==3082== </span>
+<a name="code--ex4.sh-session-pyg.html-20"></a><span class="go">==3082== Conditional jump or move depends on uninitialised value(s)</span>
+<a name="code--ex4.sh-session-pyg.html-21"></a><span class="go">==3082==    at 0x4E730F5: _itoa_word (_itoa.c:195)</span>
+<a name="code--ex4.sh-session-pyg.html-22"></a><span class="go">==3082==    by 0x4E743D8: vfprintf (vfprintf.c:1613)</span>
+<a name="code--ex4.sh-session-pyg.html-23"></a><span class="go">==3082==    by 0x4E7E6F9: printf (printf.c:35)</span>
+<a name="code--ex4.sh-session-pyg.html-24"></a><span class="go">==3082==    by 0x40052B: main (ex4.c:11)</span>
+<a name="code--ex4.sh-session-pyg.html-25"></a><span class="go">==3082== </span>
+<a name="code--ex4.sh-session-pyg.html-26"></a><span class="go">==3082== Conditional jump or move depends on uninitialised value(s)</span>
+<a name="code--ex4.sh-session-pyg.html-27"></a><span class="go">==3082==    at 0x4E7633B: vfprintf (vfprintf.c:1613)</span>
+<a name="code--ex4.sh-session-pyg.html-28"></a><span class="go">==3082==    by 0x4E7E6F9: printf (printf.c:35)</span>
+<a name="code--ex4.sh-session-pyg.html-29"></a><span class="go">==3082==    by 0x40052B: main (ex4.c:11)</span>
+<a name="code--ex4.sh-session-pyg.html-30"></a><span class="go">==3082== </span>
+<a name="code--ex4.sh-session-pyg.html-31"></a><span class="go">==3082== Conditional jump or move depends on uninitialised value(s)</span>
+<a name="code--ex4.sh-session-pyg.html-32"></a><span class="go">==3082==    at 0x4E744C6: vfprintf (vfprintf.c:1613)</span>
+<a name="code--ex4.sh-session-pyg.html-33"></a><span class="go">==3082==    by 0x4E7E6F9: printf (printf.c:35)</span>
+<a name="code--ex4.sh-session-pyg.html-34"></a><span class="go">==3082==    by 0x40052B: main (ex4.c:11)</span>
+<a name="code--ex4.sh-session-pyg.html-35"></a><span class="go">==3082== </span>
+<a name="code--ex4.sh-session-pyg.html-36"></a><span class="go">I am 0 inches tall.</span>
+<a name="code--ex4.sh-session-pyg.html-37"></a><span class="go">==3082== </span>
+<a name="code--ex4.sh-session-pyg.html-38"></a><span class="go">==3082== HEAP SUMMARY:</span>
+<a name="code--ex4.sh-session-pyg.html-39"></a><span class="go">==3082==     in use at exit: 0 bytes in 0 blocks</span>
+<a name="code--ex4.sh-session-pyg.html-40"></a><span class="go">==3082==   total heap usage: 0 allocs, 0 frees, 0 bytes allocated</span>
+<a name="code--ex4.sh-session-pyg.html-41"></a><span class="go">==3082== </span>
+<a name="code--ex4.sh-session-pyg.html-42"></a><span class="go">==3082== All heap blocks were freed -- no leaks are possible</span>
+<a name="code--ex4.sh-session-pyg.html-43"></a><span class="go">==3082== </span>
+<a name="code--ex4.sh-session-pyg.html-44"></a><span class="go">==3082== For counts of detected and suppressed errors, rerun with: -v</span>
+<a name="code--ex4.sh-session-pyg.html-45"></a><span class="go">==3082== Use --track-origins=yes to see where uninitialised values come from</span>
+<a name="code--ex4.sh-session-pyg.html-46"></a><span class="go">==3082== ERROR SUMMARY: 4 errors from 4 contexts (suppressed: 4 from 4)</span>
+<a name="code--ex4.sh-session-pyg.html-47"></a><span class="gp">$</span>
+</pre></div><div class="note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you run valgrind and it says something like <tt class="docutils literal">by 0x4052112: (below main) <span class="pre">(libc-start.c:226)</span></tt> instead of a line number in <tt class="docutils literal">main.c</tt> then add run your valgrind command like this <tt class="docutils literal">valgrind <span class="pre">--track-origins=yes</span> ./ex4</tt> to make it work.  For some reason the Debian or Ubuntu version of <tt class="docutils literal">valgrind</tt> does this but not
+other versions.</p>
+</div>
+<p>This one is huge because <tt class="docutils literal">Valgrind</tt> is telling you exactly where
+every problem in your program is.  Starting at the top here's what you're
+reading, line by line (line numbers are on the left so you can follow):</p>
+<dl class="docutils">
+<dt>1</dt>
+<dd>You do the usual <tt class="docutils literal">make ex4</tt> and that builds it. Make sure the <tt class="docutils literal">cc</tt> command
+you see is the same and has the <tt class="docutils literal"><span class="pre">-g</span></tt> option or your <tt class="docutils literal">Valgrind</tt> output won't
+have line numbers.</dd>
+<dt>2-6</dt>
+<dd>Notice that the compiler is also yelling at you about this source file and it
+warns you that you have &quot;too few arguments for format&quot;.  That's where you
+forgot to include the <tt class="docutils literal">age</tt> variable.</dd>
+<dt>7</dt>
+<dd>Then you run your program using <tt class="docutils literal">valgrind ./ex4</tt>.</dd>
+<dt>8</dt>
+<dd><p class="first">Then <tt class="docutils literal">Valgrind</tt> goes crazy and yells at you for:</p>
+<dl class="last docutils">
+<dt>14-18</dt>
+<dd>On line <tt class="docutils literal">main (ex4.c:11)</tt> (read as &quot;in the main function in
+file ex4.c at line 11) you have &quot;Use of uninitialised value of size 8&quot;.
+You find this by looking at the error, then you see what's called a &quot;stack trace&quot;
+right under that.  The line to look at first (ex4.c:11) is the bottom one,
+and if you don't see what's going wrong then you go up, so you'd try
+printf.c:35.  Typically it's the bottom most line that matters (in this case, on line 18).</dd>
+<dt>20-24</dt>
+<dd>Next error is yet another one on line ex4.c:11 in the main function. <tt class="docutils literal">Valgrind</tt>
+hates this line.  This error says that some kind of if-statement or while-loop
+happened that was based on an uninitialized variable, in this case height.</dd>
+<dt>25-35</dt>
+<dd>The remaining errors are more of the same because the variable keeps getting
+used.</dd>
+</dl>
+</dd>
+<dt>37-46</dt>
+<dd>Finally the program exits and <tt class="docutils literal">Valgrind</tt> tells you a summary of how bad
+your program is.</dd>
+</dl>
+<p>That is quite a lot of information to take in, but here's how you deal with it:</p>
+<ul class="simple">
+<li>Whenever you run your C code and get it working, rerun it under <tt class="docutils literal">Valgrind</tt>
+to check it.</li>
+<li>For each error that you get, go to the source:line indicated and
+fix it.  You may have to search online for the error message to figure out
+what it means.</li>
+<li>Once your program is &quot;Valgrind pure&quot; then it should be good, and you
+have probably learned something about how you write code.</li>
+</ul>
+<p>In this exercise I'm not expecting you to fully grasp <tt class="docutils literal">Valgrind</tt> right
+away, but instead get it installed and learn how to use it real quick so we
+can apply it to all the later exercises.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Fix this program using <tt class="docutils literal">Valgrind</tt> and the compiler as your guide.</li>
+<li>Read up on <tt class="docutils literal">Valgrind</tt> on the internet.</li>
+<li>Download other software and build it by hand. Try something you already
+use but never built for yourself.</li>
+<li>Look at how the <tt class="docutils literal">Valgrind</tt> source files are laid out in the
+source directory and read its Makefile.  Don't worry, none of that
+makes sense to me either.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

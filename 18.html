@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 18: Pointers To Functions</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 18: Pointers To Functions</h1>
+            <p>Functions in C are actually just pointers to a spot in the
+program where some code exists.  Just like you've been creating
+pointers to structs, strings, and arrays, you can point a
+pointer at a function too.  The main use for this is to pass
+&quot;callbacks&quot; to other functions, or to simulate classes and
+objects.  In this exercise we'll do some callbacks, and in
+the next one we'll make a simple object system.</p>
+<p>The format of a function pointer goes like this:</p>
+<p><tt class="docutils literal">int <span class="pre">(*POINTER_NAME)(int</span> a, int b)</tt></p>
+<p>A way to remember how to write one is to do this:</p>
+<ul class="simple">
+<li>Write a normal function declaration: <tt class="docutils literal">int callme(int a, int b)</tt></li>
+<li>Wrap function name with pointer syntax: <tt class="docutils literal">int <span class="pre">(*callme)(int</span> a, int b)</tt></li>
+<li>Change the name to the pointer name: <tt class="docutils literal">int <span class="pre">(*compare_cb)(int</span> a, int b)</tt></li>
+</ul>
+<p>The key thing to remember is, when you're done with this, the <em>variable</em>
+name for the pointer is called <em>compare_cb</em> and then you use it
+just like it's a function.  This is similar to how pointers to arrays can
+be used just like the arrays they point to.  Pointers to functions can be
+used like the functions they point to but with a different name.</p>
+<pre class="literal-block">
+int (*tester)(int a, int b) = sorted_order;
+printf(&quot;TEST: %d is same as %d\n&quot;, tester(2, 3), sorted_order(2, 3));
+</pre>
+<p>This will work even if the function pointer returns a pointer to something:</p>
+<ul class="simple">
+<li>Write it: <tt class="docutils literal">char *make_coolness(int awesome_levels)</tt></li>
+<li>Wrap it: <tt class="docutils literal">char <span class="pre">*(*make_coolness)(int</span> awesome_levels)</tt></li>
+<li>Rename it: <tt class="docutils literal">char <span class="pre">*(*coolness_cb)(int</span> awesome_levels)</tt></li>
+</ul>
+<p>The next problem to solve with using function pointers is that it's hard to
+give them as parameters to a function, like when you want to pass the function
+callback to another function.  The solution to this is to use <tt class="docutils literal">typedef</tt>
+which is a C keyword for making new names for other more complex types.
+The only thing you need to do is put <tt class="docutils literal">typedef</tt> before the same
+function pointer syntax, and then after that you can use the name like
+it's a type.  I demonstrate this in the following exercise code:</p>
+<div class="highlight"><pre><a name="code--ex18.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex18.c-pyg.html-2"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--ex18.c-pyg.html-3"></a><span class="cp">#include &lt;errno.h&gt;</span>
+<a name="code--ex18.c-pyg.html-4"></a><span class="cp">#include &lt;string.h&gt;</span>
+<a name="code--ex18.c-pyg.html-5"></a>
+<a name="code--ex18.c-pyg.html-6"></a><span class="cm">/** Our old friend die from ex17. */</span>
+<a name="code--ex18.c-pyg.html-7"></a><span class="kt">void</span> <span class="nf">die</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">message</span><span class="p">)</span>
+<a name="code--ex18.c-pyg.html-8"></a><span class="p">{</span>
+<a name="code--ex18.c-pyg.html-9"></a>    <span class="k">if</span><span class="p">(</span><span class="n">errno</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex18.c-pyg.html-10"></a>        <span class="n">perror</span><span class="p">(</span><span class="n">message</span><span class="p">);</span>
+<a name="code--ex18.c-pyg.html-11"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--ex18.c-pyg.html-12"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;ERROR: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">);</span>
+<a name="code--ex18.c-pyg.html-13"></a>    <span class="p">}</span>
+<a name="code--ex18.c-pyg.html-14"></a>
+<a name="code--ex18.c-pyg.html-15"></a>    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<a name="code--ex18.c-pyg.html-16"></a><span class="p">}</span>
+<a name="code--ex18.c-pyg.html-17"></a>
+<a name="code--ex18.c-pyg.html-18"></a><span class="c1">// a typedef creates a fake type, in this</span>
+<a name="code--ex18.c-pyg.html-19"></a><span class="c1">// case for a function pointer</span>
+<a name="code--ex18.c-pyg.html-20"></a><span class="k">typedef</span> <span class="nf">int</span> <span class="p">(</span><span class="o">*</span><span class="n">compare_cb</span><span class="p">)(</span><span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b</span><span class="p">);</span>
+<a name="code--ex18.c-pyg.html-21"></a>
+<a name="code--ex18.c-pyg.html-22"></a><span class="cm">/**</span>
+<a name="code--ex18.c-pyg.html-23"></a><span class="cm"> * A classic bubble sort function that uses the </span>
+<a name="code--ex18.c-pyg.html-24"></a><span class="cm"> * compare_cb to do the sorting. </span>
+<a name="code--ex18.c-pyg.html-25"></a><span class="cm"> */</span>
+<a name="code--ex18.c-pyg.html-26"></a><span class="kt">int</span> <span class="o">*</span><span class="nf">bubble_sort</span><span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="n">numbers</span><span class="p">,</span> <span class="kt">int</span> <span class="n">count</span><span class="p">,</span> <span class="n">compare_cb</span> <span class="n">cmp</span><span class="p">)</span>
+<a name="code--ex18.c-pyg.html-27"></a><span class="p">{</span>
+<a name="code--ex18.c-pyg.html-28"></a>    <span class="kt">int</span> <span class="n">temp</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex18.c-pyg.html-29"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex18.c-pyg.html-30"></a>    <span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex18.c-pyg.html-31"></a>    <span class="kt">int</span> <span class="o">*</span><span class="n">target</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">count</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">));</span>
+<a name="code--ex18.c-pyg.html-32"></a>
+<a name="code--ex18.c-pyg.html-33"></a>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">target</span><span class="p">)</span> <span class="n">die</span><span class="p">(</span><span class="s">&quot;Memory error.&quot;</span><span class="p">);</span>
+<a name="code--ex18.c-pyg.html-34"></a>
+<a name="code--ex18.c-pyg.html-35"></a>    <span class="n">memcpy</span><span class="p">(</span><span class="n">target</span><span class="p">,</span> <span class="n">numbers</span><span class="p">,</span> <span class="n">count</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">));</span>
+<a name="code--ex18.c-pyg.html-36"></a>
+<a name="code--ex18.c-pyg.html-37"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">count</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex18.c-pyg.html-38"></a>        <span class="k">for</span><span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="n">count</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex18.c-pyg.html-39"></a>            <span class="k">if</span><span class="p">(</span><span class="n">cmp</span><span class="p">(</span><span class="n">target</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="n">target</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex18.c-pyg.html-40"></a>                <span class="n">temp</span> <span class="o">=</span> <span class="n">target</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">];</span>
+<a name="code--ex18.c-pyg.html-41"></a>                <span class="n">target</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">target</span><span class="p">[</span><span class="n">j</span><span class="p">];</span>
+<a name="code--ex18.c-pyg.html-42"></a>                <span class="n">target</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">temp</span><span class="p">;</span>
+<a name="code--ex18.c-pyg.html-43"></a>            <span class="p">}</span>
+<a name="code--ex18.c-pyg.html-44"></a>        <span class="p">}</span>
+<a name="code--ex18.c-pyg.html-45"></a>    <span class="p">}</span>
+<a name="code--ex18.c-pyg.html-46"></a>
+<a name="code--ex18.c-pyg.html-47"></a>    <span class="k">return</span> <span class="n">target</span><span class="p">;</span>
+<a name="code--ex18.c-pyg.html-48"></a><span class="p">}</span>
+<a name="code--ex18.c-pyg.html-49"></a>
+<a name="code--ex18.c-pyg.html-50"></a><span class="kt">int</span> <span class="nf">sorted_order</span><span class="p">(</span><span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b</span><span class="p">)</span>
+<a name="code--ex18.c-pyg.html-51"></a><span class="p">{</span>
+<a name="code--ex18.c-pyg.html-52"></a>    <span class="k">return</span> <span class="n">a</span> <span class="o">-</span> <span class="n">b</span><span class="p">;</span>
+<a name="code--ex18.c-pyg.html-53"></a><span class="p">}</span>
+<a name="code--ex18.c-pyg.html-54"></a>
+<a name="code--ex18.c-pyg.html-55"></a><span class="kt">int</span> <span class="nf">reverse_order</span><span class="p">(</span><span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b</span><span class="p">)</span>
+<a name="code--ex18.c-pyg.html-56"></a><span class="p">{</span>
+<a name="code--ex18.c-pyg.html-57"></a>    <span class="k">return</span> <span class="n">b</span> <span class="o">-</span> <span class="n">a</span><span class="p">;</span>
+<a name="code--ex18.c-pyg.html-58"></a><span class="p">}</span>
+<a name="code--ex18.c-pyg.html-59"></a>
+<a name="code--ex18.c-pyg.html-60"></a><span class="kt">int</span> <span class="nf">strange_order</span><span class="p">(</span><span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="kt">int</span> <span class="n">b</span><span class="p">)</span>
+<a name="code--ex18.c-pyg.html-61"></a><span class="p">{</span>
+<a name="code--ex18.c-pyg.html-62"></a>    <span class="k">if</span><span class="p">(</span><span class="n">a</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">b</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex18.c-pyg.html-63"></a>        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex18.c-pyg.html-64"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--ex18.c-pyg.html-65"></a>        <span class="k">return</span> <span class="n">a</span> <span class="o">%</span> <span class="n">b</span><span class="p">;</span>
+<a name="code--ex18.c-pyg.html-66"></a>    <span class="p">}</span>
+<a name="code--ex18.c-pyg.html-67"></a><span class="p">}</span>
+<a name="code--ex18.c-pyg.html-68"></a>
+<a name="code--ex18.c-pyg.html-69"></a><span class="cm">/** </span>
+<a name="code--ex18.c-pyg.html-70"></a><span class="cm"> * Used to test that we are sorting things correctly</span>
+<a name="code--ex18.c-pyg.html-71"></a><span class="cm"> * by doing the sort and printing it out.</span>
+<a name="code--ex18.c-pyg.html-72"></a><span class="cm"> */</span>
+<a name="code--ex18.c-pyg.html-73"></a><span class="kt">void</span> <span class="nf">test_sorting</span><span class="p">(</span><span class="kt">int</span> <span class="o">*</span><span class="n">numbers</span><span class="p">,</span> <span class="kt">int</span> <span class="n">count</span><span class="p">,</span> <span class="n">compare_cb</span> <span class="n">cmp</span><span class="p">)</span>
+<a name="code--ex18.c-pyg.html-74"></a><span class="p">{</span>
+<a name="code--ex18.c-pyg.html-75"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex18.c-pyg.html-76"></a>    <span class="kt">int</span> <span class="o">*</span><span class="n">sorted</span> <span class="o">=</span> <span class="n">bubble_sort</span><span class="p">(</span><span class="n">numbers</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">cmp</span><span class="p">);</span>
+<a name="code--ex18.c-pyg.html-77"></a>
+<a name="code--ex18.c-pyg.html-78"></a>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">sorted</span><span class="p">)</span> <span class="n">die</span><span class="p">(</span><span class="s">&quot;Failed to sort as requested.&quot;</span><span class="p">);</span>
+<a name="code--ex18.c-pyg.html-79"></a>
+<a name="code--ex18.c-pyg.html-80"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">count</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex18.c-pyg.html-81"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d &quot;</span><span class="p">,</span> <span class="n">sorted</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="code--ex18.c-pyg.html-82"></a>    <span class="p">}</span>
+<a name="code--ex18.c-pyg.html-83"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex18.c-pyg.html-84"></a>
+<a name="code--ex18.c-pyg.html-85"></a>    <span class="n">free</span><span class="p">(</span><span class="n">sorted</span><span class="p">);</span>
+<a name="code--ex18.c-pyg.html-86"></a><span class="p">}</span>
+<a name="code--ex18.c-pyg.html-87"></a>
+<a name="code--ex18.c-pyg.html-88"></a>
+<a name="code--ex18.c-pyg.html-89"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex18.c-pyg.html-90"></a><span class="p">{</span>
+<a name="code--ex18.c-pyg.html-91"></a>    <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">)</span> <span class="n">die</span><span class="p">(</span><span class="s">&quot;USAGE: ex18 4 3 1 5 6&quot;</span><span class="p">);</span>
+<a name="code--ex18.c-pyg.html-92"></a>
+<a name="code--ex18.c-pyg.html-93"></a>    <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="n">argc</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex18.c-pyg.html-94"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex18.c-pyg.html-95"></a>    <span class="kt">char</span> <span class="o">**</span><span class="n">inputs</span> <span class="o">=</span> <span class="n">argv</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex18.c-pyg.html-96"></a>
+<a name="code--ex18.c-pyg.html-97"></a>    <span class="kt">int</span> <span class="o">*</span><span class="n">numbers</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="n">count</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">));</span>
+<a name="code--ex18.c-pyg.html-98"></a>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">numbers</span><span class="p">)</span> <span class="n">die</span><span class="p">(</span><span class="s">&quot;Memory error.&quot;</span><span class="p">);</span>
+<a name="code--ex18.c-pyg.html-99"></a>
+<a name="code--ex18.c-pyg.html-100"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">count</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex18.c-pyg.html-101"></a>        <span class="n">numbers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">atoi</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="code--ex18.c-pyg.html-102"></a>    <span class="p">}</span>
+<a name="code--ex18.c-pyg.html-103"></a>
+<a name="code--ex18.c-pyg.html-104"></a>    <span class="n">test_sorting</span><span class="p">(</span><span class="n">numbers</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">sorted_order</span><span class="p">);</span>
+<a name="code--ex18.c-pyg.html-105"></a>    <span class="n">test_sorting</span><span class="p">(</span><span class="n">numbers</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">reverse_order</span><span class="p">);</span>
+<a name="code--ex18.c-pyg.html-106"></a>    <span class="n">test_sorting</span><span class="p">(</span><span class="n">numbers</span><span class="p">,</span> <span class="n">count</span><span class="p">,</span> <span class="n">strange_order</span><span class="p">);</span>
+<a name="code--ex18.c-pyg.html-107"></a>
+<a name="code--ex18.c-pyg.html-108"></a>    <span class="n">free</span><span class="p">(</span><span class="n">numbers</span><span class="p">);</span>
+<a name="code--ex18.c-pyg.html-109"></a>
+<a name="code--ex18.c-pyg.html-110"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex18.c-pyg.html-111"></a><span class="p">}</span>
+</pre></div><p>In this program you're creating a dynamic sorting algorithm that can sort
+an array of integers using a comparison callback.  Here's the breakdown
+of this program so you can clearly understand it:</p>
+<dl class="docutils">
+<dt>ex18.c:1-6</dt>
+<dd>The usual includes needed for all the functions we call.</dd>
+<dt>ex18.c:7-17</dt>
+<dd>This is the <tt class="docutils literal">die</tt> function from the previous exercise
+which I'll use to do error checking.</dd>
+<dt>ex18.c:21</dt>
+<dd>This is where the <tt class="docutils literal">typedef</tt> is used, and later I use
+<tt class="docutils literal">compare_cb</tt> like it's a type similar to <tt class="docutils literal">int</tt> or
+<tt class="docutils literal">char</tt> in <tt class="docutils literal">bubble_sort</tt> and <tt class="docutils literal">test_sorting</tt>.</dd>
+<dt>ex18.c:27-49</dt>
+<dd><p class="first">A bubble sort implementation, which is a very inefficient way
+to sort some integers.  This function contains:</p>
+<dl class="last docutils">
+<dt>ex18.c:27</dt>
+<dd>Here's where I use the <tt class="docutils literal">typedef</tt> for <tt class="docutils literal">compare_cb</tt>
+as the last parameter <tt class="docutils literal">cmp</tt>.  This is now a function that will
+return a comparison between two integers for sorting.</dd>
+<dt>ex18.c:29-34</dt>
+<dd>The usual creation of variables on the stack, followed by
+a new array of integers on the heap using <tt class="docutils literal">malloc</tt>.  Make sure you
+understand what <tt class="docutils literal">count * sizeof(int)</tt> is doing.</dd>
+<dt>ex18.c:38</dt>
+<dd>The outer-loop of the bubble sort.</dd>
+<dt>ex18.c:39</dt>
+<dd>The inner-loop of the bubble sort</dd>
+<dt>ex18.c:40</dt>
+<dd>Now I call the <tt class="docutils literal">cmp</tt> callback just like it's a normal
+function, but instead of being the name of something we defined,
+it's just a pointer to it.  This lets the caller pass in anything
+they want as long as it matches the &quot;signature&quot; of the <tt class="docutils literal">compare_cb</tt>
+<tt class="docutils literal">typedef</tt>.</dd>
+<dt>ex18.c:41-43</dt>
+<dd>The actual swapping operation a bubble sort needs to do what it
+does.</dd>
+<dt>ex18.c:48</dt>
+<dd>Finally return the newly created and sorted result array <tt class="docutils literal">target</tt>.</dd>
+</dl>
+</dd>
+<dt>ex18.c:51-68</dt>
+<dd>Three different versions of the <tt class="docutils literal">compare_cb</tt> function type,
+which needs to have the same definition as the <tt class="docutils literal">typedef</tt> we created.
+The C compiler will complain to you if you get this wrong and say the types don't
+match.</dd>
+<dt>ex18.c:74-87</dt>
+<dd>This is a tester for the <tt class="docutils literal">bubble_sort</tt> function.  You can
+see now how I'm also using <tt class="docutils literal">compare_cb</tt> to then pass to <tt class="docutils literal">bubble_sort</tt>
+demonstrating how these can be passed around like any other pointers.</dd>
+<dt>ex18.c:90-103</dt>
+<dd>A simple main function that sets up an array based on integers
+you pass on the command line, then calls the <tt class="docutils literal">test_sorting</tt> function.</dd>
+<dt>ex18.c:105-107</dt>
+<dd>Finally, you get to see how the <tt class="docutils literal">compare_cb</tt> function
+pointer <tt class="docutils literal">typedef</tt> is used.  I simply call <tt class="docutils literal">test_sorting</tt> but
+give it the name of <tt class="docutils literal">sorted_order</tt>, <tt class="docutils literal">reverse_order</tt>, and
+<tt class="docutils literal">strange_order</tt> as the function to use.  The C compiler then finds
+the address of those functions, and makes it a pointer for
+<tt class="docutils literal">test_sorting</tt> to use.  If you look at <tt class="docutils literal">test_sorting</tt> you'll
+see it then passes each of these to <tt class="docutils literal">bubble_sort</tt> but it actually
+has no idea what they do, only that they match the <tt class="docutils literal">compare_cb</tt>
+prototype and should work.</dd>
+<dt>ex18.c:109</dt>
+<dd>Last thing we do is free up the array of numbers we made.</dd>
+</dl>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>Running this program is simple, but try different combinations of numbers, and
+try even non-numbers to see what it does.</p>
+<div class="highlight"><pre><a name="code--ex18.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex18
+<a name="code--ex18.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g    ex18.c   -o ex18</span>
+<a name="code--ex18.sh-session-pyg.html-3"></a><span class="gp">$</span> ./ex18 4 1 7 3 2 0 8
+<a name="code--ex18.sh-session-pyg.html-4"></a><span class="go">0 1 2 3 4 7 8 </span>
+<a name="code--ex18.sh-session-pyg.html-5"></a><span class="go">8 7 4 3 2 1 0 </span>
+<a name="code--ex18.sh-session-pyg.html-6"></a><span class="go">3 4 2 7 1 0 8 </span>
+<a name="code--ex18.sh-session-pyg.html-7"></a><span class="gp">$</span>
+</pre></div></div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<p>I'm going to have you do something kind of weird to break this.  These function
+pointers are pointers like every other pointer, so they point at blocks of
+memory.  C has this ability to take one pointer and convert it to another so
+you can process the data in different ways.  It's usually not necessary, but
+to show you how to hack your computer, I want you to add this at the end of
+<tt class="docutils literal">test_sorting</tt>:</p>
+<pre class="literal-block">
+unsigned char *data = (unsigned char *)cmp;
+
+for(i = 0; i &lt; 25; i++) {
+    printf(&quot;%02x:&quot;, data[i]);
+}
+
+printf(&quot;\n&quot;);
+</pre>
+<p>This loop is sort of like converting your function to a string and then
+printing out it's contents.  This won't break your program unless the CPU and
+OS you're on has a problem with you doing this.  What you'll see is a string of
+hexadecimal numbers after it prints the sorted array:</p>
+<pre class="literal-block">
+55:48:89:e5:89:7d:fc:89:75:f8:8b:55:fc:8b:45:f8:29:d0:c9:c3:55:48:89:e5:89:
+</pre>
+<p>That should be the raw assembler byte code of the function itself, and you
+should see they start the same, but then have different endings.  It's also
+possible that this loop isn't getting all of the function or is getting too
+much and stomping on another piece of the program.  Without more analysis
+you wouldn't know.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Get a hex editor and open up <tt class="docutils literal">ex18</tt>, then find this sequence
+of hex digits that start a function to see if you can find the function
+in the raw program.</li>
+<li>Find other random things in your hex editor and change them.  Rerun your
+program and see what happens.  Changing strings you find are the easiest
+things to change.</li>
+<li>Pass in the wrong function for the <tt class="docutils literal">compare_cb</tt> and see what
+the C compiler complains about.</li>
+<li>Pass in NULL and watch your program seriously bite it.  Then run
+<tt class="docutils literal">Valgrind</tt> and see what that reports.</li>
+<li>Write another sorting algorithm, then change <tt class="docutils literal">test_sorting</tt> so
+that it takes <em>both</em> an arbitrary sort function and the sort function's
+callback comparison.  Use it to test both of your algorithms.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

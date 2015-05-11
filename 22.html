@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 22: The Stack, Scope, And Globals</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 22: The Stack, Scope, And Globals</h1>
+            <p>The concept of &quot;scope&quot; seems to confuse quite a few people when they first
+start programming.  Originally it came from the use of the system stack
+(which we lightly covered earlier) and how it was used to store temporary
+variables.  In this exercise, we'll learn about scope by learning about
+how a stack data structure works, and then feeding that concept back in
+to how modern C does scoping.</p>
+<p>The real purpose of this exercise though is to learn where the hell things
+live in C.  When someone doesn't grasp the concept of scope, it's almost
+always a failure in understanding where variables are created, exist, and
+die.  Once you know where things are, the concept of scope becomes easier.</p>
+<p>This exercise will require three files:</p>
+<dl class="docutils">
+<dt>ex22.h</dt>
+<dd>A header file that sets up some external variables and some functions.</dd>
+<dt>ex22.c</dt>
+<dd>Not your main like normal, but instead a source file that will become
+a object file <tt class="docutils literal">ex22.o</tt> which will have some functions and variables in it
+defined from <tt class="docutils literal">ex22.h</tt>.</dd>
+<dt>ex22_main.c</dt>
+<dd>The actual <tt class="docutils literal">main</tt> that will include the other two and
+demonstrate what they contain as well as other scope concepts.</dd>
+</dl>
+<div class="section" id="ex22-h-and-ex22-c">
+<h1>ex22.h and ex22.c</h1>
+<p>Your first step is to create your own header file named <tt class="docutils literal">ex22.h</tt> which
+defines the functions and &quot;extern&quot; variables you need:</p>
+<div class="highlight"><pre><a name="code--ex22.h-pyg.html-1"></a><span class="cp">#ifndef _ex22_h</span>
+<a name="code--ex22.h-pyg.html-2"></a><span class="cp">#define _ex22_h</span>
+<a name="code--ex22.h-pyg.html-3"></a>
+<a name="code--ex22.h-pyg.html-4"></a><span class="c1">// makes THE_SIZE in ex22.c available to other .c files</span>
+<a name="code--ex22.h-pyg.html-5"></a><span class="k">extern</span> <span class="kt">int</span> <span class="n">THE_SIZE</span><span class="p">;</span>
+<a name="code--ex22.h-pyg.html-6"></a>
+<a name="code--ex22.h-pyg.html-7"></a><span class="c1">// gets and sets an internal static variable in ex22.c</span>
+<a name="code--ex22.h-pyg.html-8"></a><span class="kt">int</span> <span class="nf">get_age</span><span class="p">();</span>
+<a name="code--ex22.h-pyg.html-9"></a><span class="kt">void</span> <span class="nf">set_age</span><span class="p">(</span><span class="kt">int</span> <span class="n">age</span><span class="p">);</span>
+<a name="code--ex22.h-pyg.html-10"></a>
+<a name="code--ex22.h-pyg.html-11"></a><span class="c1">// updates a static variable that&#39;s inside update_ratio</span>
+<a name="code--ex22.h-pyg.html-12"></a><span class="kt">double</span> <span class="nf">update_ratio</span><span class="p">(</span><span class="kt">double</span> <span class="n">ratio</span><span class="p">);</span>
+<a name="code--ex22.h-pyg.html-13"></a>
+<a name="code--ex22.h-pyg.html-14"></a><span class="kt">void</span> <span class="nf">print_size</span><span class="p">();</span>
+<a name="code--ex22.h-pyg.html-15"></a>
+<a name="code--ex22.h-pyg.html-16"></a><span class="cp">#endif</span>
+</pre></div><p>The important thing to see is the use of <tt class="docutils literal">extern int THE_SIZE</tt>, which I'll
+explain after you also create the matching <tt class="docutils literal">ex22.c</tt>:</p>
+<div class="highlight"><pre><a name="code--ex22.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex22.c-pyg.html-2"></a><span class="cp">#include &quot;ex22.h&quot;</span>
+<a name="code--ex22.c-pyg.html-3"></a><span class="cp">#include &quot;dbg.h&quot;</span>
+<a name="code--ex22.c-pyg.html-4"></a>
+<a name="code--ex22.c-pyg.html-5"></a><span class="kt">int</span> <span class="n">THE_SIZE</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">;</span>
+<a name="code--ex22.c-pyg.html-6"></a>
+<a name="code--ex22.c-pyg.html-7"></a><span class="k">static</span> <span class="kt">int</span> <span class="n">THE_AGE</span> <span class="o">=</span> <span class="mi">37</span><span class="p">;</span>
+<a name="code--ex22.c-pyg.html-8"></a>
+<a name="code--ex22.c-pyg.html-9"></a><span class="kt">int</span> <span class="nf">get_age</span><span class="p">()</span>
+<a name="code--ex22.c-pyg.html-10"></a><span class="p">{</span>
+<a name="code--ex22.c-pyg.html-11"></a>    <span class="k">return</span> <span class="n">THE_AGE</span><span class="p">;</span>
+<a name="code--ex22.c-pyg.html-12"></a><span class="p">}</span>
+<a name="code--ex22.c-pyg.html-13"></a>
+<a name="code--ex22.c-pyg.html-14"></a><span class="kt">void</span> <span class="nf">set_age</span><span class="p">(</span><span class="kt">int</span> <span class="n">age</span><span class="p">)</span>
+<a name="code--ex22.c-pyg.html-15"></a><span class="p">{</span>
+<a name="code--ex22.c-pyg.html-16"></a>    <span class="n">THE_AGE</span> <span class="o">=</span> <span class="n">age</span><span class="p">;</span>
+<a name="code--ex22.c-pyg.html-17"></a><span class="p">}</span>
+<a name="code--ex22.c-pyg.html-18"></a>
+<a name="code--ex22.c-pyg.html-19"></a>
+<a name="code--ex22.c-pyg.html-20"></a><span class="kt">double</span> <span class="nf">update_ratio</span><span class="p">(</span><span class="kt">double</span> <span class="n">new_ratio</span><span class="p">)</span>
+<a name="code--ex22.c-pyg.html-21"></a><span class="p">{</span>
+<a name="code--ex22.c-pyg.html-22"></a>    <span class="k">static</span> <span class="kt">double</span> <span class="n">ratio</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">;</span>
+<a name="code--ex22.c-pyg.html-23"></a>
+<a name="code--ex22.c-pyg.html-24"></a>    <span class="kt">double</span> <span class="n">old_ratio</span> <span class="o">=</span> <span class="n">ratio</span><span class="p">;</span>
+<a name="code--ex22.c-pyg.html-25"></a>    <span class="n">ratio</span> <span class="o">=</span> <span class="n">new_ratio</span><span class="p">;</span>
+<a name="code--ex22.c-pyg.html-26"></a>
+<a name="code--ex22.c-pyg.html-27"></a>    <span class="k">return</span> <span class="n">old_ratio</span><span class="p">;</span>
+<a name="code--ex22.c-pyg.html-28"></a><span class="p">}</span>
+<a name="code--ex22.c-pyg.html-29"></a>
+<a name="code--ex22.c-pyg.html-30"></a><span class="kt">void</span> <span class="nf">print_size</span><span class="p">()</span>
+<a name="code--ex22.c-pyg.html-31"></a><span class="p">{</span>
+<a name="code--ex22.c-pyg.html-32"></a>    <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;I think size is: %d&quot;</span><span class="p">,</span> <span class="n">THE_SIZE</span><span class="p">);</span>
+<a name="code--ex22.c-pyg.html-33"></a><span class="p">}</span>
+</pre></div><p>These two files introduce some new kinds of storage for variables:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">extern</tt></dt>
+<dd>This keyword is a way to tell the compiler &quot;the variable exists,
+but it's in another 'external' location&quot;.  Typically this means that one
+.c file is going to use a variable that's been defined in another .c file.
+In this case, we're saying <tt class="docutils literal">ex22.c</tt> has a variable <tt class="docutils literal">THE_SIZE</tt>
+that will be accessed from <tt class="docutils literal">ex22_main.c</tt>.</dd>
+<dt><tt class="docutils literal">static</tt> (file)</dt>
+<dd>This keyword is kind of the inverse of <tt class="docutils literal">extern</tt> and says
+that the variable is only used in this .c file, and should not be available
+to other parts of the program.  Keep in mind that <tt class="docutils literal">static</tt> at the
+file level (as with <tt class="docutils literal">THE_AGE</tt> here) is different than in other places.</dd>
+<dt><tt class="docutils literal">static</tt> (function)</dt>
+<dd>If you declare a variable in a function <tt class="docutils literal">static</tt>, then
+that variable acts like a <tt class="docutils literal">static</tt> defined in the file, but it's only
+accessible from that function. It's a way of creating constant state for a
+function, but in reality it's <em>rarely</em> used in modern C programming
+because they are hard to use with threads.</dd>
+</dl>
+<p>In these two files then, you have the following variables and functions
+that you should understand:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">THE_SIZE</tt></dt>
+<dd>This is the variable you declared <tt class="docutils literal">extern</tt> that you'll
+play with from <tt class="docutils literal">ex22_main.c</tt>.</dd>
+<dt><tt class="docutils literal">get_age</tt> and <tt class="docutils literal">set_age</tt></dt>
+<dd>These are taking the static variable <tt class="docutils literal">THE_AGE</tt>,
+but exposing it to other parts of the program through functions.  You couldn't
+access <tt class="docutils literal">THE_AGE</tt> directly, but these functions can.</dd>
+<dt><tt class="docutils literal">update_ratio</tt></dt>
+<dd>This takes a new <tt class="docutils literal">ratio</tt> value, and returns the old
+one.  It uses a function level static variable <tt class="docutils literal">ratio</tt> to keep track
+of what the ratio currently is.</dd>
+<dt><tt class="docutils literal">print_size</tt></dt>
+<dd>Prints out what <tt class="docutils literal">ex22.c</tt> thinks <tt class="docutils literal">THE_SIZE</tt> is
+currently.</dd>
+</dl>
+</div>
+<div class="section" id="ex22-main-c">
+<h1>ex22_main.c</h1>
+<p>Once you have that file written, you can then make the main function which
+uses all of these and demonstrates some more scope conventions:</p>
+<div class="highlight"><pre><a name="code--ex22_main.c-pyg.html-1"></a><span class="cp">#include &quot;ex22.h&quot;</span>
+<a name="code--ex22_main.c-pyg.html-2"></a><span class="cp">#include &quot;dbg.h&quot;</span>
+<a name="code--ex22_main.c-pyg.html-3"></a>
+<a name="code--ex22_main.c-pyg.html-4"></a><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">MY_NAME</span> <span class="o">=</span> <span class="s">&quot;Zed A. Shaw&quot;</span><span class="p">;</span>
+<a name="code--ex22_main.c-pyg.html-5"></a>
+<a name="code--ex22_main.c-pyg.html-6"></a><span class="kt">void</span> <span class="nf">scope_demo</span><span class="p">(</span><span class="kt">int</span> <span class="n">count</span><span class="p">)</span>
+<a name="code--ex22_main.c-pyg.html-7"></a><span class="p">{</span>
+<a name="code--ex22_main.c-pyg.html-8"></a>    <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;count is: %d&quot;</span><span class="p">,</span> <span class="n">count</span><span class="p">);</span>
+<a name="code--ex22_main.c-pyg.html-9"></a>
+<a name="code--ex22_main.c-pyg.html-10"></a>    <span class="k">if</span><span class="p">(</span><span class="n">count</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex22_main.c-pyg.html-11"></a>        <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="mi">100</span><span class="p">;</span>  <span class="c1">// BAD! BUGS!</span>
+<a name="code--ex22_main.c-pyg.html-12"></a>
+<a name="code--ex22_main.c-pyg.html-13"></a>        <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;count in this scope is %d&quot;</span><span class="p">,</span> <span class="n">count</span><span class="p">);</span>
+<a name="code--ex22_main.c-pyg.html-14"></a>    <span class="p">}</span>
+<a name="code--ex22_main.c-pyg.html-15"></a>
+<a name="code--ex22_main.c-pyg.html-16"></a>    <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;count is at exit: %d&quot;</span><span class="p">,</span> <span class="n">count</span><span class="p">);</span>
+<a name="code--ex22_main.c-pyg.html-17"></a>
+<a name="code--ex22_main.c-pyg.html-18"></a>    <span class="n">count</span> <span class="o">=</span> <span class="mi">3000</span><span class="p">;</span>
+<a name="code--ex22_main.c-pyg.html-19"></a>
+<a name="code--ex22_main.c-pyg.html-20"></a>    <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;count after assign: %d&quot;</span><span class="p">,</span> <span class="n">count</span><span class="p">);</span>
+<a name="code--ex22_main.c-pyg.html-21"></a><span class="p">}</span>
+<a name="code--ex22_main.c-pyg.html-22"></a>
+<a name="code--ex22_main.c-pyg.html-23"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex22_main.c-pyg.html-24"></a><span class="p">{</span>
+<a name="code--ex22_main.c-pyg.html-25"></a>    <span class="c1">// test out THE_AGE accessors</span>
+<a name="code--ex22_main.c-pyg.html-26"></a>    <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;My name: %s, age: %d&quot;</span><span class="p">,</span> <span class="n">MY_NAME</span><span class="p">,</span> <span class="n">get_age</span><span class="p">());</span>
+<a name="code--ex22_main.c-pyg.html-27"></a>
+<a name="code--ex22_main.c-pyg.html-28"></a>    <span class="n">set_age</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+<a name="code--ex22_main.c-pyg.html-29"></a>
+<a name="code--ex22_main.c-pyg.html-30"></a>    <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;My age is now: %d&quot;</span><span class="p">,</span> <span class="n">get_age</span><span class="p">());</span>
+<a name="code--ex22_main.c-pyg.html-31"></a>
+<a name="code--ex22_main.c-pyg.html-32"></a>    <span class="c1">// test out THE_SIZE extern</span>
+<a name="code--ex22_main.c-pyg.html-33"></a>    <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;THE_SIZE is: %d&quot;</span><span class="p">,</span> <span class="n">THE_SIZE</span><span class="p">);</span>
+<a name="code--ex22_main.c-pyg.html-34"></a>    <span class="n">print_size</span><span class="p">();</span>
+<a name="code--ex22_main.c-pyg.html-35"></a>
+<a name="code--ex22_main.c-pyg.html-36"></a>    <span class="n">THE_SIZE</span> <span class="o">=</span> <span class="mi">9</span><span class="p">;</span>
+<a name="code--ex22_main.c-pyg.html-37"></a>
+<a name="code--ex22_main.c-pyg.html-38"></a>    <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;THE SIZE is now: %d&quot;</span><span class="p">,</span> <span class="n">THE_SIZE</span><span class="p">);</span>
+<a name="code--ex22_main.c-pyg.html-39"></a>    <span class="n">print_size</span><span class="p">();</span>
+<a name="code--ex22_main.c-pyg.html-40"></a>
+<a name="code--ex22_main.c-pyg.html-41"></a>    <span class="c1">// test the ratio function static</span>
+<a name="code--ex22_main.c-pyg.html-42"></a>    <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;Ratio at first: %f&quot;</span><span class="p">,</span> <span class="n">update_ratio</span><span class="p">(</span><span class="mf">2.0</span><span class="p">));</span>
+<a name="code--ex22_main.c-pyg.html-43"></a>    <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;Ratio again: %f&quot;</span><span class="p">,</span> <span class="n">update_ratio</span><span class="p">(</span><span class="mf">10.0</span><span class="p">));</span>
+<a name="code--ex22_main.c-pyg.html-44"></a>    <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;Ratio once more: %f&quot;</span><span class="p">,</span> <span class="n">update_ratio</span><span class="p">(</span><span class="mf">300.0</span><span class="p">));</span>
+<a name="code--ex22_main.c-pyg.html-45"></a>
+<a name="code--ex22_main.c-pyg.html-46"></a>    <span class="c1">// test the scope demo</span>
+<a name="code--ex22_main.c-pyg.html-47"></a>    <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span>
+<a name="code--ex22_main.c-pyg.html-48"></a>    <span class="n">scope_demo</span><span class="p">(</span><span class="n">count</span><span class="p">);</span>
+<a name="code--ex22_main.c-pyg.html-49"></a>    <span class="n">scope_demo</span><span class="p">(</span><span class="n">count</span> <span class="o">*</span> <span class="mi">20</span><span class="p">);</span>
+<a name="code--ex22_main.c-pyg.html-50"></a>
+<a name="code--ex22_main.c-pyg.html-51"></a>    <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;count after calling scope_demo: %d&quot;</span><span class="p">,</span> <span class="n">count</span><span class="p">);</span>
+<a name="code--ex22_main.c-pyg.html-52"></a>
+<a name="code--ex22_main.c-pyg.html-53"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex22_main.c-pyg.html-54"></a><span class="p">}</span>
+</pre></div><p>I'll break this file down line-by-line, and as I do you should find each
+variable I mention and where it lives.</p>
+<dl class="docutils">
+<dt>ex22_main.c:4</dt>
+<dd>Making a <tt class="docutils literal">const</tt> which stands for constant and is an
+alternative to using a <tt class="docutils literal">define</tt> to create a constant variable.</dd>
+<dt>ex22_main.c:6</dt>
+<dd>A simple function that demonstrates more scope issues in a function.</dd>
+<dt>ex22_main.c:8</dt>
+<dd>Prints out the value of <tt class="docutils literal">count</tt> as it is at the top of the function.</dd>
+<dt>ex22_main.c:10</dt>
+<dd>An <tt class="docutils literal"><span class="pre">if-statement</span></tt> that starts a new <em>scope block</em>, and then
+has another <tt class="docutils literal">count</tt> variable in it.  This version of <tt class="docutils literal">count</tt>
+is actually a whole new variable. It's kind of like the <tt class="docutils literal"><span class="pre">if-statement</span></tt>
+started a new &quot;mini function&quot;.</dd>
+<dt>ex22_main.c:11</dt>
+<dd>The <tt class="docutils literal">count</tt> that is local to this block is actually different
+from the one in the function's parameter list.  What what happens as we
+continue.</dd>
+<dt>ex22_main.c:13</dt>
+<dd>Prints it out so you can see it's actually 100 here, not what was
+passed to <tt class="docutils literal">scope_demo</tt>.</dd>
+<dt>ex22_main.c:16</dt>
+<dd>Now for the freaky part.  You have <tt class="docutils literal">count</tt> in two places: the
+parameters to this function, and in the <tt class="docutils literal"><span class="pre">if-statement</span></tt>.  The
+<tt class="docutils literal"><span class="pre">if-statement</span></tt> created a new block, so the <tt class="docutils literal">count</tt> on line
+11 <em>does not impact the parameter with the same name</em>.  This line
+prints it out and you'll see that it prints the value of the parameter,
+not 100.</dd>
+<dt>ex22_main.c:18-20</dt>
+<dd>Then I set the parameter <tt class="docutils literal">count</tt> to 3000 and print that
+out, which will demonstrate that you can change function parameters
+and they don't impact the caller's version of the variable.</dd>
+</dl>
+<p>Make sure you trace through this function, but don't think that you understand
+scope quite yet.  Just start to realize that if you make a variable inside a
+block (as in <tt class="docutils literal"><span class="pre">if-statements</span></tt> or <tt class="docutils literal"><span class="pre">while-loops</span></tt>), then those variables
+are <em>new</em> variables that exist only in that block.  This is crucial to
+understand, and is also a <em>source of many bugs</em>.  We'll address why
+you shouldn't do this shortly.</p>
+<p>The rest of the <tt class="docutils literal">ex22_main.c</tt> then demonstrates all of these by
+manipulating and printing them out:</p>
+<dl class="docutils">
+<dt>ex22_main.c:26</dt>
+<dd>Prints out the current values of <tt class="docutils literal">MY_NAME</tt> and gets
+<tt class="docutils literal">THE_AGE</tt> from <tt class="docutils literal">ex22.c</tt> using the accessor function
+<tt class="docutils literal">get_age</tt>.</dd>
+<dt>ex22_main.c:27-30</dt>
+<dd>Uses <tt class="docutils literal">set_age</tt> in <tt class="docutils literal">ex22.c</tt> to change <tt class="docutils literal">THE_AGE</tt>
+and then print it out.</dd>
+<dt>ex22_main.c:33-39</dt>
+<dd>Then I do the same thing to <tt class="docutils literal">THE_SIZE</tt> from <tt class="docutils literal">ex22.c</tt>,
+but this time I'm accessing it directly, and also demonstrating that it's
+actually changing in that file by printing it here and with <tt class="docutils literal">print_size</tt>.</dd>
+<dt>ex22_main.c:42-44</dt>
+<dd>Show how the static variable <tt class="docutils literal">ratio</tt> inside <tt class="docutils literal">update_ratio</tt>
+is maintained between function calls.</dd>
+<dt>ex22_main.c:46-51</dt>
+<dd>Finally running <tt class="docutils literal">scope_demo</tt> a few times so you can see
+the scope in action.  Big thing to notice is that the local <tt class="docutils literal">count</tt>
+variable remains unchanged.  You <em>must</em> get that passing in a variable
+like this will not let you change it in the function.  To do that you need
+our old friend the pointer.  If you were to pass a pointer to this <tt class="docutils literal">count</tt>,
+then the called function has the address of it and can change it.</dd>
+</dl>
+<p>That explains what's going on in all of these files, but you should trace
+through them and make sure you know where everything is as you study it.</p>
+</div>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>This time, instead of using your <tt class="docutils literal">Makefile</tt> I want you to build these
+two files manually so you can see how they are actually put together by
+the compiler.  Here's what you should do and what you should see for output.</p>
+<div class="highlight"><pre><a name="code--ex22.sh-session-pyg.html-1"></a><span class="gp">$</span> cc -Wall -g -DNDEBUG   -c -o ex22.o ex22.c
+<a name="code--ex22.sh-session-pyg.html-2"></a><span class="gp">$</span> cc -Wall -g -DNDEBUG    ex22_main.c ex22.o   -o ex22_main
+<a name="code--ex22.sh-session-pyg.html-3"></a><span class="gp">$</span> ./ex22_main
+<a name="code--ex22.sh-session-pyg.html-4"></a><span class="go">[INFO] (ex22_main.c:26) My name: Zed A. Shaw, age: 37</span>
+<a name="code--ex22.sh-session-pyg.html-5"></a><span class="go">[INFO] (ex22_main.c:30) My age is now: 100</span>
+<a name="code--ex22.sh-session-pyg.html-6"></a><span class="go">[INFO] (ex22_main.c:33) THE_SIZE is: 1000</span>
+<a name="code--ex22.sh-session-pyg.html-7"></a><span class="go">[INFO] (ex22.c:32) I think size is: 1000</span>
+<a name="code--ex22.sh-session-pyg.html-8"></a><span class="go">[INFO] (ex22_main.c:38) THE SIZE is now: 9</span>
+<a name="code--ex22.sh-session-pyg.html-9"></a><span class="go">[INFO] (ex22.c:32) I think size is: 9</span>
+<a name="code--ex22.sh-session-pyg.html-10"></a><span class="go">[INFO] (ex22_main.c:42) Ratio at first: 1.000000</span>
+<a name="code--ex22.sh-session-pyg.html-11"></a><span class="go">[INFO] (ex22_main.c:43) Ratio again: 2.000000</span>
+<a name="code--ex22.sh-session-pyg.html-12"></a><span class="go">[INFO] (ex22_main.c:44) Ratio once more: 10.000000</span>
+<a name="code--ex22.sh-session-pyg.html-13"></a><span class="go">[INFO] (ex22_main.c:8) count is: 4</span>
+<a name="code--ex22.sh-session-pyg.html-14"></a><span class="go">[INFO] (ex22_main.c:16) count is at exit: 4</span>
+<a name="code--ex22.sh-session-pyg.html-15"></a><span class="go">[INFO] (ex22_main.c:20) count after assign: 3000</span>
+<a name="code--ex22.sh-session-pyg.html-16"></a><span class="go">[INFO] (ex22_main.c:8) count is: 80</span>
+<a name="code--ex22.sh-session-pyg.html-17"></a><span class="go">[INFO] (ex22_main.c:13) count in this scope is 100</span>
+<a name="code--ex22.sh-session-pyg.html-18"></a><span class="go">[INFO] (ex22_main.c:16) count is at exit: 80</span>
+<a name="code--ex22.sh-session-pyg.html-19"></a><span class="go">[INFO] (ex22_main.c:20) count after assign: 3000</span>
+<a name="code--ex22.sh-session-pyg.html-20"></a><span class="go">[INFO] (ex22_main.c:51) count after calling scope_demo: 4</span>
+</pre></div><p>Make sure you trace how each variable is changing and match it to the line
+that gets output.  I'm using <tt class="docutils literal">log_info</tt> from the <tt class="docutils literal">dbg.h</tt> macros
+so you can get the exact line number where each variable is printed and
+find it in the files for tracing.</p>
+</div>
+<div class="section" id="scope-stack-and-bugs">
+<h1>Scope, Stack, And Bugs</h1>
+<p>If you've done this right you should now see many of the different ways
+you can place variables in your C code.  You can use <tt class="docutils literal">extern</tt> or
+access functions like <tt class="docutils literal">get_age</tt> to create globals.  You can make
+new variables inside any blocks, and they'll retain their own values until
+that block exits, leaving the outer variables alone.  You also can pass
+a value to a function, and change the parameter but not change the caller's
+version of it.</p>
+<p>The most important thing to realize though is that all of this causes
+bugs.  C's ability to place things in many places in your machine and then
+let you access it in those places means you get confused easily about
+where something lives.  If you don't where it lives then there's a chance
+you'll not manage it properly.</p>
+<p>With that in mind, here's some rules to follow when writing C code
+so you avoid bugs related to the stack:</p>
+<ul class="simple">
+<li>Do not &quot;shadow&quot; a variable like I've done here with <tt class="docutils literal">count</tt>
+in <tt class="docutils literal">scope_demo</tt>.  It leaves you open to subtle and hidden bugs
+where you <em>think</em> you're changing a value and you actually aren't.</li>
+<li>Avoid too many globals, especially if across multiple files.  If you have
+to then use accessor functions like I've done with <tt class="docutils literal">get_age</tt>.  This
+doesn't apply to constants, since those are read-only.  I'm talking about
+variables like <tt class="docutils literal">THE_SIZE</tt>.  If you want people to modify or set this,
+then make accessor functions.</li>
+<li>When in doubt, put it on the heap.  Don't rely on the semantics of the
+stack or specialized locations and instead just create things with
+<tt class="docutils literal">malloc</tt>.</li>
+<li>Don't use function static variables like I did in <tt class="docutils literal">update_ratio</tt>.
+They're rarely useful and end up being a huge pain when you need to make
+your code concurrent in threads.  They are also hard as hell to find compared
+to a well done global variable.</li>
+<li>Avoid reusing function parameters as it's confusing whether you're
+just reusing it or if you think you're changing the <em>caller's</em>
+version of it.</li>
+</ul>
+<p>As with all things, these rules can be broken when it's practical.  In fact,
+I guarantee you'll run into code that breaks all of these rules and is perfectly
+fine.  The constraints of different platforms makes it necessary sometimes.</p>
+</div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<p>For this exercise, breaking the program involves trying to access or change
+things you can't:</p>
+<ul class="simple">
+<li>Try to directly access variables in <tt class="docutils literal">ex22.c</tt> from <tt class="docutils literal">ex22_main.c</tt>
+that you think you can't.  For example, you can't get at <tt class="docutils literal">ratio</tt>
+inside <tt class="docutils literal">update_ratio</tt>? What if you had a pointer to it?</li>
+<li>Ditch the <tt class="docutils literal">extern</tt> declaration in <tt class="docutils literal">ex22.h</tt> to see what you
+get for errors or warnings.</li>
+<li>Add <tt class="docutils literal">static</tt> or <tt class="docutils literal">const</tt> specifiers to different variables
+and then try to change them.</li>
+</ul>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Research the concept of &quot;pass by value&quot; vs. &quot;pass by reference&quot;.  Write an
+example of both.</li>
+<li>Use pointers to gain access to things you shouldn't have access to.</li>
+<li>Use valgrind to see what this kind of access looks like when you
+do it wrong.</li>
+<li>Write a recursive function that causes a stack overflow.  Don't know
+what a recursive function is?  Try calling <tt class="docutils literal">scope_demo</tt> at the
+bottom of <tt class="docutils literal">scope_demo</tt> itself so that it loops.</li>
+<li>Rewrite the <tt class="docutils literal">Makefile</tt> so that it can build this.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

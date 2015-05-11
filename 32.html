@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 32: Double Linked Lists</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 32: Double Linked Lists</h1>
+            <p>The purpose of this book is to teach you how your computer really works, and included in that is
+how various data structures and algorithms function.  Computers by themselves don't do a lot of
+useful processing.  To make them do useful things you need to structure the data and then
+organize processing on these structures.  Other programming languages either include libraries
+that implement all of these structures, or they have direct syntax for them.  C makes you
+implement all the data structures you need yourself, which makes it the perfect language to
+learn how they actually work.</p>
+<p>My goal in teaching you these data structures and these algorithms is to help you do three
+things:</p>
+<ul class="simple">
+<li>Understand what is really going on in Python, Ruby, or JavaScript code like: <tt class="docutils literal">data = {&quot;name&quot;: &quot;Zed&quot;}</tt></li>
+<li>Get even better at C code by applying what you know to a set of solved problems using the data structures.</li>
+<li>Learn a core set of data structures and algorithms so that you are better informed about what ones work best in certain situations.</li>
+</ul>
+<div class="section" id="what-are-data-structures">
+<h1>What Are Data Structures</h1>
+<p>The name &quot;data structure&quot; is self-explanatory.  It is an organization of data that fits a certain model.  Maybe the model is
+designed to allow processing the data in a new way.  Maybe it's just organized to store it on disk efficiently.  In this book
+I'll follow a simple pattern for making data structures that works reliably:</p>
+<ul class="simple">
+<li>Define a struct for the main &quot;outer structure&quot;.</li>
+<li>Define a struct for the contents, usually nodes with links between them.</li>
+<li>Create functions that operate on these two.</li>
+</ul>
+<p>There's other styles of data structures in C, but this pattern works well and is consistent for most data
+structures you'll make.</p>
+</div>
+<div class="section" id="making-the-library">
+<h1>Making The Library</h1>
+<p>For the rest of this book you'll be creating a library that you can use when you're done with this book.  This library will
+have the following elements:</p>
+<ul class="simple">
+<li>Header (.h) files for each data structure.</li>
+<li>Implementation (.c) files for the algorithms.</li>
+<li>Unit tests that test all of them to make sure they keep working.</li>
+<li>Documentation we'll autogenerate from the header files.</li>
+</ul>
+<p>You already have the <tt class="docutils literal"><span class="pre">c-skeleton</span></tt> so use it to create a <tt class="docutils literal">liblcthw</tt> project:</p>
+<div class="highlight"><pre><a name="code--ex32.sh-session-pyg.html-1"></a><span class="gp">$</span> cp -r c-skeleton liblcthw
+<a name="code--ex32.sh-session-pyg.html-2"></a><span class="gp">$</span> <span class="nb">cd </span>liblcthw/
+<a name="code--ex32.sh-session-pyg.html-3"></a><span class="gp">$</span> ls
+<a name="code--ex32.sh-session-pyg.html-4"></a><span class="go">LICENSE             Makefile        README.md       bin             build           src             tests</span>
+<a name="code--ex32.sh-session-pyg.html-5"></a><span class="gp">$</span> vim Makefile
+<a name="code--ex32.sh-session-pyg.html-6"></a><span class="gp">$</span> ls src/
+<a name="code--ex32.sh-session-pyg.html-7"></a><span class="go">dbg.h               libex29.c       libex29.o</span>
+<a name="code--ex32.sh-session-pyg.html-8"></a><span class="gp">$</span> mkdir src/lcthw
+<a name="code--ex32.sh-session-pyg.html-9"></a><span class="gp">$</span> mv src/dbg.h src/lcthw
+<a name="code--ex32.sh-session-pyg.html-10"></a><span class="gp">$</span> vim tests/minunit.h
+<a name="code--ex32.sh-session-pyg.html-11"></a><span class="gp">$</span> rm src/libex29.* tests/libex29*
+<a name="code--ex32.sh-session-pyg.html-12"></a><span class="gp">$</span> make clean
+<a name="code--ex32.sh-session-pyg.html-13"></a><span class="go">rm -rf build  tests/libex29_tests</span>
+<a name="code--ex32.sh-session-pyg.html-14"></a><span class="go">rm -f tests/tests.log </span>
+<a name="code--ex32.sh-session-pyg.html-15"></a><span class="go">find . -name &quot;*.gc*&quot; -exec rm {} \;</span>
+<a name="code--ex32.sh-session-pyg.html-16"></a><span class="go">rm -rf `find . -name &quot;*.dSYM&quot; -print`</span>
+<a name="code--ex32.sh-session-pyg.html-17"></a><span class="gp">$</span> ls tests/
+<a name="code--ex32.sh-session-pyg.html-18"></a><span class="go">minunit.h  runtests.sh</span>
+<a name="code--ex32.sh-session-pyg.html-19"></a><span class="gp">$</span>
+</pre></div><p>In this session I'm doing the following:</p>
+<ul class="simple">
+<li>Copy the <tt class="docutils literal"><span class="pre">c-skeleton</span></tt> over.</li>
+<li>Edit the Makefile to change <tt class="docutils literal">libYOUR_LIBRARY.a</tt> to <tt class="docutils literal">liblcthw.a</tt>
+as the new <tt class="docutils literal">TARGET</tt>.</li>
+<li>Make the <tt class="docutils literal">src/lcthw</tt> directory where we'll put our code.</li>
+<li>Move the <tt class="docutils literal">src/dbg.h</tt> into this new directory.</li>
+<li>Edit <tt class="docutils literal">tests/minunit.h</tt> so that it uses <tt class="docutils literal">#include &lt;lcthw/dbg.h&gt;</tt>
+as the include.</li>
+<li>Get rid of the source and test files we don't need for <tt class="docutils literal">libex29.*</tt>.</li>
+<li>Clean up everything that's left over.</li>
+</ul>
+<p>With that you're ready to start building the library, and the first data structure
+I'll build is the Double Linked List.</p>
+</div>
+<div class="section" id="double-linked-lists">
+<h1>Double Linked Lists</h1>
+<p>The first data structure we'll add to <tt class="docutils literal">liblcthw</tt> is a double linked list.
+This is the simplest data structure you can make, and it has useful properties
+for certain operations.  A linked list works by nodes having pointers to their
+next or previous element.  A &quot;double linked list&quot; contains pointers to both,
+while a &quot;single linked list&quot; only points at the next element.</p>
+<p>Because each node has pointers to the next and previous, and because you
+keep track of the first and last element of the list, you can do some operations
+very quickly.  Anything that involves inserting or deleting an element
+will be very fast.  They are also easy to implement by most people.</p>
+<p>The main disadvantage of a linked list is that traversing it involves
+processing every single pointer along the way.  This means that searching,
+most sorting, or iterating over the elements will be slow.  It also means
+that you can't really jump to random parts of the list.  If you had an
+array of elements you could just index right into the middle of the list,
+but a linked list uses a stream of pointers.  That means if you want
+the 10th element, you have to go through elements 1-9.</p>
+<div class="section" id="definition">
+<h2>Definition</h2>
+<p>As I said in the introduction to this exercise, the process to follow is
+to first write a header file with the right C struct statements in it.</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--list.h-pyg.html-1"></a><span class="cp">#ifndef lcthw_List_h</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-2"></a><span class="cp">#define lcthw_List_h</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-3"></a>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-4"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-5"></a>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-6"></a><span class="k">struct</span> <span class="n">ListNode</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-7"></a>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-8"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="n">ListNode</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-9"></a>    <span class="k">struct</span> <span class="n">ListNode</span> <span class="o">*</span><span class="n">next</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-10"></a>    <span class="k">struct</span> <span class="n">ListNode</span> <span class="o">*</span><span class="n">prev</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-11"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-12"></a><span class="p">}</span> <span class="n">ListNode</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-13"></a>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-14"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="n">List</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-15"></a>    <span class="kt">int</span> <span class="n">count</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-16"></a>    <span class="n">ListNode</span> <span class="o">*</span><span class="n">first</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-17"></a>    <span class="n">ListNode</span> <span class="o">*</span><span class="n">last</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-18"></a><span class="p">}</span> <span class="n">List</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-19"></a>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-20"></a><span class="n">List</span> <span class="o">*</span><span class="nf">List_create</span><span class="p">();</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-21"></a><span class="kt">void</span> <span class="nf">List_destroy</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-22"></a><span class="kt">void</span> <span class="nf">List_clear</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-23"></a><span class="kt">void</span> <span class="nf">List_clear_destroy</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-24"></a>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-25"></a><span class="cp">#define List_count(A) ((A)-&gt;count)</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-26"></a><span class="cp">#define List_first(A) ((A)-&gt;first != NULL ? (A)-&gt;first-&gt;value : NULL)</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-27"></a><span class="cp">#define List_last(A) ((A)-&gt;last != NULL ? (A)-&gt;last-&gt;value : NULL)</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-28"></a>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-29"></a><span class="kt">void</span> <span class="nf">List_push</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-30"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">List_pop</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-31"></a>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-32"></a><span class="kt">void</span> <span class="nf">List_unshift</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-33"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">List_shift</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-34"></a>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-35"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">List_remove</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">,</span> <span class="n">ListNode</span> <span class="o">*</span><span class="n">node</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-36"></a>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-37"></a><span class="cp">#define LIST_FOREACH(L, S, M, V) ListNode *_node = NULL;\</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-38"></a><span class="cp">    ListNode *V = NULL;\</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-39"></a><span class="cp">    for(V = _node = L-&gt;S; _node != NULL; V = _node = _node-&gt;M)</span>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-40"></a>
+<a name="code--liblcthw--src--lcthw--list.h-pyg.html-41"></a><span class="cp">#endif</span>
+</pre></div><p>The first thing I do is create two structs for the <tt class="docutils literal">ListNode</tt> and
+the <tt class="docutils literal">List</tt> that will contain those nodes.  This creates the data
+structure I'll use in the functions and macros I define after that.  If
+you read through these functions they seem rather simple.  I'll be
+explaining them when I cover the implementation, but hopefully you can
+guess what they do.</p>
+<p>How the data structure works is each <tt class="docutils literal">ListNode</tt> has three components:</p>
+<ul class="simple">
+<li>A value, which is a pointer to anything and stores the thing we want
+to put in the list.</li>
+<li>A <tt class="docutils literal">ListNode *next</tt> pointer which points at another ListNode
+that holds the next element in the list.</li>
+<li>A <tt class="docutils literal">ListNode *prev</tt> that holds the previous element.  Complex
+right?  Calling the previous thing &quot;previous&quot;.  I could have used
+&quot;anterior&quot; and &quot;posterior&quot; but only a jerk would do that.</li>
+</ul>
+<p>The <tt class="docutils literal">List</tt> struct is then nothing more than a container for these
+<tt class="docutils literal">ListNode</tt> structs that have been linked together in a chain.
+It keeps track of the <tt class="docutils literal">count</tt>, <tt class="docutils literal">first</tt> and <tt class="docutils literal">last</tt>
+element of the list.</p>
+<p>Finally, take a look at <tt class="docutils literal">src/lcthw/list.h:37</tt> where I define
+the <tt class="docutils literal">LIST_FOREACH</tt> macro.  This is a common idiom where you
+make a macro that generates iteration code so people can't mess
+it up.  Getting this kind of processing right can be difficult with
+data structures, so writing macros helps people out.  You'll see
+how I use this when I talk about the implementation.</p>
+</div>
+<div class="section" id="implementation">
+<h2>Implementation</h2>
+<p>Once you understand that, you mostly understand how a double linked list
+works.  It is nothing more than nodes with two pointers to the next and
+previous element of the list.  You can then write the <tt class="docutils literal">src/lcthw/list.c</tt>
+code to see how each operation is implemented.</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--list.c-pyg.html-1"></a><span class="cp">#include &lt;lcthw/list.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-2"></a><span class="cp">#include &lt;lcthw/dbg.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-3"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-4"></a><span class="n">List</span> <span class="o">*</span><span class="nf">List_create</span><span class="p">()</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-5"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-6"></a>    <span class="k">return</span> <span class="n">calloc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">List</span><span class="p">));</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-7"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-8"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-9"></a><span class="kt">void</span> <span class="nf">List_destroy</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-10"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-11"></a>    <span class="n">LIST_FOREACH</span><span class="p">(</span><span class="n">list</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">next</span><span class="p">,</span> <span class="n">cur</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-12"></a>        <span class="k">if</span><span class="p">(</span><span class="n">cur</span><span class="o">-&gt;</span><span class="n">prev</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-13"></a>            <span class="n">free</span><span class="p">(</span><span class="n">cur</span><span class="o">-&gt;</span><span class="n">prev</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-14"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-15"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-16"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-17"></a>    <span class="n">free</span><span class="p">(</span><span class="n">list</span><span class="o">-&gt;</span><span class="n">last</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-18"></a>    <span class="n">free</span><span class="p">(</span><span class="n">list</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-19"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-20"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-21"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-22"></a><span class="kt">void</span> <span class="nf">List_clear</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-23"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-24"></a>    <span class="n">LIST_FOREACH</span><span class="p">(</span><span class="n">list</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">next</span><span class="p">,</span> <span class="n">cur</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-25"></a>        <span class="n">free</span><span class="p">(</span><span class="n">cur</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-26"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-27"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-28"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-29"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-30"></a><span class="kt">void</span> <span class="nf">List_clear_destroy</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-31"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-32"></a>    <span class="n">List_clear</span><span class="p">(</span><span class="n">list</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-33"></a>    <span class="n">List_destroy</span><span class="p">(</span><span class="n">list</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-34"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-35"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-36"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-37"></a><span class="kt">void</span> <span class="nf">List_push</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-38"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-39"></a>    <span class="n">ListNode</span> <span class="o">*</span><span class="n">node</span> <span class="o">=</span> <span class="n">calloc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">ListNode</span><span class="p">));</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-40"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">node</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-41"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-42"></a>    <span class="n">node</span><span class="o">-&gt;</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-43"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-44"></a>    <span class="k">if</span><span class="p">(</span><span class="n">list</span><span class="o">-&gt;</span><span class="n">last</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-45"></a>        <span class="n">list</span><span class="o">-&gt;</span><span class="n">first</span> <span class="o">=</span> <span class="n">node</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-46"></a>        <span class="n">list</span><span class="o">-&gt;</span><span class="n">last</span> <span class="o">=</span> <span class="n">node</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-47"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-48"></a>        <span class="n">list</span><span class="o">-&gt;</span><span class="n">last</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="n">node</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-49"></a>        <span class="n">node</span><span class="o">-&gt;</span><span class="n">prev</span> <span class="o">=</span> <span class="n">list</span><span class="o">-&gt;</span><span class="n">last</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-50"></a>        <span class="n">list</span><span class="o">-&gt;</span><span class="n">last</span> <span class="o">=</span> <span class="n">node</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-51"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-52"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-53"></a>    <span class="n">list</span><span class="o">-&gt;</span><span class="n">count</span><span class="o">++</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-54"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-55"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-56"></a>    <span class="k">return</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-57"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-58"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-59"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">List_pop</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-60"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-61"></a>    <span class="n">ListNode</span> <span class="o">*</span><span class="n">node</span> <span class="o">=</span> <span class="n">list</span><span class="o">-&gt;</span><span class="n">last</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-62"></a>    <span class="k">return</span> <span class="n">node</span> <span class="o">!=</span> <span class="nb">NULL</span> <span class="o">?</span> <span class="n">List_remove</span><span class="p">(</span><span class="n">list</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span> <span class="o">:</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-63"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-64"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-65"></a><span class="kt">void</span> <span class="nf">List_unshift</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-66"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-67"></a>    <span class="n">ListNode</span> <span class="o">*</span><span class="n">node</span> <span class="o">=</span> <span class="n">calloc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">ListNode</span><span class="p">));</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-68"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">node</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-69"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-70"></a>    <span class="n">node</span><span class="o">-&gt;</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-71"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-72"></a>    <span class="k">if</span><span class="p">(</span><span class="n">list</span><span class="o">-&gt;</span><span class="n">first</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-73"></a>        <span class="n">list</span><span class="o">-&gt;</span><span class="n">first</span> <span class="o">=</span> <span class="n">node</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-74"></a>        <span class="n">list</span><span class="o">-&gt;</span><span class="n">last</span> <span class="o">=</span> <span class="n">node</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-75"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-76"></a>        <span class="n">node</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="n">list</span><span class="o">-&gt;</span><span class="n">first</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-77"></a>        <span class="n">list</span><span class="o">-&gt;</span><span class="n">first</span><span class="o">-&gt;</span><span class="n">prev</span> <span class="o">=</span> <span class="n">node</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-78"></a>        <span class="n">list</span><span class="o">-&gt;</span><span class="n">first</span> <span class="o">=</span> <span class="n">node</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-79"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-80"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-81"></a>    <span class="n">list</span><span class="o">-&gt;</span><span class="n">count</span><span class="o">++</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-82"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-83"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-84"></a>    <span class="k">return</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-85"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-86"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-87"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">List_shift</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-88"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-89"></a>    <span class="n">ListNode</span> <span class="o">*</span><span class="n">node</span> <span class="o">=</span> <span class="n">list</span><span class="o">-&gt;</span><span class="n">first</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-90"></a>    <span class="k">return</span> <span class="n">node</span> <span class="o">!=</span> <span class="nb">NULL</span> <span class="o">?</span> <span class="n">List_remove</span><span class="p">(</span><span class="n">list</span><span class="p">,</span> <span class="n">node</span><span class="p">)</span> <span class="o">:</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-91"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-92"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-93"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">List_remove</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">,</span> <span class="n">ListNode</span> <span class="o">*</span><span class="n">node</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-94"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-95"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">result</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-96"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-97"></a>    <span class="n">check</span><span class="p">(</span><span class="n">list</span><span class="o">-&gt;</span><span class="n">first</span> <span class="o">&amp;&amp;</span> <span class="n">list</span><span class="o">-&gt;</span><span class="n">last</span><span class="p">,</span> <span class="s">&quot;List is empty.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-98"></a>    <span class="n">check</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="s">&quot;node can&#39;t be NULL&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-99"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-100"></a>    <span class="k">if</span><span class="p">(</span><span class="n">node</span> <span class="o">==</span> <span class="n">list</span><span class="o">-&gt;</span><span class="n">first</span> <span class="o">&amp;&amp;</span> <span class="n">node</span> <span class="o">==</span> <span class="n">list</span><span class="o">-&gt;</span><span class="n">last</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-101"></a>        <span class="n">list</span><span class="o">-&gt;</span><span class="n">first</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-102"></a>        <span class="n">list</span><span class="o">-&gt;</span><span class="n">last</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-103"></a>    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">node</span> <span class="o">==</span> <span class="n">list</span><span class="o">-&gt;</span><span class="n">first</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-104"></a>        <span class="n">list</span><span class="o">-&gt;</span><span class="n">first</span> <span class="o">=</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-105"></a>        <span class="n">check</span><span class="p">(</span><span class="n">list</span><span class="o">-&gt;</span><span class="n">first</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Invalid list, somehow got a first that is NULL.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-106"></a>        <span class="n">list</span><span class="o">-&gt;</span><span class="n">first</span><span class="o">-&gt;</span><span class="n">prev</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-107"></a>    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">node</span> <span class="o">==</span> <span class="n">list</span><span class="o">-&gt;</span><span class="n">last</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-108"></a>        <span class="n">list</span><span class="o">-&gt;</span><span class="n">last</span> <span class="o">=</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">prev</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-109"></a>        <span class="n">check</span><span class="p">(</span><span class="n">list</span><span class="o">-&gt;</span><span class="n">last</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Invalid list, somehow got a next that is NULL.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-110"></a>        <span class="n">list</span><span class="o">-&gt;</span><span class="n">last</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-111"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-112"></a>        <span class="n">ListNode</span> <span class="o">*</span><span class="n">after</span> <span class="o">=</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-113"></a>        <span class="n">ListNode</span> <span class="o">*</span><span class="n">before</span> <span class="o">=</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">prev</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-114"></a>        <span class="n">after</span><span class="o">-&gt;</span><span class="n">prev</span> <span class="o">=</span> <span class="n">before</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-115"></a>        <span class="n">before</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">=</span> <span class="n">after</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-116"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-117"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-118"></a>    <span class="n">list</span><span class="o">-&gt;</span><span class="n">count</span><span class="o">--</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-119"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-120"></a>    <span class="n">free</span><span class="p">(</span><span class="n">node</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-121"></a>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-122"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-123"></a>    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list.c-pyg.html-124"></a><span class="p">}</span>
+</pre></div><p>I then implement all of the operations on a double linked list that can't
+be done with simple macros.  Rather than cover every tiny little line of
+this file, I'm going to give high-level overview of every operation
+in both the <tt class="docutils literal">list.h</tt> and <tt class="docutils literal">list.c</tt> file, then leave you to read
+the code.</p>
+<dl class="docutils">
+<dt>list.h:List_count</dt>
+<dd>Returns the number of elements in the list, which is
+maintained as elements are added and removed.</dd>
+<dt>list.h:List_first</dt>
+<dd>Returns the first element of the list, but does not
+remove it.</dd>
+<dt>list.h:List_last</dt>
+<dd>Returns the last element of the list, but does not
+remove it.</dd>
+<dt>list.h:LIST_FOREACH</dt>
+<dd>Iterates over the elements in the list.</dd>
+<dt>list.c:List_create</dt>
+<dd>Simply creates the main <tt class="docutils literal">List</tt> struct.</dd>
+<dt>list.c:List_destroy</dt>
+<dd>Destroys a <tt class="docutils literal">List</tt> and any elements it might have.</dd>
+<dt>list.c:List_clear</dt>
+<dd>Convenience function for freeing the <em>values</em> in each
+node, not the nodes.</dd>
+<dt>list.c:List_clear_destroy</dt>
+<dd>Clears and destroys a list.  It's not very efficient since it loops through them twice.</dd>
+<dt>list.c:List_push</dt>
+<dd>The first operation that demonstrates the advantage of a
+linked list.  It adds a new element to the end of the list, and because that's
+just a couple of pointer assignments, does it very fast.</dd>
+<dt>list.c:List_pop</dt>
+<dd>The inverse of <tt class="docutils literal">List_push</tt>, this takes the last
+element off and returns it.</dd>
+<dt>list.c:List_unshift</dt>
+<dd>The other thing you can easily do to a linked list is
+add elements to the <em>front</em> of the list very fast.  In this case I call
+that <tt class="docutils literal">List_unshift</tt> for lack of a better term.</dd>
+<dt>list.c:List_shift</dt>
+<dd>Just like <tt class="docutils literal">List_pop</tt>, this removes the first
+element and returns it.</dd>
+<dt>list.c:List_remove</dt>
+<dd>This is actually doing all of the removal when you do
+<tt class="docutils literal">List_pop</tt> or <tt class="docutils literal">List_shift</tt>.
+Something that seems to always be difficult in
+data structures is removing things, and this function is no different. It
+has to handle quite a few conditions depending on if the element
+being removed is at the front; the end; both front and end; or middle.</dd>
+</dl>
+<p>Most of these functions are nothing special, and you should be able to easily
+digest this and understand it from just the code.  You should definitely focus
+on how the <tt class="docutils literal">LIST_FOREACH</tt> macro is used in <tt class="docutils literal">List_destroy</tt> so you
+can understand how much it simplifies this common operation.</p>
+</div>
+</div>
+<div class="section" id="tests">
+<h1>Tests</h1>
+<p>After you have those compiling it's time to create the test that makes sure
+they operate correctly.</p>
+<div class="highlight"><pre><a name="code--liblcthw--tests--list_tests.c-pyg.html-1"></a><span class="cp">#include &quot;minunit.h&quot;</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-2"></a><span class="cp">#include &lt;lcthw/list.h&gt;</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-3"></a><span class="cp">#include &lt;assert.h&gt;</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-4"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-5"></a><span class="k">static</span> <span class="n">List</span> <span class="o">*</span><span class="n">list</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-6"></a><span class="kt">char</span> <span class="o">*</span><span class="n">test1</span> <span class="o">=</span> <span class="s">&quot;test1 data&quot;</span><span class="p">;</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-7"></a><span class="kt">char</span> <span class="o">*</span><span class="n">test2</span> <span class="o">=</span> <span class="s">&quot;test2 data&quot;</span><span class="p">;</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-8"></a><span class="kt">char</span> <span class="o">*</span><span class="n">test3</span> <span class="o">=</span> <span class="s">&quot;test3 data&quot;</span><span class="p">;</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-9"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-10"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-11"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_create</span><span class="p">()</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-12"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-13"></a>    <span class="n">list</span> <span class="o">=</span> <span class="n">List_create</span><span class="p">();</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-14"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">list</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to create list.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-15"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-16"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-17"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-18"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-19"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-20"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_destroy</span><span class="p">()</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-21"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-22"></a>    <span class="n">List_clear_destroy</span><span class="p">(</span><span class="n">list</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-23"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-24"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-25"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-26"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-27"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-28"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-29"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_push_pop</span><span class="p">()</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-30"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-31"></a>    <span class="n">List_push</span><span class="p">(</span><span class="n">list</span><span class="p">,</span> <span class="n">test1</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-32"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">List_last</span><span class="p">(</span><span class="n">list</span><span class="p">)</span> <span class="o">==</span> <span class="n">test1</span><span class="p">,</span> <span class="s">&quot;Wrong last value.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-33"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-34"></a>    <span class="n">List_push</span><span class="p">(</span><span class="n">list</span><span class="p">,</span> <span class="n">test2</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-35"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">List_last</span><span class="p">(</span><span class="n">list</span><span class="p">)</span> <span class="o">==</span> <span class="n">test2</span><span class="p">,</span> <span class="s">&quot;Wrong last value&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-36"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-37"></a>    <span class="n">List_push</span><span class="p">(</span><span class="n">list</span><span class="p">,</span> <span class="n">test3</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-38"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">List_last</span><span class="p">(</span><span class="n">list</span><span class="p">)</span> <span class="o">==</span> <span class="n">test3</span><span class="p">,</span> <span class="s">&quot;Wrong last value.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-39"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">List_count</span><span class="p">(</span><span class="n">list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="s">&quot;Wrong count on push.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-40"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-41"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">val</span> <span class="o">=</span> <span class="n">List_pop</span><span class="p">(</span><span class="n">list</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-42"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">val</span> <span class="o">==</span> <span class="n">test3</span><span class="p">,</span> <span class="s">&quot;Wrong value on pop.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-43"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-44"></a>    <span class="n">val</span> <span class="o">=</span> <span class="n">List_pop</span><span class="p">(</span><span class="n">list</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-45"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">val</span> <span class="o">==</span> <span class="n">test2</span><span class="p">,</span> <span class="s">&quot;Wrong value on pop.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-46"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-47"></a>    <span class="n">val</span> <span class="o">=</span> <span class="n">List_pop</span><span class="p">(</span><span class="n">list</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-48"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">val</span> <span class="o">==</span> <span class="n">test1</span><span class="p">,</span> <span class="s">&quot;Wrong value on pop.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-49"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">List_count</span><span class="p">(</span><span class="n">list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Wrong count after pop.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-50"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-51"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-52"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-53"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-54"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_unshift</span><span class="p">()</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-55"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-56"></a>    <span class="n">List_unshift</span><span class="p">(</span><span class="n">list</span><span class="p">,</span> <span class="n">test1</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-57"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">List_first</span><span class="p">(</span><span class="n">list</span><span class="p">)</span> <span class="o">==</span> <span class="n">test1</span><span class="p">,</span> <span class="s">&quot;Wrong first value.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-58"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-59"></a>    <span class="n">List_unshift</span><span class="p">(</span><span class="n">list</span><span class="p">,</span> <span class="n">test2</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-60"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">List_first</span><span class="p">(</span><span class="n">list</span><span class="p">)</span> <span class="o">==</span> <span class="n">test2</span><span class="p">,</span> <span class="s">&quot;Wrong first value&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-61"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-62"></a>    <span class="n">List_unshift</span><span class="p">(</span><span class="n">list</span><span class="p">,</span> <span class="n">test3</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-63"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">List_first</span><span class="p">(</span><span class="n">list</span><span class="p">)</span> <span class="o">==</span> <span class="n">test3</span><span class="p">,</span> <span class="s">&quot;Wrong last value.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-64"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">List_count</span><span class="p">(</span><span class="n">list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="s">&quot;Wrong count on unshift.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-65"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-66"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-67"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-68"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-69"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_remove</span><span class="p">()</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-70"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-71"></a>    <span class="c1">// we only need to test the middle remove case since push/shift </span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-72"></a>    <span class="c1">// already tests the other cases</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-73"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-74"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">val</span> <span class="o">=</span> <span class="n">List_remove</span><span class="p">(</span><span class="n">list</span><span class="p">,</span> <span class="n">list</span><span class="o">-&gt;</span><span class="n">first</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-75"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">val</span> <span class="o">==</span> <span class="n">test2</span><span class="p">,</span> <span class="s">&quot;Wrong removed element.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-76"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">List_count</span><span class="p">(</span><span class="n">list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;Wrong count after remove.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-77"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">List_first</span><span class="p">(</span><span class="n">list</span><span class="p">)</span> <span class="o">==</span> <span class="n">test3</span><span class="p">,</span> <span class="s">&quot;Wrong first after remove.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-78"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">List_last</span><span class="p">(</span><span class="n">list</span><span class="p">)</span> <span class="o">==</span> <span class="n">test1</span><span class="p">,</span> <span class="s">&quot;Wrong last after remove.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-79"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-80"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-81"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-82"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-83"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-84"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_shift</span><span class="p">()</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-85"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-86"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">List_count</span><span class="p">(</span><span class="n">list</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Wrong count before shift.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-87"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-88"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">val</span> <span class="o">=</span> <span class="n">List_shift</span><span class="p">(</span><span class="n">list</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-89"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">val</span> <span class="o">==</span> <span class="n">test3</span><span class="p">,</span> <span class="s">&quot;Wrong value on shift.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-90"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-91"></a>    <span class="n">val</span> <span class="o">=</span> <span class="n">List_shift</span><span class="p">(</span><span class="n">list</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-92"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">val</span> <span class="o">==</span> <span class="n">test1</span><span class="p">,</span> <span class="s">&quot;Wrong value on shift.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-93"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">List_count</span><span class="p">(</span><span class="n">list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Wrong count after shift.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-94"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-95"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-96"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-97"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-98"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-99"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-100"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">all_tests</span><span class="p">()</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-101"></a>    <span class="n">mu_suite_start</span><span class="p">();</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-102"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-103"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_create</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-104"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_push_pop</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-105"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_unshift</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-106"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_remove</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-107"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_shift</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-108"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_destroy</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-109"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-110"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-111"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-112"></a>
+<a name="code--liblcthw--tests--list_tests.c-pyg.html-113"></a><span class="n">RUN_TESTS</span><span class="p">(</span><span class="n">all_tests</span><span class="p">);</span>
+</pre></div><p>This test simply goes through every operation and makes sure it works.  I use
+a simplification in the test where I create just one <tt class="docutils literal">List *list</tt> for
+the whole program, then have the tests work on it.  This saves the trouble
+of building a <tt class="docutils literal">List</tt> for every test, but it could mean that some tests
+only pass because of how the previous test ran.  In this case I try to make
+each test keep the list clear or actually use the previous test's results.</p>
+</div>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>If you did everything right, then when you do a build and run the unit tests
+it should look like this:</p>
+<div class="highlight"><pre><a name="code--ex32.build.sh-session-pyg.html-1"></a><span class="gp">$</span> make
+<a name="code--ex32.build.sh-session-pyg.html-2"></a><span class="go">cc -g -O2 -Wall -Wextra -Isrc -rdynamic -DNDEBUG  -fPIC   -c -o src/lcthw/list.o src/lcthw/list.c</span>
+<a name="code--ex32.build.sh-session-pyg.html-3"></a><span class="go">ar rcs build/liblcthw.a src/lcthw/list.o</span>
+<a name="code--ex32.build.sh-session-pyg.html-4"></a><span class="go">ranlib build/liblcthw.a</span>
+<a name="code--ex32.build.sh-session-pyg.html-5"></a><span class="go">cc -shared -o build/liblcthw.so src/lcthw/list.o</span>
+<a name="code--ex32.build.sh-session-pyg.html-6"></a><span class="go">cc -g -O2 -Wall -Wextra -Isrc -rdynamic -DNDEBUG  build/liblcthw.a    tests/list_tests.c   -o tests/list_tests</span>
+<a name="code--ex32.build.sh-session-pyg.html-7"></a><span class="go">sh ./tests/runtests.sh</span>
+<a name="code--ex32.build.sh-session-pyg.html-8"></a><span class="go">Running unit tests:</span>
+<a name="code--ex32.build.sh-session-pyg.html-9"></a><span class="go">----</span>
+<a name="code--ex32.build.sh-session-pyg.html-10"></a><span class="go">RUNNING: ./tests/list_tests</span>
+<a name="code--ex32.build.sh-session-pyg.html-11"></a><span class="go">ALL TESTS PASSED</span>
+<a name="code--ex32.build.sh-session-pyg.html-12"></a><span class="go">Tests run: 6</span>
+<a name="code--ex32.build.sh-session-pyg.html-13"></a><span class="go">tests/list_tests PASS</span>
+<a name="code--ex32.build.sh-session-pyg.html-14"></a><span class="gp">$</span>
+</pre></div><p>Make sure 6 tests ran, that it builds without warnings or errors, and that it's
+making the <tt class="docutils literal">build/liblcthw.a</tt> and <tt class="docutils literal">build/liblcthw.so</tt> files.</p>
+</div>
+<div class="section" id="how-to-improve-it">
+<h1>How To Improve It</h1>
+<p>Instead of breaking this, I'm going to tell you how to improve the code:</p>
+<ul class="simple">
+<li>You can make <tt class="docutils literal">List_clear_destroy</tt> more efficient by using
+<tt class="docutils literal">LIST_FOREACH</tt> and doing both <tt class="docutils literal">free</tt> calls inside one
+loop.</li>
+<li>You can add asserts for preconditions that it isn't given a <tt class="docutils literal">NULL</tt>
+value for the <tt class="docutils literal">List *list</tt> parameters.</li>
+<li>You can add invariants that check the list's contents are always correct,
+such as <tt class="docutils literal">count</tt> is never <tt class="docutils literal">&lt; 0</tt>, and if <tt class="docutils literal">count &gt; 0</tt> then <tt class="docutils literal">first</tt> isn't NULL.</li>
+<li>You can add documentation to the header file in the form of comments before
+each struct, function, and macro that describes what it does.</li>
+</ul>
+<p>These amount to going through the defensive programming practices I talked about
+and &quot;hardening&quot; this code against flaws or improving usability.  Go ahead and
+do these things, then find as many other ways to improve the code.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Research double vs. single linked lists and when one is preferred over
+the other.</li>
+<li>Research the limitations of a double linked list.  For example, while they
+are efficient for inserting and deleting elements, they are very slow for
+iterating over them all.</li>
+<li>What operations are missing that you can imagine needing?  Some examples
+are copying, joining, splitting.  Implement these operations and write the
+unit tests for them.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 19: A Simple Object System</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 19: A Simple Object System</h1>
+            <p>I learned C before I learned Object Oriented Programming, so it helped me to
+build an OOP system in C to understand the basics of what OOP meant.  You are
+probably the kind of person who learned an OOP language before you learned C,
+so this kind of bridge might help you as well.  In this exercise, you will
+build a simple object system, but also learn more about the C Pre-Processor or
+CPP.</p>
+<p>This exercise will build a simple game where you kill a Minotaur in a small
+little castle.  Nothing fancy, just four rooms and a bad guy.  This project
+will also be a multi-file project, and look more like a real C software
+project than your previous ones.  This is why I'm introducing the CPP here
+because you need it to start using multiple files in your own software.</p>
+<div class="section" id="how-the-cpp-works">
+<h1>How The CPP Works</h1>
+<p>The C Pre-Processor is a template processing system.  It's a highly
+targeted one that helps make C easier to work with, but it does
+this by having a syntax aware templating mechanism.  Traditionally
+people just used the CPP to store constants and make &quot;macros&quot; to simplify
+repetitive coding.  In modern C you'll actually use the CPP as a code
+generator to create templated pieces of code.</p>
+<p>How the CPP works is you give it one file, usually a .c file, and it
+processes various bits of text starting with the <tt class="docutils literal">#</tt> (octothorpe)
+character.  When it encounters one of these it performs a specific replacement
+on the text of the input file.  It's main advantage though is it can
+<em>include</em> other files, and then augment its list of macros
+based on that file's contents.</p>
+<p>A quick way to see what the CPP does is take the last exercise and
+run this:</p>
+<pre class="literal-block">
+cpp ex18.c | less
+</pre>
+<p>It will be a huge amount of output, but scroll through it and you'll see the
+contents of the other files you included with <tt class="docutils literal">#include</tt>.  Scroll down
+to the original code and you can see how the <tt class="docutils literal">cpp</tt> is altering the
+source based on various <tt class="docutils literal">#define</tt> macros in the header files.</p>
+<p>The C compiler is so tightly integrated with <tt class="docutils literal">cpp</tt> that it just
+runs this for you and understands how it works intimately.  In modern C,
+the <tt class="docutils literal">cpp</tt> system is so integral to C's function that you might
+as well just consider it to be part of the language.</p>
+<p>In the remaining sections, we'll be using more of the CPP syntax and explaining
+it as we go.</p>
+</div>
+<div class="section" id="the-prototype-object-system">
+<h1>The Prototype Object System</h1>
+<p>The OOP system we'll create is a simple &quot;prototype&quot; style object system more
+like JavaScript.  Instead of classes, you start with prototypes that have
+fields set, and then use those as the basis of creating other object instances.
+This &quot;classless&quot; design is much easier to implement and work with than a
+traditional class based one.</p>
+<div class="section" id="the-object-header-file">
+<h2>The Object Header File</h2>
+<p>I want to put the data types and function declarations into a separate
+header file named <tt class="docutils literal">object.h</tt>.  This is standard C practice and it
+lets you ship binary libraries but still let the programmer compile against
+it.  In this file I have several advanced CPP techniques I'm going to
+quickly describe and then have you see in action later:</p>
+<div class="highlight"><pre><a name="code--object.h-pyg.html-1"></a><span class="cp">#ifndef _object_h</span>
+<a name="code--object.h-pyg.html-2"></a><span class="cp">#define _object_h</span>
+<a name="code--object.h-pyg.html-3"></a>
+<a name="code--object.h-pyg.html-4"></a><span class="k">typedef</span> <span class="k">enum</span> <span class="p">{</span>
+<a name="code--object.h-pyg.html-5"></a>    <span class="n">NORTH</span><span class="p">,</span> <span class="n">SOUTH</span><span class="p">,</span> <span class="n">EAST</span><span class="p">,</span> <span class="n">WEST</span>
+<a name="code--object.h-pyg.html-6"></a><span class="p">}</span> <span class="n">Direction</span><span class="p">;</span>
+<a name="code--object.h-pyg.html-7"></a>
+<a name="code--object.h-pyg.html-8"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="p">{</span>
+<a name="code--object.h-pyg.html-9"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">description</span><span class="p">;</span>
+<a name="code--object.h-pyg.html-10"></a>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">init</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">);</span>
+<a name="code--object.h-pyg.html-11"></a>    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">describe</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">);</span>
+<a name="code--object.h-pyg.html-12"></a>    <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">destroy</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">);</span>
+<a name="code--object.h-pyg.html-13"></a>    <span class="kt">void</span> <span class="o">*</span><span class="p">(</span><span class="o">*</span><span class="n">move</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">,</span> <span class="n">Direction</span> <span class="n">direction</span><span class="p">);</span>
+<a name="code--object.h-pyg.html-14"></a>    <span class="kt">int</span> <span class="p">(</span><span class="o">*</span><span class="n">attack</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">,</span> <span class="kt">int</span> <span class="n">damage</span><span class="p">);</span>
+<a name="code--object.h-pyg.html-15"></a><span class="p">}</span> <span class="n">Object</span><span class="p">;</span>
+<a name="code--object.h-pyg.html-16"></a>
+<a name="code--object.h-pyg.html-17"></a><span class="kt">int</span> <span class="nf">Object_init</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">);</span>
+<a name="code--object.h-pyg.html-18"></a><span class="kt">void</span> <span class="nf">Object_destroy</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">);</span>
+<a name="code--object.h-pyg.html-19"></a><span class="kt">void</span> <span class="nf">Object_describe</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">);</span>
+<a name="code--object.h-pyg.html-20"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">Object_move</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">,</span> <span class="n">Direction</span> <span class="n">direction</span><span class="p">);</span>
+<a name="code--object.h-pyg.html-21"></a><span class="kt">int</span> <span class="nf">Object_attack</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">,</span> <span class="kt">int</span> <span class="n">damage</span><span class="p">);</span>
+<a name="code--object.h-pyg.html-22"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">Object_new</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">size</span><span class="p">,</span> <span class="n">Object</span> <span class="n">proto</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">description</span><span class="p">);</span>
+<a name="code--object.h-pyg.html-23"></a>
+<a name="code--object.h-pyg.html-24"></a><span class="cp">#define NEW(T, N) Object_new(sizeof(T), T##Proto, N)</span>
+<a name="code--object.h-pyg.html-25"></a><span class="cp">#define _(N) proto.N</span>
+<a name="code--object.h-pyg.html-26"></a>
+<a name="code--object.h-pyg.html-27"></a><span class="cp">#endif</span>
+</pre></div><p>Taking a look at this file, you can see we have a few new pieces of
+syntax you haven't encountered before:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">#ifndef</tt></dt>
+<dd>You've seen a <tt class="docutils literal">#define</tt> for making simple constants, but
+the CPP can also do logic and remove sections of code.  This <tt class="docutils literal">#ifndef</tt> is
+&quot;if not defined&quot; and checks if there's already a <tt class="docutils literal">#define _object_h</tt> and
+if there is it skips all of this code.  I do this so that we can include
+this file any time we want and not worry about it defining things multiple
+times.</dd>
+<dt><tt class="docutils literal">#define</tt></dt>
+<dd>With the above <tt class="docutils literal">#ifndef</tt> shielding this file from we then
+add the <tt class="docutils literal">_object_h</tt> define so that any attempts to include it later
+cause the above to skip.</dd>
+<dt><tt class="docutils literal">#define NEW(T,N)</tt></dt>
+<dd>This makes a macro, and it works like a template function
+that spits out the code on the right, whenever you write use the macro
+on the left.  This one is simply making a short version of the normal way
+we'll call <tt class="docutils literal">Object_new</tt> and avoids potential errors with calling it
+wrong.  The way the macro works is the <tt class="docutils literal">T</tt> and <tt class="docutils literal">N</tt> parameters
+to <tt class="docutils literal">NEW</tt> are &quot;injected&quot; into the line of code on the right.  The
+syntax <tt class="docutils literal"><span class="pre">T##Proto</span></tt> says to &quot;concat Proto at the end of T&quot;, so if you had
+<tt class="docutils literal">NEW(Room, <span class="pre">&quot;Hello.&quot;)</span></tt> then it'd make <tt class="docutils literal">RoomProto</tt> there.</dd>
+<dt><tt class="docutils literal">#define _(N)</tt></dt>
+<dd>This macro is a bit of &quot;syntactic sugar&quot; for the object
+system and basically helps you write <tt class="docutils literal"><span class="pre">obj-&gt;proto.blah</span></tt> as simply
+<tt class="docutils literal"><span class="pre">obj-&gt;_(blah)</span></tt>.  It's not necessary, but it's a fun little trick
+that I'll use later.</dd>
+</dl>
+</div>
+<div class="section" id="the-object-source-file">
+<h2>The Object Source File</h2>
+<p>The <tt class="docutils literal">object.h</tt> file is declaring functions and data types that are defined
+(created) in the <tt class="docutils literal">object.c</tt>, so that's next:</p>
+<div class="highlight"><pre><a name="code--object.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--object.c-pyg.html-2"></a><span class="cp">#include &lt;string.h&gt;</span>
+<a name="code--object.c-pyg.html-3"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--object.c-pyg.html-4"></a><span class="cp">#include &quot;object.h&quot;</span>
+<a name="code--object.c-pyg.html-5"></a><span class="cp">#include &lt;assert.h&gt;</span>
+<a name="code--object.c-pyg.html-6"></a>
+<a name="code--object.c-pyg.html-7"></a><span class="kt">void</span> <span class="nf">Object_destroy</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">)</span>
+<a name="code--object.c-pyg.html-8"></a><span class="p">{</span>
+<a name="code--object.c-pyg.html-9"></a>    <span class="n">Object</span> <span class="o">*</span><span class="n">obj</span> <span class="o">=</span> <span class="n">self</span><span class="p">;</span>
+<a name="code--object.c-pyg.html-10"></a>
+<a name="code--object.c-pyg.html-11"></a>    <span class="k">if</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--object.c-pyg.html-12"></a>        <span class="k">if</span><span class="p">(</span><span class="n">obj</span><span class="o">-&gt;</span><span class="n">description</span><span class="p">)</span> <span class="n">free</span><span class="p">(</span><span class="n">obj</span><span class="o">-&gt;</span><span class="n">description</span><span class="p">);</span>
+<a name="code--object.c-pyg.html-13"></a>        <span class="n">free</span><span class="p">(</span><span class="n">obj</span><span class="p">);</span>
+<a name="code--object.c-pyg.html-14"></a>    <span class="p">}</span>
+<a name="code--object.c-pyg.html-15"></a><span class="p">}</span>
+<a name="code--object.c-pyg.html-16"></a>
+<a name="code--object.c-pyg.html-17"></a><span class="kt">void</span> <span class="nf">Object_describe</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">)</span>
+<a name="code--object.c-pyg.html-18"></a><span class="p">{</span>
+<a name="code--object.c-pyg.html-19"></a>    <span class="n">Object</span> <span class="o">*</span><span class="n">obj</span> <span class="o">=</span> <span class="n">self</span><span class="p">;</span>
+<a name="code--object.c-pyg.html-20"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%s.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">obj</span><span class="o">-&gt;</span><span class="n">description</span><span class="p">);</span>
+<a name="code--object.c-pyg.html-21"></a><span class="p">}</span>
+<a name="code--object.c-pyg.html-22"></a>
+<a name="code--object.c-pyg.html-23"></a><span class="kt">int</span> <span class="nf">Object_init</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">)</span>
+<a name="code--object.c-pyg.html-24"></a><span class="p">{</span>
+<a name="code--object.c-pyg.html-25"></a>    <span class="c1">// do nothing really</span>
+<a name="code--object.c-pyg.html-26"></a>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--object.c-pyg.html-27"></a><span class="p">}</span>
+<a name="code--object.c-pyg.html-28"></a>
+<a name="code--object.c-pyg.html-29"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">Object_move</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">,</span> <span class="n">Direction</span> <span class="n">direction</span><span class="p">)</span>
+<a name="code--object.c-pyg.html-30"></a><span class="p">{</span>
+<a name="code--object.c-pyg.html-31"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You can&#39;t go that direction.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--object.c-pyg.html-32"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--object.c-pyg.html-33"></a><span class="p">}</span>
+<a name="code--object.c-pyg.html-34"></a>
+<a name="code--object.c-pyg.html-35"></a><span class="kt">int</span> <span class="nf">Object_attack</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">,</span> <span class="kt">int</span> <span class="n">damage</span><span class="p">)</span>
+<a name="code--object.c-pyg.html-36"></a><span class="p">{</span>
+<a name="code--object.c-pyg.html-37"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You can&#39;t attack that.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--object.c-pyg.html-38"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--object.c-pyg.html-39"></a><span class="p">}</span>
+<a name="code--object.c-pyg.html-40"></a>
+<a name="code--object.c-pyg.html-41"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">Object_new</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">size</span><span class="p">,</span> <span class="n">Object</span> <span class="n">proto</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">description</span><span class="p">)</span>
+<a name="code--object.c-pyg.html-42"></a><span class="p">{</span>
+<a name="code--object.c-pyg.html-43"></a>    <span class="c1">// setup the default functions in case they aren&#39;t set</span>
+<a name="code--object.c-pyg.html-44"></a>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">proto</span><span class="p">.</span><span class="n">init</span><span class="p">)</span> <span class="n">proto</span><span class="p">.</span><span class="n">init</span> <span class="o">=</span> <span class="n">Object_init</span><span class="p">;</span>
+<a name="code--object.c-pyg.html-45"></a>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">proto</span><span class="p">.</span><span class="n">describe</span><span class="p">)</span> <span class="n">proto</span><span class="p">.</span><span class="n">describe</span> <span class="o">=</span> <span class="n">Object_describe</span><span class="p">;</span>
+<a name="code--object.c-pyg.html-46"></a>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">proto</span><span class="p">.</span><span class="n">destroy</span><span class="p">)</span> <span class="n">proto</span><span class="p">.</span><span class="n">destroy</span> <span class="o">=</span> <span class="n">Object_destroy</span><span class="p">;</span>
+<a name="code--object.c-pyg.html-47"></a>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">proto</span><span class="p">.</span><span class="n">attack</span><span class="p">)</span> <span class="n">proto</span><span class="p">.</span><span class="n">attack</span> <span class="o">=</span> <span class="n">Object_attack</span><span class="p">;</span>
+<a name="code--object.c-pyg.html-48"></a>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">proto</span><span class="p">.</span><span class="n">move</span><span class="p">)</span> <span class="n">proto</span><span class="p">.</span><span class="n">move</span> <span class="o">=</span> <span class="n">Object_move</span><span class="p">;</span>
+<a name="code--object.c-pyg.html-49"></a>
+<a name="code--object.c-pyg.html-50"></a>    <span class="c1">// this seems weird, but we can make a struct of one size,</span>
+<a name="code--object.c-pyg.html-51"></a>    <span class="c1">// then point a different pointer at it to &quot;cast&quot; it</span>
+<a name="code--object.c-pyg.html-52"></a>    <span class="n">Object</span> <span class="o">*</span><span class="n">el</span> <span class="o">=</span> <span class="n">calloc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="p">);</span>
+<a name="code--object.c-pyg.html-53"></a>    <span class="o">*</span><span class="n">el</span> <span class="o">=</span> <span class="n">proto</span><span class="p">;</span>
+<a name="code--object.c-pyg.html-54"></a>
+<a name="code--object.c-pyg.html-55"></a>    <span class="c1">// copy the description over</span>
+<a name="code--object.c-pyg.html-56"></a>    <span class="n">el</span><span class="o">-&gt;</span><span class="n">description</span> <span class="o">=</span> <span class="n">strdup</span><span class="p">(</span><span class="n">description</span><span class="p">);</span>
+<a name="code--object.c-pyg.html-57"></a>
+<a name="code--object.c-pyg.html-58"></a>    <span class="c1">// initialize it with whatever init we were given</span>
+<a name="code--object.c-pyg.html-59"></a>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">el</span><span class="o">-&gt;</span><span class="n">init</span><span class="p">(</span><span class="n">el</span><span class="p">))</span> <span class="p">{</span>
+<a name="code--object.c-pyg.html-60"></a>        <span class="c1">// looks like it didn&#39;t initialize properly</span>
+<a name="code--object.c-pyg.html-61"></a>        <span class="n">el</span><span class="o">-&gt;</span><span class="n">destroy</span><span class="p">(</span><span class="n">el</span><span class="p">);</span>
+<a name="code--object.c-pyg.html-62"></a>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--object.c-pyg.html-63"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--object.c-pyg.html-64"></a>        <span class="c1">// all done, we made an object of any type</span>
+<a name="code--object.c-pyg.html-65"></a>        <span class="k">return</span> <span class="n">el</span><span class="p">;</span>
+<a name="code--object.c-pyg.html-66"></a>    <span class="p">}</span>
+<a name="code--object.c-pyg.html-67"></a><span class="p">}</span>
+</pre></div><p>There's really nothing new in this file, except one <em>tiny</em> little trick.
+The function <tt class="docutils literal">Object_new</tt> uses an aspect of how <tt class="docutils literal">structs</tt> work
+by putting the base prototype at the beginning of the struct.  When you look
+at the <tt class="docutils literal">ex19.h</tt> header later, you'll see how I make the first field
+in the struct an <tt class="docutils literal">Object</tt>.  Since C puts the fields in a struct
+in order, and since a pointer just points at a chunk of memory, I can
+&quot;cast&quot; a pointer to anything I want.  In this case, even though I'm taking
+a potentially larger block of memory from <tt class="docutils literal">calloc</tt>, I'm using a
+<tt class="docutils literal">Object</tt> pointer to work with it.</p>
+<p>I explain this a bit better when we write the <tt class="docutils literal">ex19.h</tt> file since it's
+easier to understand when you see it being used.</p>
+<p>That creates your base object system, but you'll need a way to compile it
+and link it into your <tt class="docutils literal">ex19.c</tt> file to create a complete program.  The
+<tt class="docutils literal">object.c</tt> file on its own doesn't have a <tt class="docutils literal">main</tt> so it isn't
+enough to make a full program.  Here's a <tt class="docutils literal">Makefile</tt> that will do this
+based on the one you've been using:</p>
+<div class="highlight"><pre><a name="code--ex19.1.mak-pyg.html-1"></a><span class="nv">CFLAGS</span><span class="o">=</span>-Wall -g
+<a name="code--ex19.1.mak-pyg.html-2"></a>
+<a name="code--ex19.1.mak-pyg.html-3"></a><span class="nf">all</span><span class="o">:</span> <span class="m">ex19</span>
+<a name="code--ex19.1.mak-pyg.html-4"></a>
+<a name="code--ex19.1.mak-pyg.html-5"></a><span class="nf">ex19</span><span class="o">:</span> <span class="m">object.o</span>
+<a name="code--ex19.1.mak-pyg.html-6"></a>
+<a name="code--ex19.1.mak-pyg.html-7"></a><span class="nf">clean</span><span class="o">:</span>
+<a name="code--ex19.1.mak-pyg.html-8"></a>  rm -f ex19
+</pre></div><p>This <tt class="docutils literal">Makefile</tt> is doing nothing more than saying that <tt class="docutils literal">ex19</tt>
+depends on <tt class="docutils literal">object.o</tt>.  Remember how <tt class="docutils literal">make</tt> knows how to build
+different kinds of files by their extensions?  Doing this tells make the
+following:</p>
+<ul class="simple">
+<li>When I say run <tt class="docutils literal">make</tt> the default <tt class="docutils literal">all</tt> should just build
+<tt class="docutils literal">ex19</tt>.</li>
+<li>When you build <tt class="docutils literal">ex19</tt>, you need to also build <tt class="docutils literal">object.o</tt>
+and include it in the build.</li>
+<li><tt class="docutils literal">make</tt> can't see anything in the file for <tt class="docutils literal">object.o</tt>, but it does
+see an <tt class="docutils literal">object.c</tt> file, and it knows how to turn a <tt class="docutils literal">.c</tt> into
+a <tt class="docutils literal">.o</tt>, so it does that.</li>
+<li>Once it has <tt class="docutils literal">object.o</tt> built it then runs the correct compile
+command to build <tt class="docutils literal">ex19</tt> from <tt class="docutils literal">ex19.c</tt> and <tt class="docutils literal">object.o</tt>.</li>
+</ul>
+</div>
+</div>
+<div class="section" id="the-game-implementation">
+<h1>The Game Implementation</h1>
+<p>Once you have those files you just need to implement the actual game
+using the object system, and first step is putting all the data types
+and function declarations in a <tt class="docutils literal">ex19.h</tt> file:</p>
+<div class="highlight"><pre><a name="code--ex19.h-pyg.html-1"></a><span class="cp">#ifndef _ex19_h</span>
+<a name="code--ex19.h-pyg.html-2"></a><span class="cp">#define _ex19_h</span>
+<a name="code--ex19.h-pyg.html-3"></a>
+<a name="code--ex19.h-pyg.html-4"></a><span class="cp">#include &quot;object.h&quot;</span>
+<a name="code--ex19.h-pyg.html-5"></a>
+<a name="code--ex19.h-pyg.html-6"></a><span class="k">struct</span> <span class="n">Monster</span> <span class="p">{</span>
+<a name="code--ex19.h-pyg.html-7"></a>    <span class="n">Object</span> <span class="n">proto</span><span class="p">;</span>
+<a name="code--ex19.h-pyg.html-8"></a>    <span class="kt">int</span> <span class="n">hit_points</span><span class="p">;</span>
+<a name="code--ex19.h-pyg.html-9"></a><span class="p">};</span>
+<a name="code--ex19.h-pyg.html-10"></a>
+<a name="code--ex19.h-pyg.html-11"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="n">Monster</span> <span class="n">Monster</span><span class="p">;</span>
+<a name="code--ex19.h-pyg.html-12"></a>
+<a name="code--ex19.h-pyg.html-13"></a><span class="kt">int</span> <span class="nf">Monster_attack</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">,</span> <span class="kt">int</span> <span class="n">damage</span><span class="p">);</span>
+<a name="code--ex19.h-pyg.html-14"></a><span class="kt">int</span> <span class="nf">Monster_init</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">);</span>
+<a name="code--ex19.h-pyg.html-15"></a>
+<a name="code--ex19.h-pyg.html-16"></a><span class="k">struct</span> <span class="n">Room</span> <span class="p">{</span>
+<a name="code--ex19.h-pyg.html-17"></a>    <span class="n">Object</span> <span class="n">proto</span><span class="p">;</span>
+<a name="code--ex19.h-pyg.html-18"></a>
+<a name="code--ex19.h-pyg.html-19"></a>    <span class="n">Monster</span> <span class="o">*</span><span class="n">bad_guy</span><span class="p">;</span>
+<a name="code--ex19.h-pyg.html-20"></a>
+<a name="code--ex19.h-pyg.html-21"></a>    <span class="k">struct</span> <span class="n">Room</span> <span class="o">*</span><span class="n">north</span><span class="p">;</span>
+<a name="code--ex19.h-pyg.html-22"></a>    <span class="k">struct</span> <span class="n">Room</span> <span class="o">*</span><span class="n">south</span><span class="p">;</span>
+<a name="code--ex19.h-pyg.html-23"></a>    <span class="k">struct</span> <span class="n">Room</span> <span class="o">*</span><span class="n">east</span><span class="p">;</span>
+<a name="code--ex19.h-pyg.html-24"></a>    <span class="k">struct</span> <span class="n">Room</span> <span class="o">*</span><span class="n">west</span><span class="p">;</span>
+<a name="code--ex19.h-pyg.html-25"></a><span class="p">};</span>
+<a name="code--ex19.h-pyg.html-26"></a>
+<a name="code--ex19.h-pyg.html-27"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="n">Room</span> <span class="n">Room</span><span class="p">;</span>
+<a name="code--ex19.h-pyg.html-28"></a>
+<a name="code--ex19.h-pyg.html-29"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">Room_move</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">,</span> <span class="n">Direction</span> <span class="n">direction</span><span class="p">);</span>
+<a name="code--ex19.h-pyg.html-30"></a><span class="kt">int</span> <span class="nf">Room_attack</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">,</span> <span class="kt">int</span> <span class="n">damage</span><span class="p">);</span>
+<a name="code--ex19.h-pyg.html-31"></a><span class="kt">int</span> <span class="nf">Room_init</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">);</span>
+<a name="code--ex19.h-pyg.html-32"></a>
+<a name="code--ex19.h-pyg.html-33"></a>
+<a name="code--ex19.h-pyg.html-34"></a><span class="k">struct</span> <span class="n">Map</span> <span class="p">{</span>
+<a name="code--ex19.h-pyg.html-35"></a>    <span class="n">Object</span> <span class="n">proto</span><span class="p">;</span>
+<a name="code--ex19.h-pyg.html-36"></a>    <span class="n">Room</span> <span class="o">*</span><span class="n">start</span><span class="p">;</span>
+<a name="code--ex19.h-pyg.html-37"></a>    <span class="n">Room</span> <span class="o">*</span><span class="n">location</span><span class="p">;</span>
+<a name="code--ex19.h-pyg.html-38"></a><span class="p">};</span>
+<a name="code--ex19.h-pyg.html-39"></a>
+<a name="code--ex19.h-pyg.html-40"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="n">Map</span> <span class="n">Map</span><span class="p">;</span>
+<a name="code--ex19.h-pyg.html-41"></a>
+<a name="code--ex19.h-pyg.html-42"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">Map_move</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">,</span> <span class="n">Direction</span> <span class="n">direction</span><span class="p">);</span>
+<a name="code--ex19.h-pyg.html-43"></a><span class="kt">int</span> <span class="nf">Map_attack</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">,</span> <span class="kt">int</span> <span class="n">damage</span><span class="p">);</span>
+<a name="code--ex19.h-pyg.html-44"></a><span class="kt">int</span> <span class="nf">Map_init</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">);</span>
+<a name="code--ex19.h-pyg.html-45"></a>
+<a name="code--ex19.h-pyg.html-46"></a><span class="cp">#endif</span>
+</pre></div><p>That sets up three new Objects you'll be using: <tt class="docutils literal">Monster</tt>, <tt class="docutils literal">Room</tt>,
+and <tt class="docutils literal">Map</tt>.</p>
+<p>Taking a look at <tt class="docutils literal">object.c:52</tt> you can see where I use a pointer
+<tt class="docutils literal">Object *el = calloc(1, size)</tt>.  Go back and look at the <tt class="docutils literal">NEW</tt>
+macro in <tt class="docutils literal">object.h</tt> and you can see that it is getting the <tt class="docutils literal">sizeof</tt>
+another struct, say <tt class="docutils literal">Room</tt>, and I allocate that much.  However, because
+I've pointed a <tt class="docutils literal">Object</tt> pointer at this block of memory, and because
+I put an <tt class="docutils literal">Object proto</tt> field at the front of <tt class="docutils literal">Room</tt>, I'm able
+to treat a <tt class="docutils literal">Room</tt> like it's an <tt class="docutils literal">Object</tt>.</p>
+<p>The way to break this down is like so:</p>
+<ul class="simple">
+<li>I call <tt class="docutils literal">NEW(Room, <span class="pre">&quot;Hello.&quot;)</span></tt> which the CPP expands as a macro
+into <tt class="docutils literal">Object_new(sizeof(Room), RoomProto, <span class="pre">&quot;Hello.&quot;)</span></tt>.</li>
+<li>This runs, and inside <tt class="docutils literal">Object_new</tt> I allocate a piece of memory
+that's <tt class="docutils literal">Room</tt> in size, <em>but</em> point a <tt class="docutils literal">Object *el</tt> pointer
+at it.</li>
+<li>Since C puts the <tt class="docutils literal">Room.proto</tt> field first, that means the <tt class="docutils literal">el</tt>
+pointer is really only pointing at enough of the block of memory to
+see a full <tt class="docutils literal">Object</tt> struct.  It has no idea that it's even called
+<tt class="docutils literal">proto</tt>.</li>
+<li>It then uses this <tt class="docutils literal">Object *el</tt> pointer to set the contents of
+the piece of memory correctly with <tt class="docutils literal">*el = proto;</tt>.  Remember that
+you can copy structs, and that <tt class="docutils literal">*el</tt> means &quot;the value of whatever el points
+at&quot;, so this means &quot;assign the proto struct to whatever el points at&quot;.</li>
+<li>Now that this mystery struct is filled in with the right data from
+<tt class="docutils literal">proto</tt>, the function can then call <tt class="docutils literal">init</tt> or <tt class="docutils literal">destroy</tt>
+on the <tt class="docutils literal">Object</tt>, but the cool part is whoever called this function
+can <em>change</em> these out for whatever ones they want.</li>
+</ul>
+<p>And with that, we have a way to get this one function to construct new types,
+and give them new functions to change their behavior.  This may seem like
+&quot;hackery&quot; but it's stock C and totally valid.  In fact there's quite a few
+standard system functions that work this same way, and we'll be using some of
+them for converting addresses in network code.</p>
+<p>With the function definitions and data structures written out I can now
+actually implement the game with four rooms and a minotaur to beat up:</p>
+<div class="highlight"><pre><a name="code--ex19.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex19.c-pyg.html-2"></a><span class="cp">#include &lt;errno.h&gt;</span>
+<a name="code--ex19.c-pyg.html-3"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--ex19.c-pyg.html-4"></a><span class="cp">#include &lt;string.h&gt;</span>
+<a name="code--ex19.c-pyg.html-5"></a><span class="cp">#include &lt;time.h&gt;</span>
+<a name="code--ex19.c-pyg.html-6"></a><span class="cp">#include &quot;ex19.h&quot;</span>
+<a name="code--ex19.c-pyg.html-7"></a>
+<a name="code--ex19.c-pyg.html-8"></a>
+<a name="code--ex19.c-pyg.html-9"></a><span class="kt">int</span> <span class="nf">Monster_attack</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">,</span> <span class="kt">int</span> <span class="n">damage</span><span class="p">)</span>
+<a name="code--ex19.c-pyg.html-10"></a><span class="p">{</span>
+<a name="code--ex19.c-pyg.html-11"></a>    <span class="n">Monster</span> <span class="o">*</span><span class="n">monster</span> <span class="o">=</span> <span class="n">self</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-12"></a>
+<a name="code--ex19.c-pyg.html-13"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You attack %s!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">monster</span><span class="o">-&gt;</span><span class="n">_</span><span class="p">(</span><span class="n">description</span><span class="p">));</span>
+<a name="code--ex19.c-pyg.html-14"></a>
+<a name="code--ex19.c-pyg.html-15"></a>    <span class="n">monster</span><span class="o">-&gt;</span><span class="n">hit_points</span> <span class="o">-=</span> <span class="n">damage</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-16"></a>
+<a name="code--ex19.c-pyg.html-17"></a>    <span class="k">if</span><span class="p">(</span><span class="n">monster</span><span class="o">-&gt;</span><span class="n">hit_points</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex19.c-pyg.html-18"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;It is still alive.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-19"></a>        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-20"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--ex19.c-pyg.html-21"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;It is dead!</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-22"></a>        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-23"></a>    <span class="p">}</span>
+<a name="code--ex19.c-pyg.html-24"></a><span class="p">}</span>
+<a name="code--ex19.c-pyg.html-25"></a>
+<a name="code--ex19.c-pyg.html-26"></a><span class="kt">int</span> <span class="nf">Monster_init</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">)</span>
+<a name="code--ex19.c-pyg.html-27"></a><span class="p">{</span>
+<a name="code--ex19.c-pyg.html-28"></a>    <span class="n">Monster</span> <span class="o">*</span><span class="n">monster</span> <span class="o">=</span> <span class="n">self</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-29"></a>    <span class="n">monster</span><span class="o">-&gt;</span><span class="n">hit_points</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-30"></a>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-31"></a><span class="p">}</span>
+<a name="code--ex19.c-pyg.html-32"></a>
+<a name="code--ex19.c-pyg.html-33"></a><span class="n">Object</span> <span class="n">MonsterProto</span> <span class="o">=</span> <span class="p">{</span>
+<a name="code--ex19.c-pyg.html-34"></a>    <span class="p">.</span><span class="n">init</span> <span class="o">=</span> <span class="n">Monster_init</span><span class="p">,</span>
+<a name="code--ex19.c-pyg.html-35"></a>    <span class="p">.</span><span class="n">attack</span> <span class="o">=</span> <span class="n">Monster_attack</span>
+<a name="code--ex19.c-pyg.html-36"></a><span class="p">};</span>
+<a name="code--ex19.c-pyg.html-37"></a>
+<a name="code--ex19.c-pyg.html-38"></a>
+<a name="code--ex19.c-pyg.html-39"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">Room_move</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">,</span> <span class="n">Direction</span> <span class="n">direction</span><span class="p">)</span>
+<a name="code--ex19.c-pyg.html-40"></a><span class="p">{</span>
+<a name="code--ex19.c-pyg.html-41"></a>    <span class="n">Room</span> <span class="o">*</span><span class="n">room</span> <span class="o">=</span> <span class="n">self</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-42"></a>    <span class="n">Room</span> <span class="o">*</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-43"></a>
+<a name="code--ex19.c-pyg.html-44"></a>    <span class="k">if</span><span class="p">(</span><span class="n">direction</span> <span class="o">==</span> <span class="n">NORTH</span> <span class="o">&amp;&amp;</span> <span class="n">room</span><span class="o">-&gt;</span><span class="n">north</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex19.c-pyg.html-45"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You go north, into:</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-46"></a>        <span class="n">next</span> <span class="o">=</span> <span class="n">room</span><span class="o">-&gt;</span><span class="n">north</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-47"></a>    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">direction</span> <span class="o">==</span> <span class="n">SOUTH</span> <span class="o">&amp;&amp;</span> <span class="n">room</span><span class="o">-&gt;</span><span class="n">south</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex19.c-pyg.html-48"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You go south, into:</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-49"></a>        <span class="n">next</span> <span class="o">=</span> <span class="n">room</span><span class="o">-&gt;</span><span class="n">south</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-50"></a>    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">direction</span> <span class="o">==</span> <span class="n">EAST</span> <span class="o">&amp;&amp;</span> <span class="n">room</span><span class="o">-&gt;</span><span class="n">east</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex19.c-pyg.html-51"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You go east, into:</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-52"></a>        <span class="n">next</span> <span class="o">=</span> <span class="n">room</span><span class="o">-&gt;</span><span class="n">east</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-53"></a>    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">direction</span> <span class="o">==</span> <span class="n">WEST</span> <span class="o">&amp;&amp;</span> <span class="n">room</span><span class="o">-&gt;</span><span class="n">west</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex19.c-pyg.html-54"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You go west, into:</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-55"></a>        <span class="n">next</span> <span class="o">=</span> <span class="n">room</span><span class="o">-&gt;</span><span class="n">west</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-56"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--ex19.c-pyg.html-57"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You can&#39;t go that direction.&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-58"></a>        <span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-59"></a>    <span class="p">}</span>
+<a name="code--ex19.c-pyg.html-60"></a>
+<a name="code--ex19.c-pyg.html-61"></a>    <span class="k">if</span><span class="p">(</span><span class="n">next</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex19.c-pyg.html-62"></a>        <span class="n">next</span><span class="o">-&gt;</span><span class="n">_</span><span class="p">(</span><span class="n">describe</span><span class="p">)(</span><span class="n">next</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-63"></a>    <span class="p">}</span>
+<a name="code--ex19.c-pyg.html-64"></a>
+<a name="code--ex19.c-pyg.html-65"></a>    <span class="k">return</span> <span class="n">next</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-66"></a><span class="p">}</span>
+<a name="code--ex19.c-pyg.html-67"></a>
+<a name="code--ex19.c-pyg.html-68"></a>
+<a name="code--ex19.c-pyg.html-69"></a><span class="kt">int</span> <span class="nf">Room_attack</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">,</span> <span class="kt">int</span> <span class="n">damage</span><span class="p">)</span>
+<a name="code--ex19.c-pyg.html-70"></a><span class="p">{</span>
+<a name="code--ex19.c-pyg.html-71"></a>    <span class="n">Room</span> <span class="o">*</span><span class="n">room</span> <span class="o">=</span> <span class="n">self</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-72"></a>    <span class="n">Monster</span> <span class="o">*</span><span class="n">monster</span> <span class="o">=</span> <span class="n">room</span><span class="o">-&gt;</span><span class="n">bad_guy</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-73"></a>
+<a name="code--ex19.c-pyg.html-74"></a>    <span class="k">if</span><span class="p">(</span><span class="n">monster</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex19.c-pyg.html-75"></a>        <span class="n">monster</span><span class="o">-&gt;</span><span class="n">_</span><span class="p">(</span><span class="n">attack</span><span class="p">)(</span><span class="n">monster</span><span class="p">,</span> <span class="n">damage</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-76"></a>        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-77"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--ex19.c-pyg.html-78"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You flail in the air at nothing. Idiot.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-79"></a>        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-80"></a>    <span class="p">}</span>
+<a name="code--ex19.c-pyg.html-81"></a><span class="p">}</span>
+<a name="code--ex19.c-pyg.html-82"></a>
+<a name="code--ex19.c-pyg.html-83"></a>
+<a name="code--ex19.c-pyg.html-84"></a><span class="n">Object</span> <span class="n">RoomProto</span> <span class="o">=</span> <span class="p">{</span>
+<a name="code--ex19.c-pyg.html-85"></a>    <span class="p">.</span><span class="n">move</span> <span class="o">=</span> <span class="n">Room_move</span><span class="p">,</span>
+<a name="code--ex19.c-pyg.html-86"></a>    <span class="p">.</span><span class="n">attack</span> <span class="o">=</span> <span class="n">Room_attack</span>
+<a name="code--ex19.c-pyg.html-87"></a><span class="p">};</span>
+<a name="code--ex19.c-pyg.html-88"></a>
+<a name="code--ex19.c-pyg.html-89"></a>
+<a name="code--ex19.c-pyg.html-90"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">Map_move</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">,</span> <span class="n">Direction</span> <span class="n">direction</span><span class="p">)</span>
+<a name="code--ex19.c-pyg.html-91"></a><span class="p">{</span>
+<a name="code--ex19.c-pyg.html-92"></a>    <span class="n">Map</span> <span class="o">*</span><span class="n">map</span> <span class="o">=</span> <span class="n">self</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-93"></a>    <span class="n">Room</span> <span class="o">*</span><span class="n">location</span> <span class="o">=</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">location</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-94"></a>    <span class="n">Room</span> <span class="o">*</span><span class="n">next</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-95"></a>
+<a name="code--ex19.c-pyg.html-96"></a>    <span class="n">next</span> <span class="o">=</span> <span class="n">location</span><span class="o">-&gt;</span><span class="n">_</span><span class="p">(</span><span class="n">move</span><span class="p">)(</span><span class="n">location</span><span class="p">,</span> <span class="n">direction</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-97"></a>
+<a name="code--ex19.c-pyg.html-98"></a>    <span class="k">if</span><span class="p">(</span><span class="n">next</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex19.c-pyg.html-99"></a>        <span class="n">map</span><span class="o">-&gt;</span><span class="n">location</span> <span class="o">=</span> <span class="n">next</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-100"></a>    <span class="p">}</span>
+<a name="code--ex19.c-pyg.html-101"></a>
+<a name="code--ex19.c-pyg.html-102"></a>    <span class="k">return</span> <span class="n">next</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-103"></a><span class="p">}</span>
+<a name="code--ex19.c-pyg.html-104"></a>
+<a name="code--ex19.c-pyg.html-105"></a><span class="kt">int</span> <span class="nf">Map_attack</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">,</span> <span class="kt">int</span> <span class="n">damage</span><span class="p">)</span>
+<a name="code--ex19.c-pyg.html-106"></a><span class="p">{</span>
+<a name="code--ex19.c-pyg.html-107"></a>    <span class="n">Map</span><span class="o">*</span> <span class="n">map</span> <span class="o">=</span> <span class="n">self</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-108"></a>    <span class="n">Room</span> <span class="o">*</span><span class="n">location</span> <span class="o">=</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">location</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-109"></a>
+<a name="code--ex19.c-pyg.html-110"></a>    <span class="k">return</span> <span class="n">location</span><span class="o">-&gt;</span><span class="n">_</span><span class="p">(</span><span class="n">attack</span><span class="p">)(</span><span class="n">location</span><span class="p">,</span> <span class="n">damage</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-111"></a><span class="p">}</span>
+<a name="code--ex19.c-pyg.html-112"></a>
+<a name="code--ex19.c-pyg.html-113"></a>
+<a name="code--ex19.c-pyg.html-114"></a><span class="kt">int</span> <span class="nf">Map_init</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">self</span><span class="p">)</span>
+<a name="code--ex19.c-pyg.html-115"></a><span class="p">{</span>
+<a name="code--ex19.c-pyg.html-116"></a>    <span class="n">Map</span> <span class="o">*</span><span class="n">map</span> <span class="o">=</span> <span class="n">self</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-117"></a>
+<a name="code--ex19.c-pyg.html-118"></a>    <span class="c1">// make some rooms for a small map</span>
+<a name="code--ex19.c-pyg.html-119"></a>    <span class="n">Room</span> <span class="o">*</span><span class="n">hall</span> <span class="o">=</span> <span class="n">NEW</span><span class="p">(</span><span class="n">Room</span><span class="p">,</span> <span class="s">&quot;The great Hall&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-120"></a>    <span class="n">Room</span> <span class="o">*</span><span class="n">throne</span> <span class="o">=</span> <span class="n">NEW</span><span class="p">(</span><span class="n">Room</span><span class="p">,</span> <span class="s">&quot;The throne room&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-121"></a>    <span class="n">Room</span> <span class="o">*</span><span class="n">arena</span> <span class="o">=</span> <span class="n">NEW</span><span class="p">(</span><span class="n">Room</span><span class="p">,</span> <span class="s">&quot;The arena, with the minotaur&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-122"></a>    <span class="n">Room</span> <span class="o">*</span><span class="n">kitchen</span> <span class="o">=</span> <span class="n">NEW</span><span class="p">(</span><span class="n">Room</span><span class="p">,</span> <span class="s">&quot;Kitchen, you have the knife now&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-123"></a>
+<a name="code--ex19.c-pyg.html-124"></a>    <span class="c1">// put the bad guy in the arena</span>
+<a name="code--ex19.c-pyg.html-125"></a>    <span class="n">arena</span><span class="o">-&gt;</span><span class="n">bad_guy</span> <span class="o">=</span> <span class="n">NEW</span><span class="p">(</span><span class="n">Monster</span><span class="p">,</span> <span class="s">&quot;The evil minotaur&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-126"></a>
+<a name="code--ex19.c-pyg.html-127"></a>    <span class="c1">// setup the map rooms</span>
+<a name="code--ex19.c-pyg.html-128"></a>    <span class="n">hall</span><span class="o">-&gt;</span><span class="n">north</span> <span class="o">=</span> <span class="n">throne</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-129"></a>
+<a name="code--ex19.c-pyg.html-130"></a>    <span class="n">throne</span><span class="o">-&gt;</span><span class="n">west</span> <span class="o">=</span> <span class="n">arena</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-131"></a>    <span class="n">throne</span><span class="o">-&gt;</span><span class="n">east</span> <span class="o">=</span> <span class="n">kitchen</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-132"></a>    <span class="n">throne</span><span class="o">-&gt;</span><span class="n">south</span> <span class="o">=</span> <span class="n">hall</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-133"></a>
+<a name="code--ex19.c-pyg.html-134"></a>    <span class="n">arena</span><span class="o">-&gt;</span><span class="n">east</span> <span class="o">=</span> <span class="n">throne</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-135"></a>    <span class="n">kitchen</span><span class="o">-&gt;</span><span class="n">west</span> <span class="o">=</span> <span class="n">throne</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-136"></a>
+<a name="code--ex19.c-pyg.html-137"></a>    <span class="c1">// start the map and the character off in the hall</span>
+<a name="code--ex19.c-pyg.html-138"></a>    <span class="n">map</span><span class="o">-&gt;</span><span class="n">start</span> <span class="o">=</span> <span class="n">hall</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-139"></a>    <span class="n">map</span><span class="o">-&gt;</span><span class="n">location</span> <span class="o">=</span> <span class="n">hall</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-140"></a>
+<a name="code--ex19.c-pyg.html-141"></a>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-142"></a><span class="p">}</span>
+<a name="code--ex19.c-pyg.html-143"></a>
+<a name="code--ex19.c-pyg.html-144"></a><span class="n">Object</span> <span class="n">MapProto</span> <span class="o">=</span> <span class="p">{</span>
+<a name="code--ex19.c-pyg.html-145"></a>    <span class="p">.</span><span class="n">init</span> <span class="o">=</span> <span class="n">Map_init</span><span class="p">,</span>
+<a name="code--ex19.c-pyg.html-146"></a>    <span class="p">.</span><span class="n">move</span> <span class="o">=</span> <span class="n">Map_move</span><span class="p">,</span>
+<a name="code--ex19.c-pyg.html-147"></a>    <span class="p">.</span><span class="n">attack</span> <span class="o">=</span> <span class="n">Map_attack</span>
+<a name="code--ex19.c-pyg.html-148"></a><span class="p">};</span>
+<a name="code--ex19.c-pyg.html-149"></a>
+<a name="code--ex19.c-pyg.html-150"></a><span class="kt">int</span> <span class="nf">process_input</span><span class="p">(</span><span class="n">Map</span> <span class="o">*</span><span class="n">game</span><span class="p">)</span>
+<a name="code--ex19.c-pyg.html-151"></a><span class="p">{</span>
+<a name="code--ex19.c-pyg.html-152"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&gt; &quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-153"></a>
+<a name="code--ex19.c-pyg.html-154"></a>    <span class="kt">char</span> <span class="n">ch</span> <span class="o">=</span> <span class="n">getchar</span><span class="p">();</span>
+<a name="code--ex19.c-pyg.html-155"></a>    <span class="n">getchar</span><span class="p">();</span> <span class="c1">// eat ENTER</span>
+<a name="code--ex19.c-pyg.html-156"></a>
+<a name="code--ex19.c-pyg.html-157"></a>    <span class="kt">int</span> <span class="n">damage</span> <span class="o">=</span> <span class="n">rand</span><span class="p">()</span> <span class="o">%</span> <span class="mi">4</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-158"></a>
+<a name="code--ex19.c-pyg.html-159"></a>    <span class="k">switch</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex19.c-pyg.html-160"></a>        <span class="k">case</span> <span class="o">-</span><span class="mi">1</span>:
+<a name="code--ex19.c-pyg.html-161"></a>            <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Giving up? You suck.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-162"></a>            <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-163"></a>            <span class="k">break</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-164"></a>
+<a name="code--ex19.c-pyg.html-165"></a>        <span class="k">case</span> <span class="sc">&#39;n&#39;</span>:
+<a name="code--ex19.c-pyg.html-166"></a>            <span class="n">game</span><span class="o">-&gt;</span><span class="n">_</span><span class="p">(</span><span class="n">move</span><span class="p">)(</span><span class="n">game</span><span class="p">,</span> <span class="n">NORTH</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-167"></a>            <span class="k">break</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-168"></a>
+<a name="code--ex19.c-pyg.html-169"></a>        <span class="k">case</span> <span class="sc">&#39;s&#39;</span>:
+<a name="code--ex19.c-pyg.html-170"></a>            <span class="n">game</span><span class="o">-&gt;</span><span class="n">_</span><span class="p">(</span><span class="n">move</span><span class="p">)(</span><span class="n">game</span><span class="p">,</span> <span class="n">SOUTH</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-171"></a>            <span class="k">break</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-172"></a>
+<a name="code--ex19.c-pyg.html-173"></a>        <span class="k">case</span> <span class="sc">&#39;e&#39;</span>:
+<a name="code--ex19.c-pyg.html-174"></a>            <span class="n">game</span><span class="o">-&gt;</span><span class="n">_</span><span class="p">(</span><span class="n">move</span><span class="p">)(</span><span class="n">game</span><span class="p">,</span> <span class="n">EAST</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-175"></a>            <span class="k">break</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-176"></a>
+<a name="code--ex19.c-pyg.html-177"></a>        <span class="k">case</span> <span class="sc">&#39;w&#39;</span>:
+<a name="code--ex19.c-pyg.html-178"></a>            <span class="n">game</span><span class="o">-&gt;</span><span class="n">_</span><span class="p">(</span><span class="n">move</span><span class="p">)(</span><span class="n">game</span><span class="p">,</span> <span class="n">WEST</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-179"></a>            <span class="k">break</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-180"></a>
+<a name="code--ex19.c-pyg.html-181"></a>        <span class="k">case</span> <span class="sc">&#39;a&#39;</span>:
+<a name="code--ex19.c-pyg.html-182"></a>
+<a name="code--ex19.c-pyg.html-183"></a>            <span class="n">game</span><span class="o">-&gt;</span><span class="n">_</span><span class="p">(</span><span class="n">attack</span><span class="p">)(</span><span class="n">game</span><span class="p">,</span> <span class="n">damage</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-184"></a>            <span class="k">break</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-185"></a>        <span class="k">case</span> <span class="sc">&#39;l&#39;</span>:
+<a name="code--ex19.c-pyg.html-186"></a>            <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You can go:</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-187"></a>            <span class="k">if</span><span class="p">(</span><span class="n">game</span><span class="o">-&gt;</span><span class="n">location</span><span class="o">-&gt;</span><span class="n">north</span><span class="p">)</span> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;NORTH</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-188"></a>            <span class="k">if</span><span class="p">(</span><span class="n">game</span><span class="o">-&gt;</span><span class="n">location</span><span class="o">-&gt;</span><span class="n">south</span><span class="p">)</span> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;SOUTH</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-189"></a>            <span class="k">if</span><span class="p">(</span><span class="n">game</span><span class="o">-&gt;</span><span class="n">location</span><span class="o">-&gt;</span><span class="n">east</span><span class="p">)</span> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;EAST</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-190"></a>            <span class="k">if</span><span class="p">(</span><span class="n">game</span><span class="o">-&gt;</span><span class="n">location</span><span class="o">-&gt;</span><span class="n">west</span><span class="p">)</span> <span class="n">printf</span><span class="p">(</span><span class="s">&quot;WEST</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-191"></a>            <span class="k">break</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-192"></a>
+<a name="code--ex19.c-pyg.html-193"></a>        <span class="nl">default:</span>
+<a name="code--ex19.c-pyg.html-194"></a>            <span class="n">printf</span><span class="p">(</span><span class="s">&quot;What?: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">ch</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-195"></a>    <span class="p">}</span>
+<a name="code--ex19.c-pyg.html-196"></a>
+<a name="code--ex19.c-pyg.html-197"></a>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-198"></a><span class="p">}</span>
+<a name="code--ex19.c-pyg.html-199"></a>
+<a name="code--ex19.c-pyg.html-200"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex19.c-pyg.html-201"></a><span class="p">{</span>
+<a name="code--ex19.c-pyg.html-202"></a>    <span class="c1">// simple way to setup the randomness</span>
+<a name="code--ex19.c-pyg.html-203"></a>    <span class="n">srand</span><span class="p">(</span><span class="n">time</span><span class="p">(</span><span class="nb">NULL</span><span class="p">));</span>
+<a name="code--ex19.c-pyg.html-204"></a>
+<a name="code--ex19.c-pyg.html-205"></a>    <span class="c1">// make our map to work with</span>
+<a name="code--ex19.c-pyg.html-206"></a>    <span class="n">Map</span> <span class="o">*</span><span class="n">game</span> <span class="o">=</span> <span class="n">NEW</span><span class="p">(</span><span class="n">Map</span><span class="p">,</span> <span class="s">&quot;The Hall of the Minotaur.&quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-207"></a>
+<a name="code--ex19.c-pyg.html-208"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You enter the &quot;</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-209"></a>    <span class="n">game</span><span class="o">-&gt;</span><span class="n">location</span><span class="o">-&gt;</span><span class="n">_</span><span class="p">(</span><span class="n">describe</span><span class="p">)(</span><span class="n">game</span><span class="o">-&gt;</span><span class="n">location</span><span class="p">);</span>
+<a name="code--ex19.c-pyg.html-210"></a>
+<a name="code--ex19.c-pyg.html-211"></a>    <span class="k">while</span><span class="p">(</span><span class="n">process_input</span><span class="p">(</span><span class="n">game</span><span class="p">))</span> <span class="p">{</span>
+<a name="code--ex19.c-pyg.html-212"></a>    <span class="p">}</span>
+<a name="code--ex19.c-pyg.html-213"></a>
+<a name="code--ex19.c-pyg.html-214"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex19.c-pyg.html-215"></a><span class="p">}</span>
+</pre></div><p>Honestly there isn't much in this that you haven't seen, and only you might
+need to understand how I'm using the macros I made from the headers files.
+Here's the important key things to study and understand:</p>
+<ul class="simple">
+<li>Implementing a prototype involves creating its version of the
+functions, and then creating a single struct ending in &quot;Proto&quot;.
+Look at <tt class="docutils literal">MonsterProto</tt>, <tt class="docutils literal">RoomProto</tt> and <tt class="docutils literal">MapProto</tt>.</li>
+<li>Because of how <tt class="docutils literal">Object_new</tt> is implemented, if you don't set
+a function in your prototype, then it will get the default implementation
+created in <tt class="docutils literal">object.c</tt>.</li>
+<li>In <tt class="docutils literal">Map_init</tt> I create the little world, but more importantly
+I use the <tt class="docutils literal">NEW</tt> macro from <tt class="docutils literal">object.h</tt> to build all of the
+objects.  To get this concept in your head, try replacing the <tt class="docutils literal">NEW</tt>
+usage with direct <tt class="docutils literal">Object_new</tt> calls to see how it's being
+translated.</li>
+<li>Working with these objects involves calling functions on them, and the
+<tt class="docutils literal">_(N)</tt> macro does this for me.  If you look at the code
+<tt class="docutils literal"><span class="pre">monster-&gt;_(attack)(monster,</span> damage)</tt> you see that I'm using the
+macro, which gets replaced with <tt class="docutils literal"><span class="pre">monster-&gt;proto.attack(monster,</span> damage)</tt>.
+Study this transformation again by rewriting these calls back to their
+original.  Also, if you get stuck then run <tt class="docutils literal">cpp</tt> manually to see what it's
+going to do.</li>
+<li>I'm using two new functions <tt class="docutils literal">srand</tt> and <tt class="docutils literal">rand</tt>, which setup
+a simple random number generator good enough for the game.  I also use
+<tt class="docutils literal">time</tt> to initialize the random number generator.  Research those.</li>
+<li>I use a new function <tt class="docutils literal">getchar</tt> that gets a single character
+from the stdin.  Research it.</li>
+</ul>
+</div>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>Here's me playing my own game:</p>
+<div class="highlight"><pre><a name="code--ex19.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex19
+<a name="code--ex19.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g   -c -o object.o object.c</span>
+<a name="code--ex19.sh-session-pyg.html-3"></a><span class="go">cc -Wall -g    ex19.c object.o   -o ex19</span>
+<a name="code--ex19.sh-session-pyg.html-4"></a><span class="gp">$</span> ./ex19
+<a name="code--ex19.sh-session-pyg.html-5"></a><span class="go">You enter the The great Hall.</span>
+<a name="code--ex19.sh-session-pyg.html-6"></a>
+<a name="code--ex19.sh-session-pyg.html-7"></a><span class="gp">&gt;</span> l
+<a name="code--ex19.sh-session-pyg.html-8"></a><span class="go">You can go:</span>
+<a name="code--ex19.sh-session-pyg.html-9"></a><span class="go">NORTH</span>
+<a name="code--ex19.sh-session-pyg.html-10"></a>
+<a name="code--ex19.sh-session-pyg.html-11"></a><span class="gp">&gt;</span> n
+<a name="code--ex19.sh-session-pyg.html-12"></a><span class="go">You go north, into:</span>
+<a name="code--ex19.sh-session-pyg.html-13"></a><span class="go">The throne room.</span>
+<a name="code--ex19.sh-session-pyg.html-14"></a>
+<a name="code--ex19.sh-session-pyg.html-15"></a><span class="gp">&gt;</span> l
+<a name="code--ex19.sh-session-pyg.html-16"></a><span class="go">You can go:</span>
+<a name="code--ex19.sh-session-pyg.html-17"></a><span class="go">SOUTH</span>
+<a name="code--ex19.sh-session-pyg.html-18"></a><span class="go">EAST</span>
+<a name="code--ex19.sh-session-pyg.html-19"></a><span class="go">WEST</span>
+<a name="code--ex19.sh-session-pyg.html-20"></a>
+<a name="code--ex19.sh-session-pyg.html-21"></a><span class="gp">&gt;</span> e
+<a name="code--ex19.sh-session-pyg.html-22"></a><span class="go">You go east, into:</span>
+<a name="code--ex19.sh-session-pyg.html-23"></a><span class="go">Kitchen, you have the knife now.</span>
+<a name="code--ex19.sh-session-pyg.html-24"></a>
+<a name="code--ex19.sh-session-pyg.html-25"></a><span class="gp">&gt;</span> w
+<a name="code--ex19.sh-session-pyg.html-26"></a><span class="go">You go west, into:</span>
+<a name="code--ex19.sh-session-pyg.html-27"></a><span class="go">The throne room.</span>
+<a name="code--ex19.sh-session-pyg.html-28"></a>
+<a name="code--ex19.sh-session-pyg.html-29"></a><span class="gp">&gt;</span> s
+<a name="code--ex19.sh-session-pyg.html-30"></a><span class="go">You go south, into:</span>
+<a name="code--ex19.sh-session-pyg.html-31"></a><span class="go">The great Hall.</span>
+<a name="code--ex19.sh-session-pyg.html-32"></a>
+<a name="code--ex19.sh-session-pyg.html-33"></a><span class="gp">&gt;</span> n
+<a name="code--ex19.sh-session-pyg.html-34"></a><span class="go">You go north, into:</span>
+<a name="code--ex19.sh-session-pyg.html-35"></a><span class="go">The throne room.</span>
+<a name="code--ex19.sh-session-pyg.html-36"></a>
+<a name="code--ex19.sh-session-pyg.html-37"></a><span class="gp">&gt;</span> w
+<a name="code--ex19.sh-session-pyg.html-38"></a><span class="go">You go west, into:</span>
+<a name="code--ex19.sh-session-pyg.html-39"></a><span class="go">The arena, with the minotaur.</span>
+<a name="code--ex19.sh-session-pyg.html-40"></a>
+<a name="code--ex19.sh-session-pyg.html-41"></a><span class="gp">&gt;</span> a
+<a name="code--ex19.sh-session-pyg.html-42"></a><span class="go">You attack The evil minotaur!</span>
+<a name="code--ex19.sh-session-pyg.html-43"></a><span class="go">It is still alive.</span>
+<a name="code--ex19.sh-session-pyg.html-44"></a>
+<a name="code--ex19.sh-session-pyg.html-45"></a><span class="gp">&gt;</span> a
+<a name="code--ex19.sh-session-pyg.html-46"></a><span class="go">You attack The evil minotaur!</span>
+<a name="code--ex19.sh-session-pyg.html-47"></a><span class="go">It is dead!</span>
+<a name="code--ex19.sh-session-pyg.html-48"></a>
+<a name="code--ex19.sh-session-pyg.html-49"></a><span class="gp">&gt;</span> ^D
+<a name="code--ex19.sh-session-pyg.html-50"></a><span class="go">Giving up? You suck.</span>
+<a name="code--ex19.sh-session-pyg.html-51"></a><span class="gp">$</span>
+</pre></div></div>
+<div class="section" id="auditing-the-game">
+<h1>Auditing The Game</h1>
+<p>As an exercise for you I have left out all of the <tt class="docutils literal">assert</tt> checks
+I normally put into a piece of software.  You've seen me use <tt class="docutils literal">assert</tt> to
+make sure a program is running correctly, but now I want you to go back
+and do the following:</p>
+<ul class="simple">
+<li>Look at each function you've defined, one file at a time.</li>
+<li>At the top of each function, add <tt class="docutils literal">asserts</tt> that make sure
+the input parameters are correct.  For example, in <tt class="docutils literal">Object_new</tt>
+you want a <tt class="docutils literal">assert(description != NULL)</tt>.</li>
+<li>Go through each line of the function, and find any functions
+being called.  Read the documentation (man page) for that function,
+and confirm what it returns for an error.  Add another assert to
+check that the error didn't happen.  For example, in <tt class="docutils literal">Object_new</tt>
+you need one after the call to <tt class="docutils literal">calloc</tt> that does <tt class="docutils literal">assert(el != NULL)</tt>.</li>
+<li>If a function is expected to return a value, either make sure it returns
+an error value (like NULL), or have an assert to make sure that the returned
+variable isn't invalid.  For example, in <tt class="docutils literal">Object_new</tt>, you need
+to have <tt class="docutils literal">assert(el != NULL)</tt> again before the last return since
+that part can never be NULL.</li>
+<li>For every <tt class="docutils literal"><span class="pre">if-statement</span></tt> you write, make sure there's an else
+clause unless that if is an error check that causes an exit.</li>
+<li>For every <tt class="docutils literal"><span class="pre">switch-statement</span></tt> you write, make sure that there's
+a <tt class="docutils literal">default</tt> case that handles anything you didn't anticipate.</li>
+</ul>
+<p>Take your time going through every line of the function and find any errors you
+make.  Remember that the point of this exercise is to stop being a &quot;coder&quot; and
+switch your brain into being a &quot;hacker&quot;.  Try to see how you could break it,
+then write code to prevent it or abort early if you can.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Update the <tt class="docutils literal">Makefile</tt> so that when you do <tt class="docutils literal">make clean</tt>
+it will also remove the <tt class="docutils literal">object.o</tt> file.</li>
+<li>Write a test script that works the game in different ways and augment
+the <tt class="docutils literal">Makefile</tt> so you can run <tt class="docutils literal">make test</tt> and it'll thrash
+the game with your script.</li>
+<li>Add more rooms and monsters to the game.</li>
+<li>Put the game mechanics into a third file, compile it to .o, and then
+use that to write another little game.  If you're doing it right
+you should only have a new <tt class="docutils literal">Map</tt> and a <tt class="docutils literal">main</tt> function
+in the new game.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 39: String Algorithms</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 39: String Algorithms</h1>
+            <p>In this exercise I'm going to show you one of the supposedly faster string
+search algorithms, and compare it to the one that exists in <tt class="docutils literal">bstrlib.c</tt>
+call <tt class="docutils literal">binstr</tt>.  The documentation for <tt class="docutils literal">binstr</tt> says that it uses a
+simple &quot;brute force&quot; string search to find the first instance.  The one I'll
+implement will use the Boyer-Moore-Horspool (BMH) algorithm, which is supposed
+to be faster if you analyze the theoretical time.  You'll see that, assuming my
+implementation isn't flawed, that the practical time for BMH is much worse than
+the simple brute force of <tt class="docutils literal">binstr</tt>.</p>
+<p>The point of this exercise isn't really to explain the algorithm because it's
+simple enough for you to go to
+<a class="reference external" href="http://en.wikipedia.org/wiki/Boyer%E2%80%93Moore%E2%80%93Horspool_algorithm">the Boyer-Moore-Horspool Wikipedia page</a>
+and read it.  The gist of this algorithm
+is that it calculates a &quot;skip characters list&quot; as a first operation, then it
+uses this list to quickly scan through the string.  It is supposed to be faster
+than brute force, so let's get the code into the right files and see.</p>
+<p>First, I have the header:</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-1"></a><span class="cp">#ifndef string_algos_h</span>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-2"></a><span class="cp">#define string_algos_h</span>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-3"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-4"></a><span class="cp">#include &lt;lcthw/bstrlib.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-5"></a><span class="cp">#include &lt;lcthw/darray.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-6"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-7"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="n">StringScanner</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-8"></a>    <span class="n">bstring</span> <span class="k">in</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-9"></a>    <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">haystack</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-10"></a>    <span class="kt">ssize_t</span> <span class="n">hlen</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-11"></a>    <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">needle</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-12"></a>    <span class="kt">ssize_t</span> <span class="n">nlen</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-13"></a>    <span class="kt">size_t</span> <span class="n">skip_chars</span><span class="p">[</span><span class="n">UCHAR_MAX</span> <span class="o">+</span> <span class="mi">1</span><span class="p">];</span>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-14"></a><span class="p">}</span> <span class="n">StringScanner</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-15"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-16"></a><span class="kt">int</span> <span class="nf">String_find</span><span class="p">(</span><span class="n">bstring</span> <span class="k">in</span><span class="p">,</span> <span class="n">bstring</span> <span class="n">what</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-17"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-18"></a><span class="n">StringScanner</span> <span class="o">*</span><span class="nf">StringScanner_create</span><span class="p">(</span><span class="n">bstring</span> <span class="k">in</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-19"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-20"></a><span class="kt">int</span> <span class="nf">StringScanner_scan</span><span class="p">(</span><span class="n">StringScanner</span> <span class="o">*</span><span class="n">scan</span><span class="p">,</span> <span class="n">bstring</span> <span class="n">tofind</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-21"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-22"></a><span class="kt">void</span> <span class="nf">StringScanner_destroy</span><span class="p">(</span><span class="n">StringScanner</span> <span class="o">*</span><span class="n">scan</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-23"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.h-pyg.html-24"></a><span class="cp">#endif</span>
+</pre></div><p>In order to see the effects of this &quot;skip characters list&quot; I'm going to make
+two versions of the BMH algorithm:</p>
+<dl class="docutils">
+<dt>String_find</dt>
+<dd>Simply find the first instance of one string in another,
+doing the entire algorithm in one shot.</dd>
+<dt>StringScanner_scan</dt>
+<dd>Uses a <tt class="docutils literal">StringScanner</tt> state structure to
+separate the skip list build from the actual find.  This will let me
+see what impact that has on performance.  This model also has the advantage
+that I can incrementally scan for one string in another and find all
+instances quickly.</dd>
+</dl>
+<p>Once you have that, here's the implementation:</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-1"></a><span class="cp">#include &lt;lcthw/string_algos.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-2"></a><span class="cp">#include &lt;limits.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-3"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-4"></a><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">String_setup_skip_chars</span><span class="p">(</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-5"></a>        <span class="kt">size_t</span> <span class="o">*</span><span class="n">skip_chars</span><span class="p">,</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-6"></a>        <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">needle</span><span class="p">,</span> <span class="kt">ssize_t</span> <span class="n">nlen</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-7"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-8"></a>    <span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-9"></a>    <span class="kt">size_t</span> <span class="n">last</span> <span class="o">=</span> <span class="n">nlen</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-10"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-11"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">UCHAR_MAX</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-12"></a>        <span class="n">skip_chars</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">nlen</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-13"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-14"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-15"></a>    <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">last</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-16"></a>        <span class="n">skip_chars</span><span class="p">[</span><span class="n">needle</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="n">last</span> <span class="o">-</span> <span class="n">i</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-17"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-18"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-19"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-20"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-21"></a><span class="k">static</span> <span class="kr">inline</span> <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="nf">String_base_search</span><span class="p">(</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-22"></a>        <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">haystack</span><span class="p">,</span> <span class="kt">ssize_t</span> <span class="n">hlen</span><span class="p">,</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-23"></a>        <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">needle</span><span class="p">,</span> <span class="kt">ssize_t</span> <span class="n">nlen</span><span class="p">,</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-24"></a>        <span class="kt">size_t</span> <span class="o">*</span><span class="n">skip_chars</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-25"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-26"></a>    <span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-27"></a>    <span class="kt">size_t</span> <span class="n">last</span> <span class="o">=</span> <span class="n">nlen</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-28"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-29"></a>    <span class="n">assert</span><span class="p">(</span><span class="n">haystack</span> <span class="o">!=</span> <span class="nb">NULL</span> <span class="o">&amp;&amp;</span> <span class="s">&quot;Given bad haystack to search.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-30"></a>    <span class="n">assert</span><span class="p">(</span><span class="n">needle</span> <span class="o">!=</span> <span class="nb">NULL</span> <span class="o">&amp;&amp;</span> <span class="s">&quot;Given bad needle to search for.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-31"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-32"></a>    <span class="n">check</span><span class="p">(</span><span class="n">nlen</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;nlen can&#39;t be &lt;= 0&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-33"></a>    <span class="n">check</span><span class="p">(</span><span class="n">hlen</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;hlen can&#39;t be &lt;= 0&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-34"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-35"></a>    <span class="k">while</span> <span class="p">(</span><span class="n">hlen</span> <span class="o">&gt;=</span> <span class="n">nlen</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-36"></a>    <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-37"></a>        <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="n">last</span><span class="p">;</span> <span class="n">haystack</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">needle</span><span class="p">[</span><span class="n">i</span><span class="p">];</span> <span class="n">i</span><span class="o">--</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-38"></a>            <span class="k">if</span> <span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-39"></a>                <span class="k">return</span> <span class="n">haystack</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-40"></a>            <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-41"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-42"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-43"></a>        <span class="n">hlen</span> <span class="o">-=</span> <span class="n">skip_chars</span><span class="p">[</span><span class="n">haystack</span><span class="p">[</span><span class="n">last</span><span class="p">]];</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-44"></a>        <span class="n">haystack</span> <span class="o">+=</span> <span class="n">skip_chars</span><span class="p">[</span><span class="n">haystack</span><span class="p">[</span><span class="n">last</span><span class="p">]];</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-45"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-46"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-47"></a><span class="nl">error:</span> <span class="c1">// fallthrough</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-48"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-49"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-50"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-51"></a><span class="kt">int</span> <span class="nf">String_find</span><span class="p">(</span><span class="n">bstring</span> <span class="n">in</span><span class="p">,</span> <span class="n">bstring</span> <span class="n">what</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-52"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-53"></a>    <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">found</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-54"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-55"></a>    <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">haystack</span> <span class="o">=</span> <span class="p">(</span><span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">bdata</span><span class="p">(</span><span class="n">in</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-56"></a>    <span class="kt">ssize_t</span> <span class="n">hlen</span> <span class="o">=</span> <span class="n">blength</span><span class="p">(</span><span class="n">in</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-57"></a>    <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">needle</span> <span class="o">=</span> <span class="p">(</span><span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">bdata</span><span class="p">(</span><span class="n">what</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-58"></a>    <span class="kt">ssize_t</span> <span class="n">nlen</span> <span class="o">=</span> <span class="n">blength</span><span class="p">(</span><span class="n">what</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-59"></a>    <span class="kt">size_t</span> <span class="n">skip_chars</span><span class="p">[</span><span class="n">UCHAR_MAX</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-60"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-61"></a>    <span class="n">String_setup_skip_chars</span><span class="p">(</span><span class="n">skip_chars</span><span class="p">,</span> <span class="n">needle</span><span class="p">,</span> <span class="n">nlen</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-62"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-63"></a>    <span class="n">found</span> <span class="o">=</span> <span class="n">String_base_search</span><span class="p">(</span><span class="n">haystack</span><span class="p">,</span> <span class="n">hlen</span><span class="p">,</span> <span class="n">needle</span><span class="p">,</span> <span class="n">nlen</span><span class="p">,</span> <span class="n">skip_chars</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-64"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-65"></a>    <span class="k">return</span> <span class="n">found</span> <span class="o">!=</span> <span class="nb">NULL</span> <span class="o">?</span> <span class="n">found</span> <span class="o">-</span> <span class="n">haystack</span> <span class="o">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-66"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-67"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-68"></a><span class="n">StringScanner</span> <span class="o">*</span><span class="nf">StringScanner_create</span><span class="p">(</span><span class="n">bstring</span> <span class="n">in</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-69"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-70"></a>    <span class="n">StringScanner</span> <span class="o">*</span><span class="n">scan</span> <span class="o">=</span> <span class="n">calloc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">StringScanner</span><span class="p">));</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-71"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">scan</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-72"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-73"></a>    <span class="n">scan</span><span class="o">-&gt;</span><span class="n">in</span> <span class="o">=</span> <span class="n">in</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-74"></a>    <span class="n">scan</span><span class="o">-&gt;</span><span class="n">haystack</span> <span class="o">=</span> <span class="p">(</span><span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">bdata</span><span class="p">(</span><span class="n">in</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-75"></a>    <span class="n">scan</span><span class="o">-&gt;</span><span class="n">hlen</span> <span class="o">=</span> <span class="n">blength</span><span class="p">(</span><span class="n">in</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-76"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-77"></a>    <span class="n">assert</span><span class="p">(</span><span class="n">scan</span> <span class="o">!=</span> <span class="nb">NULL</span> <span class="o">&amp;&amp;</span> <span class="s">&quot;fuck&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-78"></a>    <span class="k">return</span> <span class="n">scan</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-79"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-80"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-81"></a>    <span class="n">free</span><span class="p">(</span><span class="n">scan</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-82"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-83"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-84"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-85"></a><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">StringScanner_set_needle</span><span class="p">(</span><span class="n">StringScanner</span> <span class="o">*</span><span class="n">scan</span><span class="p">,</span> <span class="n">bstring</span> <span class="n">tofind</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-86"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-87"></a>    <span class="n">scan</span><span class="o">-&gt;</span><span class="n">needle</span> <span class="o">=</span> <span class="p">(</span><span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">bdata</span><span class="p">(</span><span class="n">tofind</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-88"></a>    <span class="n">scan</span><span class="o">-&gt;</span><span class="n">nlen</span> <span class="o">=</span> <span class="n">blength</span><span class="p">(</span><span class="n">tofind</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-89"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-90"></a>    <span class="n">String_setup_skip_chars</span><span class="p">(</span><span class="n">scan</span><span class="o">-&gt;</span><span class="n">skip_chars</span><span class="p">,</span> <span class="n">scan</span><span class="o">-&gt;</span><span class="n">needle</span><span class="p">,</span> <span class="n">scan</span><span class="o">-&gt;</span><span class="n">nlen</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-91"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-92"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-93"></a><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">StringScanner_reset</span><span class="p">(</span><span class="n">StringScanner</span> <span class="o">*</span><span class="n">scan</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-94"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-95"></a>    <span class="n">scan</span><span class="o">-&gt;</span><span class="n">haystack</span> <span class="o">=</span> <span class="p">(</span><span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">bdata</span><span class="p">(</span><span class="n">scan</span><span class="o">-&gt;</span><span class="n">in</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-96"></a>    <span class="n">scan</span><span class="o">-&gt;</span><span class="n">hlen</span> <span class="o">=</span> <span class="n">blength</span><span class="p">(</span><span class="n">scan</span><span class="o">-&gt;</span><span class="n">in</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-97"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-98"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-99"></a><span class="kt">int</span> <span class="nf">StringScanner_scan</span><span class="p">(</span><span class="n">StringScanner</span> <span class="o">*</span><span class="n">scan</span><span class="p">,</span> <span class="n">bstring</span> <span class="n">tofind</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-100"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-101"></a>    <span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="n">found</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-102"></a>    <span class="kt">ssize_t</span> <span class="n">found_at</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-103"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-104"></a>    <span class="k">if</span><span class="p">(</span><span class="n">scan</span><span class="o">-&gt;</span><span class="n">hlen</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-105"></a>        <span class="n">StringScanner_reset</span><span class="p">(</span><span class="n">scan</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-106"></a>        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-107"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-108"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-109"></a>    <span class="k">if</span><span class="p">((</span><span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">bdata</span><span class="p">(</span><span class="n">tofind</span><span class="p">)</span> <span class="o">!=</span> <span class="n">scan</span><span class="o">-&gt;</span><span class="n">needle</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-110"></a>        <span class="n">StringScanner_set_needle</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="n">tofind</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-111"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-112"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-113"></a>    <span class="n">found</span> <span class="o">=</span> <span class="n">String_base_search</span><span class="p">(</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-114"></a>            <span class="n">scan</span><span class="o">-&gt;</span><span class="n">haystack</span><span class="p">,</span> <span class="n">scan</span><span class="o">-&gt;</span><span class="n">hlen</span><span class="p">,</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-115"></a>            <span class="n">scan</span><span class="o">-&gt;</span><span class="n">needle</span><span class="p">,</span> <span class="n">scan</span><span class="o">-&gt;</span><span class="n">nlen</span><span class="p">,</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-116"></a>            <span class="n">scan</span><span class="o">-&gt;</span><span class="n">skip_chars</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-117"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-118"></a>    <span class="k">if</span><span class="p">(</span><span class="n">found</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-119"></a>        <span class="n">found_at</span> <span class="o">=</span> <span class="n">found</span> <span class="o">-</span> <span class="p">(</span><span class="k">const</span> <span class="kt">unsigned</span> <span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">bdata</span><span class="p">(</span><span class="n">scan</span><span class="o">-&gt;</span><span class="n">in</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-120"></a>        <span class="n">scan</span><span class="o">-&gt;</span><span class="n">haystack</span> <span class="o">=</span> <span class="n">found</span> <span class="o">+</span> <span class="n">scan</span><span class="o">-&gt;</span><span class="n">nlen</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-121"></a>        <span class="n">scan</span><span class="o">-&gt;</span><span class="n">hlen</span> <span class="o">-=</span> <span class="n">found_at</span> <span class="o">-</span> <span class="n">scan</span><span class="o">-&gt;</span><span class="n">nlen</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-122"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-123"></a>        <span class="c1">// done, reset the setup</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-124"></a>        <span class="n">StringScanner_reset</span><span class="p">(</span><span class="n">scan</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-125"></a>        <span class="n">found_at</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-126"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-127"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-128"></a>    <span class="k">return</span> <span class="n">found_at</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-129"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-130"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-131"></a>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-132"></a><span class="kt">void</span> <span class="nf">StringScanner_destroy</span><span class="p">(</span><span class="n">StringScanner</span> <span class="o">*</span><span class="n">scan</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-133"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-134"></a>    <span class="k">if</span><span class="p">(</span><span class="n">scan</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-135"></a>        <span class="n">free</span><span class="p">(</span><span class="n">scan</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-136"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--string_algos.c-pyg.html-137"></a><span class="p">}</span>
+</pre></div><p>The entire algorithm is in two <tt class="docutils literal">static inline</tt> functions called
+<tt class="docutils literal">String_setup_skip_chars</tt> and <tt class="docutils literal">String_base_search</tt>.  These are
+then used in the other functions to actually implement the searching styles I
+want.  Study these first two functions and compare them to the Wikipedia
+description so you know what's going on.</p>
+<p>The <tt class="docutils literal">String_find</tt> then just uses these two functions to do a find and
+return the position found.  It's very simple and I'll use it to see how this
+&quot;build skip chars&quot; phase impacts real practical performance.  Keep in mind that
+you could maybe make this faster, but I'm teaching you how to confirm
+theoretical speed after you implement an algorithm.</p>
+<p>The <tt class="docutils literal">StringScanner_scan</tt> function is then following the common pattern I
+use of &quot;create, scan, destroy&quot; and is used to incrementally scan a string for
+another string.  You'll see how this is used when I show you the unit test that
+will test this out.</p>
+<p>Finally, I have the unit test that first confirms this is all working, then
+runs simple performance tests for all three finding algorithms in a <em>commented out section</em>.</p>
+<div class="highlight"><pre><a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-1"></a><span class="cp">#include &quot;minunit.h&quot;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-2"></a><span class="cp">#include &lt;lcthw/string_algos.h&gt;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-3"></a><span class="cp">#include &lt;lcthw/bstrlib.h&gt;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-4"></a><span class="cp">#include &lt;time.h&gt;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-5"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-6"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">IN_STR</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;I have ALPHA beta ALPHA and oranges ALPHA&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-7"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">ALPHA</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;ALPHA&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-8"></a><span class="k">const</span> <span class="kt">int</span> <span class="n">TEST_TIME</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-9"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-10"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_find_and_scan</span><span class="p">()</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-11"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-12"></a>    <span class="n">StringScanner</span> <span class="o">*</span><span class="n">scan</span> <span class="o">=</span> <span class="n">StringScanner_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">IN_STR</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-13"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">scan</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to make the scanner.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-14"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-15"></a>    <span class="kt">int</span> <span class="n">find_i</span> <span class="o">=</span> <span class="n">String_find</span><span class="p">(</span><span class="o">&amp;</span><span class="n">IN_STR</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ALPHA</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-16"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">find_i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to find &#39;ALPHA&#39; in test string.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-17"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-18"></a>    <span class="kt">int</span> <span class="n">scan_i</span> <span class="o">=</span> <span class="n">StringScanner_scan</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ALPHA</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-19"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">scan_i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to find &#39;ALPHA&#39; with scan.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-20"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">scan_i</span> <span class="o">==</span> <span class="n">find_i</span><span class="p">,</span> <span class="s">&quot;find and scan don&#39;t match&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-21"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-22"></a>    <span class="n">scan_i</span> <span class="o">=</span> <span class="n">StringScanner_scan</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ALPHA</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-23"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">scan_i</span> <span class="o">&gt;</span> <span class="n">find_i</span><span class="p">,</span> <span class="s">&quot;should find another ALPHA after the first&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-24"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-25"></a>    <span class="n">scan_i</span> <span class="o">=</span> <span class="n">StringScanner_scan</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ALPHA</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-26"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">scan_i</span> <span class="o">&gt;</span> <span class="n">find_i</span><span class="p">,</span> <span class="s">&quot;should find another ALPHA after the first&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-27"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-28"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">StringScanner_scan</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ALPHA</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;shouldn&#39;t find it&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-29"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-30"></a>    <span class="n">StringScanner_destroy</span><span class="p">(</span><span class="n">scan</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-31"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-32"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-33"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-34"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-35"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_binstr_performance</span><span class="p">()</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-36"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-37"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-38"></a>    <span class="kt">int</span> <span class="n">found_at</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-39"></a>    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">find_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-40"></a>    <span class="kt">time_t</span> <span class="n">elapsed</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-41"></a>    <span class="kt">time_t</span> <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="p">(</span><span class="nb">NULL</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-42"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-43"></a>    <span class="k">do</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-44"></a>        <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-45"></a>            <span class="n">found_at</span> <span class="o">=</span> <span class="n">binstr</span><span class="p">(</span><span class="o">&amp;</span><span class="n">IN_STR</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ALPHA</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-46"></a>            <span class="n">mu_assert</span><span class="p">(</span><span class="n">found_at</span> <span class="o">!=</span> <span class="n">BSTR_ERR</span><span class="p">,</span> <span class="s">&quot;Failed to find!&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-47"></a>            <span class="n">find_count</span><span class="o">++</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-48"></a>        <span class="p">}</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-49"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-50"></a>        <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="p">(</span><span class="nb">NULL</span><span class="p">)</span> <span class="o">-</span> <span class="n">start</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-51"></a>    <span class="p">}</span> <span class="k">while</span><span class="p">(</span><span class="n">elapsed</span> <span class="o">&lt;=</span> <span class="n">TEST_TIME</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-52"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-53"></a>    <span class="n">debug</span><span class="p">(</span><span class="s">&quot;BINSTR COUNT: %lu, END TIME: %d, OPS: %f&quot;</span><span class="p">,</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-54"></a>            <span class="n">find_count</span><span class="p">,</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">elapsed</span><span class="p">,</span> <span class="p">(</span><span class="kt">double</span><span class="p">)</span><span class="n">find_count</span> <span class="o">/</span> <span class="n">elapsed</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-55"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-56"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-57"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-58"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_find_performance</span><span class="p">()</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-59"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-60"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-61"></a>    <span class="kt">int</span> <span class="n">found_at</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-62"></a>    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">find_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-63"></a>    <span class="kt">time_t</span> <span class="n">elapsed</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-64"></a>    <span class="kt">time_t</span> <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="p">(</span><span class="nb">NULL</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-65"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-66"></a>    <span class="k">do</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-67"></a>        <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-68"></a>            <span class="n">found_at</span> <span class="o">=</span> <span class="n">String_find</span><span class="p">(</span><span class="o">&amp;</span><span class="n">IN_STR</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ALPHA</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-69"></a>            <span class="n">find_count</span><span class="o">++</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-70"></a>        <span class="p">}</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-71"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-72"></a>        <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="p">(</span><span class="nb">NULL</span><span class="p">)</span> <span class="o">-</span> <span class="n">start</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-73"></a>    <span class="p">}</span> <span class="k">while</span><span class="p">(</span><span class="n">elapsed</span> <span class="o">&lt;=</span> <span class="n">TEST_TIME</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-74"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-75"></a>    <span class="n">debug</span><span class="p">(</span><span class="s">&quot;FIND COUNT: %lu, END TIME: %d, OPS: %f&quot;</span><span class="p">,</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-76"></a>            <span class="n">find_count</span><span class="p">,</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">elapsed</span><span class="p">,</span> <span class="p">(</span><span class="kt">double</span><span class="p">)</span><span class="n">find_count</span> <span class="o">/</span> <span class="n">elapsed</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-77"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-78"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-79"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-80"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-81"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_scan_performance</span><span class="p">()</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-82"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-83"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-84"></a>    <span class="kt">int</span> <span class="n">found_at</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-85"></a>    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">find_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-86"></a>    <span class="kt">time_t</span> <span class="n">elapsed</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-87"></a>    <span class="n">StringScanner</span> <span class="o">*</span><span class="n">scan</span> <span class="o">=</span> <span class="n">StringScanner_create</span><span class="p">(</span><span class="o">&amp;</span><span class="n">IN_STR</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-88"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-89"></a>    <span class="kt">time_t</span> <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="p">(</span><span class="nb">NULL</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-90"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-91"></a>    <span class="k">do</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-92"></a>        <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-93"></a>            <span class="n">found_at</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-94"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-95"></a>            <span class="k">do</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-96"></a>                <span class="n">found_at</span> <span class="o">=</span> <span class="n">StringScanner_scan</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ALPHA</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-97"></a>                <span class="n">find_count</span><span class="o">++</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-98"></a>            <span class="p">}</span> <span class="k">while</span><span class="p">(</span><span class="n">found_at</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-99"></a>        <span class="p">}</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-100"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-101"></a>        <span class="n">elapsed</span> <span class="o">=</span> <span class="n">time</span><span class="p">(</span><span class="nb">NULL</span><span class="p">)</span> <span class="o">-</span> <span class="n">start</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-102"></a>    <span class="p">}</span> <span class="k">while</span><span class="p">(</span><span class="n">elapsed</span> <span class="o">&lt;=</span> <span class="n">TEST_TIME</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-103"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-104"></a>    <span class="n">debug</span><span class="p">(</span><span class="s">&quot;SCAN COUNT: %lu, END TIME: %d, OPS: %f&quot;</span><span class="p">,</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-105"></a>            <span class="n">find_count</span><span class="p">,</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">elapsed</span><span class="p">,</span> <span class="p">(</span><span class="kt">double</span><span class="p">)</span><span class="n">find_count</span> <span class="o">/</span> <span class="n">elapsed</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-106"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-107"></a>    <span class="n">StringScanner_destroy</span><span class="p">(</span><span class="n">scan</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-108"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-109"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-110"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-111"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-112"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-113"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">all_tests</span><span class="p">()</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-114"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-115"></a>    <span class="n">mu_suite_start</span><span class="p">();</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-116"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-117"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_find_and_scan</span><span class="p">);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-118"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-119"></a>    <span class="c1">// this is an idiom for commenting out sections of code</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-120"></a><span class="cp">#if 0</span><span class="c"></span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-121"></a><span class="c">    mu_run_test(test_scan_performance);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-122"></a><span class="c">    mu_run_test(test_find_performance);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-123"></a><span class="c">    mu_run_test(test_binstr_performance);</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-124"></a><span class="cp">#endif</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-125"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-126"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-127"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-128"></a>
+<a name="code--liblcthw--tests--string_algos_tests.c-pyg.html-129"></a><span class="n">RUN_TESTS</span><span class="p">(</span><span class="n">all_tests</span><span class="p">);</span>
+</pre></div><p>I have it written here with <tt class="docutils literal">#if 0</tt> which is a way to use the CPP to
+comment out a section of code.  Type it in like this, and then remove that
+and the <tt class="docutils literal">#endif</tt> so you can see these performance tests run.  When you
+continue with the book, simply comment these out so that the test doesn't
+waste development time.</p>
+<p>There's nothing amazing in this unit test, it just runs each of the different
+functions in loops that last long enough to get a few seconds of sampling.  The
+first test (<tt class="docutils literal">test_find_and_scan</tt>) just confirms that what I've written
+works, because there's no point in testing the speed of something that doesn't
+work.  Then the next three functions run a large number of searches using each
+of the three functions.</p>
+<p>The trick to notice is that I grab the starting time in <tt class="docutils literal">start</tt>, and then
+I loop until at least <tt class="docutils literal">TEST_TIME</tt> seconds have passed.  This makes sure
+that I get enough samples to work with in comparing the three.  I'll then run
+this test with different <tt class="docutils literal">TEST_TIME</tt> settings and analyze the results.</p>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>When I run this test on my laptop, I get number that look like this:</p>
+<div class="highlight"><pre><a name="code--ex39.1.sh-session-pyg.html-1"></a><span class="gp">$</span> ./tests/string_algos_tests
+<a name="code--ex39.1.sh-session-pyg.html-2"></a><span class="go">DEBUG tests/string_algos_tests.c:124: ----- RUNNING: ./tests/string_algos_tests</span>
+<a name="code--ex39.1.sh-session-pyg.html-3"></a><span class="go">----</span>
+<a name="code--ex39.1.sh-session-pyg.html-4"></a><span class="go">RUNNING: ./tests/string_algos_tests</span>
+<a name="code--ex39.1.sh-session-pyg.html-5"></a><span class="go">DEBUG tests/string_algos_tests.c:116: </span>
+<a name="code--ex39.1.sh-session-pyg.html-6"></a><span class="go">----- test_find_and_scan</span>
+<a name="code--ex39.1.sh-session-pyg.html-7"></a><span class="go">DEBUG tests/string_algos_tests.c:117: </span>
+<a name="code--ex39.1.sh-session-pyg.html-8"></a><span class="go">----- test_scan_performance</span>
+<a name="code--ex39.1.sh-session-pyg.html-9"></a><span class="go">DEBUG tests/string_algos_tests.c:105: SCAN COUNT: 110272000, END TIME: 2, OPS: 55136000.000000</span>
+<a name="code--ex39.1.sh-session-pyg.html-10"></a><span class="go">DEBUG tests/string_algos_tests.c:118: </span>
+<a name="code--ex39.1.sh-session-pyg.html-11"></a><span class="go">----- test_find_performance</span>
+<a name="code--ex39.1.sh-session-pyg.html-12"></a><span class="go">DEBUG tests/string_algos_tests.c:76: FIND COUNT: 12710000, END TIME: 2, OPS: 6355000.000000</span>
+<a name="code--ex39.1.sh-session-pyg.html-13"></a><span class="go">DEBUG tests/string_algos_tests.c:119: </span>
+<a name="code--ex39.1.sh-session-pyg.html-14"></a><span class="go">----- test_binstr_performance</span>
+<a name="code--ex39.1.sh-session-pyg.html-15"></a><span class="go">DEBUG tests/string_algos_tests.c:54: BINSTR COUNT: 72736000, END TIME: 2, OPS: 36368000.000000</span>
+<a name="code--ex39.1.sh-session-pyg.html-16"></a><span class="go">ALL TESTS PASSED</span>
+<a name="code--ex39.1.sh-session-pyg.html-17"></a><span class="go">Tests run: 4</span>
+<a name="code--ex39.1.sh-session-pyg.html-18"></a><span class="gp">$</span>
+</pre></div><p>I look at this and I sort of want to do more than 2 seconds of each run, and I
+want to run this many times then use R to check it out like I did before.
+Here's what I get for 10 samples of about 10 seconds each:</p>
+<pre class="literal-block">
+scan find binstr
+71195200 6353700 37110200
+75098000 6358400 37420800
+74910000 6351300 37263600
+74859600 6586100 37133200
+73345600 6365200 37549700
+74754400 6358000 37162400
+75343600 6630400 37075000
+73804800 6439900 36858700
+74995200 6384300 36811700
+74781200 6449500 37383000
+</pre>
+<p>The way I got this is with a little bit of shell help and then editing the
+output:</p>
+<div class="highlight"><pre><a name="code--ex39.2.sh-session-pyg.html-1"></a><span class="gp">$</span> <span class="k">for </span>i in 1 2 3 4 5 6 7 8 9 10; <span class="k">do </span><span class="nb">echo</span> <span class="s2">&quot;RUN --- $i&quot;</span> &gt;&gt; times.log; ./tests/string_algos_tests 2&gt;&amp;1 | grep COUNT &gt;&gt; times.log ; <span class="k">done</span>
+<a name="code--ex39.2.sh-session-pyg.html-2"></a><span class="gp">$</span><span class="k"> </span>less times.log
+<a name="code--ex39.2.sh-session-pyg.html-3"></a><span class="gp">$</span> vim times.log
+</pre></div><p>Right away you can see that the scanning system beats the pants off both of the
+others, but I'll open this in R and confirm the results:</p>
+<div class="highlight"><pre><a name="code--ex39.3.sh-session-pyg.html-1"></a><span class="gp">&gt;</span> <span class="nb">times</span> &lt;- read.table<span class="o">(</span><span class="s2">&quot;times.log&quot;</span>, <span class="nv">header</span><span class="o">=</span>T<span class="o">)</span>
+<a name="code--ex39.3.sh-session-pyg.html-2"></a><span class="gp">&gt;</span> summary<span class="o">(</span><span class="nb">times</span><span class="o">)</span>
+<a name="code--ex39.3.sh-session-pyg.html-3"></a><span class="go">      scan               find             binstr        </span>
+<a name="code--ex39.3.sh-session-pyg.html-4"></a><span class="go"> Min.   :71195200   Min.   :6351300   Min.   :36811700  </span>
+<a name="code--ex39.3.sh-session-pyg.html-5"></a><span class="go"> 1st Qu.:74042200   1st Qu.:6358100   1st Qu.:37083800  </span>
+<a name="code--ex39.3.sh-session-pyg.html-6"></a><span class="go"> Median :74820400   Median :6374750   Median :37147800  </span>
+<a name="code--ex39.3.sh-session-pyg.html-7"></a><span class="go"> Mean   :74308760   Mean   :6427680   Mean   :37176830  </span>
+<a name="code--ex39.3.sh-session-pyg.html-8"></a><span class="go"> 3rd Qu.:74973900   3rd Qu.:6447100   3rd Qu.:37353150  </span>
+<a name="code--ex39.3.sh-session-pyg.html-9"></a><span class="go"> Max.   :75343600   Max.   :6630400   Max.   :37549700  </span>
+<a name="code--ex39.3.sh-session-pyg.html-10"></a><span class="gp">&gt;</span>
+</pre></div><p>To understand why I'm getting the summary statistics I have to explain some
+statistics for you.  What I'm looking for in these numbers can be said simply
+to be, &quot;Are these three functions (scan, find, bsinter) actually different?&quot;  I
+know that each time I run my tester function I get slightly different numbers,
+and that those numbers can cover a certain range.  You see here that the
+1st and 3rd quarters do that for each sample.</p>
+<p>What I look at first is the mean and I want to see if each sample's mean is
+different from the others.  I can see that, and clearly the <tt class="docutils literal">scan</tt> beats
+<tt class="docutils literal">binstr</tt> which also beats <tt class="docutils literal">find</tt>.  However, I have a problem, if I
+use just the mean, there's a <em>chance</em> that the <tt class="docutils literal">ranges</tt> of each
+sample might overlap.</p>
+<p>What if I have means that are different, but the 1st and 3rd quarters overlap?
+In that case I could say that there's a chance that if I ran the samples again
+the means might not be different.  The more overlap I have in the ranges the
+higher probability that my two samples (and my two functions) are <em>not</em>
+actually different.  Any difference I'm seeing in the two (in this case three)
+is just random chance.</p>
+<p>Statistics has many tools to solve this problem, but in our case I can just
+look at the 1st and 3rd quarters as well as the mean for all three samples.  If
+the means are different and the quarters are way off never possibly
+overlapping, then it's alright to say they are different.</p>
+<p>In my three samples I can say that <tt class="docutils literal">scan</tt>, <tt class="docutils literal">find</tt> and
+<tt class="docutils literal">binstr</tt> are different, don't overlap in range, and that I can trust the
+sample (for the most part).</p>
+</div>
+<div class="section" id="analyzing-the-results">
+<h1>Analyzing The Results</h1>
+<p>Looking at the results I can see that <tt class="docutils literal">String_find</tt> is much slower than
+the other two.  In fact, so slow I'd think there's something wrong with how I
+implemented it.  However when I compare it with <tt class="docutils literal">StringScanner_scan</tt> I
+can see that it's the part that builds the skip list that is most likely
+costing the time.  Not only is <tt class="docutils literal">find</tt> slower, it's also doing <em>less</em>
+than <tt class="docutils literal">scan</tt> because it's just finding the first string while <tt class="docutils literal">scan</tt>
+finds all of them.</p>
+<p>I can also see that <tt class="docutils literal">scan</tt> beats <tt class="docutils literal">binstr</tt> as well by quite a large
+margin.  Again I can say that not only does <tt class="docutils literal">scan</tt> do more than both of
+these, but it's also much faster.</p>
+<p>There's a few caveats with this analysis:</p>
+<ul class="simple">
+<li>I may have messed up this implementation or the test. At this
+point I would go research all the possible ways to do a BMH algorithm
+and try to improve it.  I would also confirm that I'm doing the test
+right.</li>
+<li>If you alter the time the test runs, you get different results.
+There is a &quot;warm up&quot; period I'm not investigating.</li>
+<li>The <tt class="docutils literal">test_scan_performance</tt> unit test isn't quite the
+same as the others, but it is doing more than the other tests so
+it's probably alright.</li>
+<li>I'm only doing the test by searching for one string in another.
+I could randomize the strings to find to remove their position
+and length as a confounding factor.</li>
+<li>Maybe <tt class="docutils literal">binstr</tt> is implemented better than &quot;simple&quot; brute force.</li>
+<li>I could be running these in an unfortunate order and maybe randomizing
+which test runs first will give better results.</li>
+</ul>
+<p>One thing to gather from this is you need to confirm real performance even if
+you implement an algorithm &quot;correctly&quot;.  In this case the claim is that the BMH
+algorithm should have beaten the <tt class="docutils literal">binstr</tt> algorithm, but a simple test
+proved it didn't.  Had I not done this I would have been using an inferior
+algorithm implementation without knowing it.  With these metrics I can start to
+tune my implementation, or simply scrap it and find another one.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>See if you can make the <tt class="docutils literal">Scan_find</tt> faster.  Why is my implementation
+here slow?</li>
+<li>Try some different scan times and see if you get different numbers.
+What impact does the length of time that you run the test have on
+the <tt class="docutils literal">scan</tt> times?  What can you say about that result?</li>
+<li>Alter the unit test so that it runs each function for a short burst
+in the beginning to clear out any &quot;warm up&quot; period, then start the
+timing portion.  Does that change the dependence on the length of time
+the test runs and how many operations / second are possible?</li>
+<li>Make the unit test randomize the strings to find and then measure
+the performance you get.  One way to do this is use the <tt class="docutils literal">bsplit</tt>
+function from <tt class="docutils literal">bstrlib.h</tt> to split the <tt class="docutils literal">IN_STR</tt> on
+spaces.  Then use the <tt class="docutils literal">bstrList</tt> struct you get to access each
+string it returns.  This will also teach you how to use <tt class="docutils literal">bstrList</tt>
+operations for string processing.</li>
+<li>Try some runs with the tests in different orders and see if you get different
+results.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

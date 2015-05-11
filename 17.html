@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 17: Heap And Stack Memory Allocation</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 17: Heap And Stack Memory Allocation</h1>
+            <p>In this exercise you're going to make a big leap in difficulty and create
+an entire small program to manage a database.  This database isn't very
+efficient and doesn't store very much, but it does demonstrate most of
+what you've learned so far.  It also introduces memory allocation more
+formally and gets you started working with files.  We use some file I/O
+functions, but I won't be explaining them too well so you can try to
+figure them out first.</p>
+<p>As usual, type this whole program in and get it working, then we'll discuss:</p>
+<div class="highlight"><pre><a name="code--ex17.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex17.c-pyg.html-2"></a><span class="cp">#include &lt;assert.h&gt;</span>
+<a name="code--ex17.c-pyg.html-3"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--ex17.c-pyg.html-4"></a><span class="cp">#include &lt;errno.h&gt;</span>
+<a name="code--ex17.c-pyg.html-5"></a><span class="cp">#include &lt;string.h&gt;</span>
+<a name="code--ex17.c-pyg.html-6"></a>
+<a name="code--ex17.c-pyg.html-7"></a><span class="cp">#define MAX_DATA 512</span>
+<a name="code--ex17.c-pyg.html-8"></a><span class="cp">#define MAX_ROWS 100</span>
+<a name="code--ex17.c-pyg.html-9"></a>
+<a name="code--ex17.c-pyg.html-10"></a><span class="k">struct</span> <span class="n">Address</span> <span class="p">{</span>
+<a name="code--ex17.c-pyg.html-11"></a>    <span class="kt">int</span> <span class="n">id</span><span class="p">;</span>
+<a name="code--ex17.c-pyg.html-12"></a>    <span class="kt">int</span> <span class="n">set</span><span class="p">;</span>
+<a name="code--ex17.c-pyg.html-13"></a>    <span class="kt">char</span> <span class="n">name</span><span class="p">[</span><span class="n">MAX_DATA</span><span class="p">];</span>
+<a name="code--ex17.c-pyg.html-14"></a>    <span class="kt">char</span> <span class="n">email</span><span class="p">[</span><span class="n">MAX_DATA</span><span class="p">];</span>
+<a name="code--ex17.c-pyg.html-15"></a><span class="p">};</span>
+<a name="code--ex17.c-pyg.html-16"></a>
+<a name="code--ex17.c-pyg.html-17"></a><span class="k">struct</span> <span class="n">Database</span> <span class="p">{</span>
+<a name="code--ex17.c-pyg.html-18"></a>    <span class="k">struct</span> <span class="n">Address</span> <span class="n">rows</span><span class="p">[</span><span class="n">MAX_ROWS</span><span class="p">];</span>
+<a name="code--ex17.c-pyg.html-19"></a><span class="p">};</span>
+<a name="code--ex17.c-pyg.html-20"></a>
+<a name="code--ex17.c-pyg.html-21"></a><span class="k">struct</span> <span class="n">Connection</span> <span class="p">{</span>
+<a name="code--ex17.c-pyg.html-22"></a>    <span class="kt">FILE</span> <span class="o">*</span><span class="n">file</span><span class="p">;</span>
+<a name="code--ex17.c-pyg.html-23"></a>    <span class="k">struct</span> <span class="n">Database</span> <span class="o">*</span><span class="n">db</span><span class="p">;</span>
+<a name="code--ex17.c-pyg.html-24"></a><span class="p">};</span>
+<a name="code--ex17.c-pyg.html-25"></a>
+<a name="code--ex17.c-pyg.html-26"></a><span class="kt">void</span> <span class="nf">die</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">message</span><span class="p">)</span>
+<a name="code--ex17.c-pyg.html-27"></a><span class="p">{</span>
+<a name="code--ex17.c-pyg.html-28"></a>    <span class="k">if</span><span class="p">(</span><span class="n">errno</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex17.c-pyg.html-29"></a>        <span class="n">perror</span><span class="p">(</span><span class="n">message</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-30"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--ex17.c-pyg.html-31"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;ERROR: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-32"></a>    <span class="p">}</span>
+<a name="code--ex17.c-pyg.html-33"></a>
+<a name="code--ex17.c-pyg.html-34"></a>    <span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-35"></a><span class="p">}</span>
+<a name="code--ex17.c-pyg.html-36"></a>
+<a name="code--ex17.c-pyg.html-37"></a><span class="kt">void</span> <span class="nf">Address_print</span><span class="p">(</span><span class="k">struct</span> <span class="n">Address</span> <span class="o">*</span><span class="n">addr</span><span class="p">)</span>
+<a name="code--ex17.c-pyg.html-38"></a><span class="p">{</span>
+<a name="code--ex17.c-pyg.html-39"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d %s %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex17.c-pyg.html-40"></a>            <span class="n">addr</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">,</span> <span class="n">addr</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">,</span> <span class="n">addr</span><span class="o">-&gt;</span><span class="n">email</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-41"></a><span class="p">}</span>
+<a name="code--ex17.c-pyg.html-42"></a>
+<a name="code--ex17.c-pyg.html-43"></a><span class="kt">void</span> <span class="nf">Database_load</span><span class="p">(</span><span class="k">struct</span> <span class="n">Connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">)</span>
+<a name="code--ex17.c-pyg.html-44"></a><span class="p">{</span>
+<a name="code--ex17.c-pyg.html-45"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">fread</span><span class="p">(</span><span class="n">conn</span><span class="o">-&gt;</span><span class="n">db</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">Database</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">conn</span><span class="o">-&gt;</span><span class="n">file</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-46"></a>    <span class="k">if</span><span class="p">(</span><span class="n">rc</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)</span> <span class="n">die</span><span class="p">(</span><span class="s">&quot;Failed to load database.&quot;</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-47"></a><span class="p">}</span>
+<a name="code--ex17.c-pyg.html-48"></a>
+<a name="code--ex17.c-pyg.html-49"></a><span class="k">struct</span> <span class="n">Connection</span> <span class="o">*</span><span class="nf">Database_open</span><span class="p">(</span><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span><span class="p">,</span> <span class="kt">char</span> <span class="n">mode</span><span class="p">)</span>
+<a name="code--ex17.c-pyg.html-50"></a><span class="p">{</span>
+<a name="code--ex17.c-pyg.html-51"></a>    <span class="k">struct</span> <span class="n">Connection</span> <span class="o">*</span><span class="n">conn</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">Connection</span><span class="p">));</span>
+<a name="code--ex17.c-pyg.html-52"></a>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">conn</span><span class="p">)</span> <span class="n">die</span><span class="p">(</span><span class="s">&quot;Memory error&quot;</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-53"></a>
+<a name="code--ex17.c-pyg.html-54"></a>    <span class="n">conn</span><span class="o">-&gt;</span><span class="n">db</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">Database</span><span class="p">));</span>
+<a name="code--ex17.c-pyg.html-55"></a>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">conn</span><span class="o">-&gt;</span><span class="n">db</span><span class="p">)</span> <span class="n">die</span><span class="p">(</span><span class="s">&quot;Memory error&quot;</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-56"></a>
+<a name="code--ex17.c-pyg.html-57"></a>    <span class="k">if</span><span class="p">(</span><span class="n">mode</span> <span class="o">==</span> <span class="sc">&#39;c&#39;</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex17.c-pyg.html-58"></a>        <span class="n">conn</span><span class="o">-&gt;</span><span class="n">file</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&quot;w&quot;</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-59"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--ex17.c-pyg.html-60"></a>        <span class="n">conn</span><span class="o">-&gt;</span><span class="n">file</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&quot;r+&quot;</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-61"></a>
+<a name="code--ex17.c-pyg.html-62"></a>        <span class="k">if</span><span class="p">(</span><span class="n">conn</span><span class="o">-&gt;</span><span class="n">file</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex17.c-pyg.html-63"></a>            <span class="n">Database_load</span><span class="p">(</span><span class="n">conn</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-64"></a>        <span class="p">}</span>
+<a name="code--ex17.c-pyg.html-65"></a>    <span class="p">}</span>
+<a name="code--ex17.c-pyg.html-66"></a>
+<a name="code--ex17.c-pyg.html-67"></a>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">conn</span><span class="o">-&gt;</span><span class="n">file</span><span class="p">)</span> <span class="n">die</span><span class="p">(</span><span class="s">&quot;Failed to open the file&quot;</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-68"></a>
+<a name="code--ex17.c-pyg.html-69"></a>    <span class="k">return</span> <span class="n">conn</span><span class="p">;</span>
+<a name="code--ex17.c-pyg.html-70"></a><span class="p">}</span>
+<a name="code--ex17.c-pyg.html-71"></a>
+<a name="code--ex17.c-pyg.html-72"></a><span class="kt">void</span> <span class="nf">Database_close</span><span class="p">(</span><span class="k">struct</span> <span class="n">Connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">)</span>
+<a name="code--ex17.c-pyg.html-73"></a><span class="p">{</span>
+<a name="code--ex17.c-pyg.html-74"></a>    <span class="k">if</span><span class="p">(</span><span class="n">conn</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex17.c-pyg.html-75"></a>        <span class="k">if</span><span class="p">(</span><span class="n">conn</span><span class="o">-&gt;</span><span class="n">file</span><span class="p">)</span> <span class="n">fclose</span><span class="p">(</span><span class="n">conn</span><span class="o">-&gt;</span><span class="n">file</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-76"></a>        <span class="k">if</span><span class="p">(</span><span class="n">conn</span><span class="o">-&gt;</span><span class="n">db</span><span class="p">)</span> <span class="n">free</span><span class="p">(</span><span class="n">conn</span><span class="o">-&gt;</span><span class="n">db</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-77"></a>        <span class="n">free</span><span class="p">(</span><span class="n">conn</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-78"></a>    <span class="p">}</span>
+<a name="code--ex17.c-pyg.html-79"></a><span class="p">}</span>
+<a name="code--ex17.c-pyg.html-80"></a>
+<a name="code--ex17.c-pyg.html-81"></a><span class="kt">void</span> <span class="nf">Database_write</span><span class="p">(</span><span class="k">struct</span> <span class="n">Connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">)</span>
+<a name="code--ex17.c-pyg.html-82"></a><span class="p">{</span>
+<a name="code--ex17.c-pyg.html-83"></a>    <span class="n">rewind</span><span class="p">(</span><span class="n">conn</span><span class="o">-&gt;</span><span class="n">file</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-84"></a>
+<a name="code--ex17.c-pyg.html-85"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">fwrite</span><span class="p">(</span><span class="n">conn</span><span class="o">-&gt;</span><span class="n">db</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">Database</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="n">conn</span><span class="o">-&gt;</span><span class="n">file</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-86"></a>    <span class="k">if</span><span class="p">(</span><span class="n">rc</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)</span> <span class="n">die</span><span class="p">(</span><span class="s">&quot;Failed to write database.&quot;</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-87"></a>
+<a name="code--ex17.c-pyg.html-88"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">fflush</span><span class="p">(</span><span class="n">conn</span><span class="o">-&gt;</span><span class="n">file</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-89"></a>    <span class="k">if</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="n">die</span><span class="p">(</span><span class="s">&quot;Cannot flush database.&quot;</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-90"></a><span class="p">}</span>
+<a name="code--ex17.c-pyg.html-91"></a>
+<a name="code--ex17.c-pyg.html-92"></a><span class="kt">void</span> <span class="nf">Database_create</span><span class="p">(</span><span class="k">struct</span> <span class="n">Connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">)</span>
+<a name="code--ex17.c-pyg.html-93"></a><span class="p">{</span>
+<a name="code--ex17.c-pyg.html-94"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex17.c-pyg.html-95"></a>
+<a name="code--ex17.c-pyg.html-96"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">MAX_ROWS</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex17.c-pyg.html-97"></a>        <span class="c1">// make a prototype to initialize it</span>
+<a name="code--ex17.c-pyg.html-98"></a>        <span class="k">struct</span> <span class="n">Address</span> <span class="n">addr</span> <span class="o">=</span> <span class="p">{.</span><span class="n">id</span> <span class="o">=</span> <span class="n">i</span><span class="p">,</span> <span class="p">.</span><span class="n">set</span> <span class="o">=</span> <span class="mi">0</span><span class="p">};</span>
+<a name="code--ex17.c-pyg.html-99"></a>        <span class="c1">// then just assign it</span>
+<a name="code--ex17.c-pyg.html-100"></a>        <span class="n">conn</span><span class="o">-&gt;</span><span class="n">db</span><span class="o">-&gt;</span><span class="n">rows</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">addr</span><span class="p">;</span>
+<a name="code--ex17.c-pyg.html-101"></a>    <span class="p">}</span>
+<a name="code--ex17.c-pyg.html-102"></a><span class="p">}</span>
+<a name="code--ex17.c-pyg.html-103"></a>
+<a name="code--ex17.c-pyg.html-104"></a><span class="kt">void</span> <span class="nf">Database_set</span><span class="p">(</span><span class="k">struct</span> <span class="n">Connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">,</span> <span class="kt">int</span> <span class="n">id</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">email</span><span class="p">)</span>
+<a name="code--ex17.c-pyg.html-105"></a><span class="p">{</span>
+<a name="code--ex17.c-pyg.html-106"></a>    <span class="k">struct</span> <span class="n">Address</span> <span class="o">*</span><span class="n">addr</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">conn</span><span class="o">-&gt;</span><span class="n">db</span><span class="o">-&gt;</span><span class="n">rows</span><span class="p">[</span><span class="n">id</span><span class="p">];</span>
+<a name="code--ex17.c-pyg.html-107"></a>    <span class="k">if</span><span class="p">(</span><span class="n">addr</span><span class="o">-&gt;</span><span class="n">set</span><span class="p">)</span> <span class="n">die</span><span class="p">(</span><span class="s">&quot;Already set, delete it first&quot;</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-108"></a>
+<a name="code--ex17.c-pyg.html-109"></a>    <span class="n">addr</span><span class="o">-&gt;</span><span class="n">set</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex17.c-pyg.html-110"></a>    <span class="c1">// WARNING: bug, read the &quot;How To Break It&quot; and fix this</span>
+<a name="code--ex17.c-pyg.html-111"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">res</span> <span class="o">=</span> <span class="n">strncpy</span><span class="p">(</span><span class="n">addr</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">MAX_DATA</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-112"></a>    <span class="c1">// demonstrate the strncpy bug</span>
+<a name="code--ex17.c-pyg.html-113"></a>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">res</span><span class="p">)</span> <span class="n">die</span><span class="p">(</span><span class="s">&quot;Name copy failed&quot;</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-114"></a>
+<a name="code--ex17.c-pyg.html-115"></a>    <span class="n">res</span> <span class="o">=</span> <span class="n">strncpy</span><span class="p">(</span><span class="n">addr</span><span class="o">-&gt;</span><span class="n">email</span><span class="p">,</span> <span class="n">email</span><span class="p">,</span> <span class="n">MAX_DATA</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-116"></a>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">res</span><span class="p">)</span> <span class="n">die</span><span class="p">(</span><span class="s">&quot;Email copy failed&quot;</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-117"></a><span class="p">}</span>
+<a name="code--ex17.c-pyg.html-118"></a>
+<a name="code--ex17.c-pyg.html-119"></a><span class="kt">void</span> <span class="nf">Database_get</span><span class="p">(</span><span class="k">struct</span> <span class="n">Connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">,</span> <span class="kt">int</span> <span class="n">id</span><span class="p">)</span>
+<a name="code--ex17.c-pyg.html-120"></a><span class="p">{</span>
+<a name="code--ex17.c-pyg.html-121"></a>    <span class="k">struct</span> <span class="n">Address</span> <span class="o">*</span><span class="n">addr</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">conn</span><span class="o">-&gt;</span><span class="n">db</span><span class="o">-&gt;</span><span class="n">rows</span><span class="p">[</span><span class="n">id</span><span class="p">];</span>
+<a name="code--ex17.c-pyg.html-122"></a>
+<a name="code--ex17.c-pyg.html-123"></a>    <span class="k">if</span><span class="p">(</span><span class="n">addr</span><span class="o">-&gt;</span><span class="n">set</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex17.c-pyg.html-124"></a>        <span class="n">Address_print</span><span class="p">(</span><span class="n">addr</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-125"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--ex17.c-pyg.html-126"></a>        <span class="n">die</span><span class="p">(</span><span class="s">&quot;ID is not set&quot;</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-127"></a>    <span class="p">}</span>
+<a name="code--ex17.c-pyg.html-128"></a><span class="p">}</span>
+<a name="code--ex17.c-pyg.html-129"></a>
+<a name="code--ex17.c-pyg.html-130"></a><span class="kt">void</span> <span class="nf">Database_delete</span><span class="p">(</span><span class="k">struct</span> <span class="n">Connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">,</span> <span class="kt">int</span> <span class="n">id</span><span class="p">)</span>
+<a name="code--ex17.c-pyg.html-131"></a><span class="p">{</span>
+<a name="code--ex17.c-pyg.html-132"></a>    <span class="k">struct</span> <span class="n">Address</span> <span class="n">addr</span> <span class="o">=</span> <span class="p">{.</span><span class="n">id</span> <span class="o">=</span> <span class="n">id</span><span class="p">,</span> <span class="p">.</span><span class="n">set</span> <span class="o">=</span> <span class="mi">0</span><span class="p">};</span>
+<a name="code--ex17.c-pyg.html-133"></a>    <span class="n">conn</span><span class="o">-&gt;</span><span class="n">db</span><span class="o">-&gt;</span><span class="n">rows</span><span class="p">[</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="n">addr</span><span class="p">;</span>
+<a name="code--ex17.c-pyg.html-134"></a><span class="p">}</span>
+<a name="code--ex17.c-pyg.html-135"></a>
+<a name="code--ex17.c-pyg.html-136"></a><span class="kt">void</span> <span class="nf">Database_list</span><span class="p">(</span><span class="k">struct</span> <span class="n">Connection</span> <span class="o">*</span><span class="n">conn</span><span class="p">)</span>
+<a name="code--ex17.c-pyg.html-137"></a><span class="p">{</span>
+<a name="code--ex17.c-pyg.html-138"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex17.c-pyg.html-139"></a>    <span class="k">struct</span> <span class="n">Database</span> <span class="o">*</span><span class="n">db</span> <span class="o">=</span> <span class="n">conn</span><span class="o">-&gt;</span><span class="n">db</span><span class="p">;</span>
+<a name="code--ex17.c-pyg.html-140"></a>
+<a name="code--ex17.c-pyg.html-141"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">MAX_ROWS</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex17.c-pyg.html-142"></a>        <span class="k">struct</span> <span class="n">Address</span> <span class="o">*</span><span class="n">cur</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">db</span><span class="o">-&gt;</span><span class="n">rows</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<a name="code--ex17.c-pyg.html-143"></a>
+<a name="code--ex17.c-pyg.html-144"></a>        <span class="k">if</span><span class="p">(</span><span class="n">cur</span><span class="o">-&gt;</span><span class="n">set</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex17.c-pyg.html-145"></a>            <span class="n">Address_print</span><span class="p">(</span><span class="n">cur</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-146"></a>        <span class="p">}</span>
+<a name="code--ex17.c-pyg.html-147"></a>    <span class="p">}</span>
+<a name="code--ex17.c-pyg.html-148"></a><span class="p">}</span>
+<a name="code--ex17.c-pyg.html-149"></a>
+<a name="code--ex17.c-pyg.html-150"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex17.c-pyg.html-151"></a><span class="p">{</span>
+<a name="code--ex17.c-pyg.html-152"></a>    <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">)</span> <span class="n">die</span><span class="p">(</span><span class="s">&quot;USAGE: ex17 &lt;dbfile&gt; &lt;action&gt; [action params]&quot;</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-153"></a>
+<a name="code--ex17.c-pyg.html-154"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">filename</span> <span class="o">=</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">];</span>
+<a name="code--ex17.c-pyg.html-155"></a>    <span class="kt">char</span> <span class="n">action</span> <span class="o">=</span> <span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">];</span>
+<a name="code--ex17.c-pyg.html-156"></a>    <span class="k">struct</span> <span class="n">Connection</span> <span class="o">*</span><span class="n">conn</span> <span class="o">=</span> <span class="n">Database_open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">action</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-157"></a>    <span class="kt">int</span> <span class="n">id</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex17.c-pyg.html-158"></a>
+<a name="code--ex17.c-pyg.html-159"></a>    <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">)</span> <span class="n">id</span> <span class="o">=</span> <span class="n">atoi</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">3</span><span class="p">]);</span>
+<a name="code--ex17.c-pyg.html-160"></a>    <span class="k">if</span><span class="p">(</span><span class="n">id</span> <span class="o">&gt;=</span> <span class="n">MAX_ROWS</span><span class="p">)</span> <span class="n">die</span><span class="p">(</span><span class="s">&quot;There&#39;s not that many records.&quot;</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-161"></a>
+<a name="code--ex17.c-pyg.html-162"></a>    <span class="k">switch</span><span class="p">(</span><span class="n">action</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex17.c-pyg.html-163"></a>        <span class="k">case</span> <span class="sc">&#39;c&#39;</span>:
+<a name="code--ex17.c-pyg.html-164"></a>            <span class="n">Database_create</span><span class="p">(</span><span class="n">conn</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-165"></a>            <span class="n">Database_write</span><span class="p">(</span><span class="n">conn</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-166"></a>            <span class="k">break</span><span class="p">;</span>
+<a name="code--ex17.c-pyg.html-167"></a>
+<a name="code--ex17.c-pyg.html-168"></a>        <span class="k">case</span> <span class="sc">&#39;g&#39;</span>:
+<a name="code--ex17.c-pyg.html-169"></a>            <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">)</span> <span class="n">die</span><span class="p">(</span><span class="s">&quot;Need an id to get&quot;</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-170"></a>
+<a name="code--ex17.c-pyg.html-171"></a>            <span class="n">Database_get</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">id</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-172"></a>            <span class="k">break</span><span class="p">;</span>
+<a name="code--ex17.c-pyg.html-173"></a>
+<a name="code--ex17.c-pyg.html-174"></a>        <span class="k">case</span> <span class="sc">&#39;s&#39;</span>:
+<a name="code--ex17.c-pyg.html-175"></a>            <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">!=</span> <span class="mi">6</span><span class="p">)</span> <span class="n">die</span><span class="p">(</span><span class="s">&quot;Need id, name, email to set&quot;</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-176"></a>
+<a name="code--ex17.c-pyg.html-177"></a>            <span class="n">Database_set</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">id</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">argv</span><span class="p">[</span><span class="mi">5</span><span class="p">]);</span>
+<a name="code--ex17.c-pyg.html-178"></a>            <span class="n">Database_write</span><span class="p">(</span><span class="n">conn</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-179"></a>            <span class="k">break</span><span class="p">;</span>
+<a name="code--ex17.c-pyg.html-180"></a>
+<a name="code--ex17.c-pyg.html-181"></a>        <span class="k">case</span> <span class="sc">&#39;d&#39;</span>:
+<a name="code--ex17.c-pyg.html-182"></a>            <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">)</span> <span class="n">die</span><span class="p">(</span><span class="s">&quot;Need id to delete&quot;</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-183"></a>
+<a name="code--ex17.c-pyg.html-184"></a>            <span class="n">Database_delete</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">id</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-185"></a>            <span class="n">Database_write</span><span class="p">(</span><span class="n">conn</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-186"></a>            <span class="k">break</span><span class="p">;</span>
+<a name="code--ex17.c-pyg.html-187"></a>
+<a name="code--ex17.c-pyg.html-188"></a>        <span class="k">case</span> <span class="sc">&#39;l&#39;</span>:
+<a name="code--ex17.c-pyg.html-189"></a>            <span class="n">Database_list</span><span class="p">(</span><span class="n">conn</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-190"></a>            <span class="k">break</span><span class="p">;</span>
+<a name="code--ex17.c-pyg.html-191"></a>        <span class="nl">default:</span>
+<a name="code--ex17.c-pyg.html-192"></a>            <span class="n">die</span><span class="p">(</span><span class="s">&quot;Invalid action, only: c=create, g=get, s=set, d=del, l=list&quot;</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-193"></a>    <span class="p">}</span>
+<a name="code--ex17.c-pyg.html-194"></a>
+<a name="code--ex17.c-pyg.html-195"></a>    <span class="n">Database_close</span><span class="p">(</span><span class="n">conn</span><span class="p">);</span>
+<a name="code--ex17.c-pyg.html-196"></a>
+<a name="code--ex17.c-pyg.html-197"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex17.c-pyg.html-198"></a><span class="p">}</span>
+</pre></div><p>In this program I am using a set of structures to create a simple
+database for an address book.  In it I'm using some things you've never
+seen, so you should go through it line-by-line, explain what each line
+does, and look up any functions you do not recognize.  There are few
+key things I'm doing that you should pay attention to as well:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">#define</tt> for constants</dt>
+<dd>I use another part of the &quot;C Pre-Processor&quot; to
+create constant settings of <tt class="docutils literal">MAX_DATA</tt> and <tt class="docutils literal">MAX_ROWS</tt>.  I'll
+cover more of what the CPP does, but this is a way to create a constant
+that will work reliably.  There's other ways but they don't apply in
+certain situations.</dd>
+<dt>Fixed Sized Structs</dt>
+<dd>The <tt class="docutils literal">Address</tt> struct then uses these
+constants to create a piece of data that is fixed in size making it
+less efficient, but easier to store and read.  The <tt class="docutils literal">Database</tt> struct
+is then also fixed size because it is a fixed length array of <tt class="docutils literal">Address</tt>
+structs.  That lets you write the whole thing to disk in one move later on.</dd>
+<dt>die function to abort with an error</dt>
+<dd>In a small program like this you
+can make a single function that kills the program with an error if there's
+anything wrong.  I call this <tt class="docutils literal">die</tt>, and it's used after any failed
+function calls or bad inputs to exit with an error using <tt class="docutils literal">exit</tt>.</dd>
+<dt>errno and perror() for error reporting</dt>
+<dd>When you have an error return
+from a function, it will usually set an &quot;external&quot; variable called <tt class="docutils literal">errno</tt>
+to say exactly what error happened.  These are just numbers, so you can use
+<tt class="docutils literal">perror</tt> to &quot;print the error message&quot;.</dd>
+<dt>FILE functions</dt>
+<dd>I'm using all new functions like <tt class="docutils literal">fopen</tt>, <tt class="docutils literal">fread</tt>,
+<tt class="docutils literal">fclose</tt>, and <tt class="docutils literal">rewind</tt> to work with files.  Each of these functions
+works on a <tt class="docutils literal">FILE</tt> struct that's just like your structs, but it's defined
+by the C standard library.</dd>
+<dt>nested struct pointers</dt>
+<dd>There's use of nested structures and getting the
+address of array elements that you should study.  Specifically code like
+<tt class="docutils literal"><span class="pre">&amp;conn-&gt;db-&gt;rows[i]</span></tt> which reads &quot;get the <tt class="docutils literal">i</tt> element of <tt class="docutils literal">rows</tt>, which is
+in <tt class="docutils literal">db</tt>, which is in <tt class="docutils literal">conn</tt>, then get the address of (<tt class="docutils literal">&amp;</tt>) it&quot;.</dd>
+<dt>copying struct prototypes</dt>
+<dd>best shown in <tt class="docutils literal">Database_delete</tt>, you can
+see I'm using a temporary local <tt class="docutils literal">Address</tt>, initializing its <tt class="docutils literal">id</tt>
+and <tt class="docutils literal">set</tt> fields, and then simply copying it into the <tt class="docutils literal">rows</tt> array by
+assigning it to the element I want.  This trick makes sure that all fields
+but <tt class="docutils literal">set</tt> and <tt class="docutils literal">id</tt> are initialized to 0s and is actually
+easier to write.  Incidentally, you shouldn't be using <tt class="docutils literal">memcpy</tt> to do
+these kinds of struct copying operations. Modern C allows you to simply assign
+one struct to another and it'll handle the copying for you.</dd>
+<dt>processing complex arguments</dt>
+<dd>I'm doing some more complex argument parsing,
+but this isn't really the best way to do it.  We'll get into better option
+parsing later in the book.</dd>
+<dt>converting strings to ints</dt>
+<dd>I use the <tt class="docutils literal">atoi</tt> function to take the
+string for the id on the command line and convert it to the <tt class="docutils literal">int id</tt>
+variable.  Read up on this function and similar ones.</dd>
+<dt>allocating large data on the &quot;heap&quot;</dt>
+<dd>The whole point of this program is
+that I'm using <tt class="docutils literal">malloc</tt> to ask the OS for a large amount of memory
+to work with when I create the <tt class="docutils literal">Database</tt>.  I cover this in more
+detail below.</dd>
+<dt>NULL is 0 so boolean works</dt>
+<dd>In many of the checks I'm testing that a
+pointer is not NULL by simply doing <tt class="docutils literal"><span class="pre">if(!ptr)</span> <span class="pre">die(&quot;fail!&quot;)</span></tt> this is
+valid because NULL will evaluate to false.  You could
+be explicit and say <tt class="docutils literal">if(ptr == NULL) <span class="pre">die(&quot;fail!&quot;)</span></tt> as well. On some rare systems NULL will
+be stored in the computer (represented) as something not 0, but the C standard says you should still be able to write
+code as if it has a 0 value. From now on when I say &quot;NULL is 0&quot; I mean its value for anyone
+who is overly pedantic.</dd>
+</dl>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>You should spend as much time as you can testing that it works, and running
+it with <tt class="docutils literal">Valgrind</tt> to confirm you've got all the memory usage
+right.  Here's a session of me testing it normally and then using
+<tt class="docutils literal">Valgrind</tt> to check the operations:</p>
+<div class="highlight"><pre><a name="code--ex17.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex17
+<a name="code--ex17.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g    ex17.c   -o ex17</span>
+<a name="code--ex17.sh-session-pyg.html-3"></a><span class="gp">$</span> ./ex17 db.dat c
+<a name="code--ex17.sh-session-pyg.html-4"></a><span class="gp">$</span> ./ex17 db.dat s 1 zed zed@zedshaw.com
+<a name="code--ex17.sh-session-pyg.html-5"></a><span class="gp">$</span> ./ex17 db.dat s 2 frank frank@zedshaw.com
+<a name="code--ex17.sh-session-pyg.html-6"></a><span class="gp">$</span> ./ex17 db.dat s 3 joe joe@zedshaw.com
+<a name="code--ex17.sh-session-pyg.html-7"></a><span class="gp">$</span>
+<a name="code--ex17.sh-session-pyg.html-8"></a><span class="gp">$</span> ./ex17 db.dat l
+<a name="code--ex17.sh-session-pyg.html-9"></a><span class="go">1 zed zed@zedshaw.com</span>
+<a name="code--ex17.sh-session-pyg.html-10"></a><span class="go">2 frank frank@zedshaw.com</span>
+<a name="code--ex17.sh-session-pyg.html-11"></a><span class="go">3 joe joe@zedshaw.com</span>
+<a name="code--ex17.sh-session-pyg.html-12"></a><span class="gp">$</span> ./ex17 db.dat d 3
+<a name="code--ex17.sh-session-pyg.html-13"></a><span class="gp">$</span> ./ex17 db.dat l
+<a name="code--ex17.sh-session-pyg.html-14"></a><span class="go">1 zed zed@zedshaw.com</span>
+<a name="code--ex17.sh-session-pyg.html-15"></a><span class="go">2 frank frank@zedshaw.com</span>
+<a name="code--ex17.sh-session-pyg.html-16"></a><span class="gp">$</span> ./ex17 db.dat g 2
+<a name="code--ex17.sh-session-pyg.html-17"></a><span class="go">2 frank frank@zedshaw.com</span>
+<a name="code--ex17.sh-session-pyg.html-18"></a><span class="gp">$</span>
+<a name="code--ex17.sh-session-pyg.html-19"></a><span class="gp">$</span> valgrind --leak-check<span class="o">=</span>yes ./ex17 db.dat g 2
+<a name="code--ex17.sh-session-pyg.html-20"></a><span class="gp">#</span> cut valgrind output...
+<a name="code--ex17.sh-session-pyg.html-21"></a><span class="gp">$</span>
+</pre></div><p>The actual output of <tt class="docutils literal">Valgrind</tt> is taken out since you should
+be able to detect it.</p>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p class="last"><tt class="docutils literal">Valgrind</tt> will report that you're leaking small blocks of memory,
+but sometimes it's just over-reporting from OSX's internal APIs.  If you see it
+showing leaks that aren't inside your code then just ignore them.</p>
+</div>
+</div>
+<div class="section" id="heap-vs-stack-allocation">
+<h1>Heap vs. Stack Allocation</h1>
+<p>You kids these days have it great.  You play with your Ruby or Python and
+just make objects and variables without any care for where they live.  You
+don't care if it's on the &quot;stack&quot;, and the heap?  Fuggedaboutit.  You don't
+even know, and you know what, chances are your language of choice doesn't
+even put the variables on stack at all.  It's all heap, and you don't even
+<em>know</em> if it is.</p>
+<p>C is different because it's using the real CPU's actual machinery to do its
+work, and that involves a chunk of ram called the stack and another
+called the heap.  What's the difference?  It all depends on where you
+get the storage.</p>
+<p>The heap is easier to explain as it's just all the remaining memory in
+your computer, and you access it with the function <tt class="docutils literal">malloc</tt> to
+get more.  Each time you call <tt class="docutils literal">malloc</tt>, the OS uses internal
+functions to register that piece of memory to you, and then returns
+a pointer to it.  When you're done with it, you use <tt class="docutils literal">free</tt> to
+return it to the OS so that it can be used by other programs.  Failing
+to do this will cause your program to &quot;leak&quot; memory, but <tt class="docutils literal">Valgrind</tt>
+will help you track these leaks down.</p>
+<p>The stack is a special region of memory that stores temporary variables each
+function creates as locals to that function.  How it works is each argument to
+a function is &quot;pushed&quot; onto the stack, and then used inside the function.  It
+is really a stack data structure, so the last thing in is the first thing out.
+This also happens with all local variables like <tt class="docutils literal">char action</tt> and
+<tt class="docutils literal">int id</tt> in <tt class="docutils literal">main</tt>.  The advantage of using a stack for this is
+simply that, when the function exits, the C compiler &quot;pops&quot; these variables off
+the stack to clean up.  This is simple and prevents memory leaks if the
+variable is on the stack.</p>
+<p>The easiest way to keep this straight is with this mantra:  If you
+didn't get it from <tt class="docutils literal">malloc</tt> or a function that got it from <tt class="docutils literal">malloc</tt>,
+then it's on the stack.</p>
+<p>There's three primary problems with stacks and heaps to watch for:</p>
+<ul class="simple">
+<li>If you get a block of memory from <tt class="docutils literal">malloc</tt>, and have that
+pointer on the stack, then when the function exits, the pointer will
+get popped off and lost.</li>
+<li>If you put too much data on the stack (like large structs and arrays)
+then you can cause a &quot;stack overflow&quot; and the program will abort.  In
+this case, use the heap with <tt class="docutils literal">malloc</tt>.</li>
+<li>If you take a pointer to something on the stack, and then pass that
+or return it from your function, then the function receiving it will
+&quot;segmentation fault&quot; (segfault) because the actual data will get
+popped off and disappear.  You'll be pointing at dead space.</li>
+</ul>
+<p>This is why in the program I've created a <tt class="docutils literal">Database_open</tt> that allocates
+memory or dies, and then a <tt class="docutils literal">Database_close</tt> that frees everything.  If you
+create a &quot;create&quot; function, that makes the whole thing or nothing, and then a
+&quot;destroy&quot; function that cleans up everything safely, then it's easier to keep
+it all straight.</p>
+<p>Finally, when a program exits the OS will clean up all the resources for you,
+but sometimes not immediately.  A common idiom (and one I use in this
+exercise) is to just abort and let the OS clean up on error.</p>
+</div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<p>This program has a lot of places you can break it, so try some of these
+but also come up with your own:</p>
+<ul class="simple">
+<li>The classic way is to remove some of the safety checks such that you can
+pass in arbitrary data. For example, if you remove the check on line 160
+that prevents you from passing in any record number.</li>
+<li>You can also try corrupting the data file.  Open it in any editor and
+change random bytes then close it.</li>
+<li>You could also find ways to pass bad arguments to the program when it's
+run, such as getting the file and action backwards will make it create
+a file named after the action, then do an action based on the first
+character.</li>
+<li>There is a bug in this program because of <tt class="docutils literal">strncpy</tt> being poorly
+designed.  Go read about <tt class="docutils literal">strncpy</tt> then try to find out what happens
+when the <tt class="docutils literal">name</tt> or <tt class="docutils literal">address</tt> you give is <em>greater</em> than
+512 bytes.  Fix this by simply forcing the last character to <tt class="docutils literal">'\0'</tt>
+so that it's always set no matter what (which is what strncpy should do).</li>
+<li>In the extra credit I have you augment the program to create arbitrary
+size databases.  Try to see what the biggest database is before you
+cause the program to die for lack of memory from <tt class="docutils literal">malloc</tt>.</li>
+</ul>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>The <tt class="docutils literal">die</tt> function needs to be augmented to let you pass the <tt class="docutils literal">conn</tt>
+variable so it can close it and clean up.</li>
+<li>Change the code to accept parameters for <tt class="docutils literal">MAX_DATA</tt> and <tt class="docutils literal">MAX_ROWS</tt>, store them in the <tt class="docutils literal">Database</tt> struct, and write that to the file, thus creating
+a database that can be arbitrarily sized.</li>
+<li>Add more operations you can do on the database, like <tt class="docutils literal">find</tt>.</li>
+<li>Read about how C does it's struct packing, and then try to see why your
+file is the size it is.  See if you can calculate a new size after adding
+more fields.</li>
+<li>Add some more fields to the <tt class="docutils literal">Address</tt> and make them searchable.</li>
+<li>Write a shell script that will do your testing automatically for you
+by running commands in the right order.  Hint: Use <tt class="docutils literal">set <span class="pre">-e</span></tt> at the
+top of a <tt class="docutils literal">bash</tt> to make it abort the whole script if any command
+has an error.</li>
+<li>Try reworking the program to use a single global for the database connection.
+How does this new version of the program compare to the other one?</li>
+<li>Go research &quot;stack data structure&quot; and write one in your favorite language,
+then try to do it in C.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

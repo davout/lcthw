@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 7: More Variables, Some Math</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 7: More Variables, Some Math</h1>
+            <p>Let's get familiar with more things you can do with variables by
+declaring various <tt class="docutils literal">ints</tt>, <tt class="docutils literal">floats</tt>, <tt class="docutils literal">chars</tt>, and
+<tt class="docutils literal">doubles</tt>.  We'll then use these in various math expressions
+so you get introduced to C's basic math.</p>
+<div class="highlight"><pre><a name="code--ex7.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex7.c-pyg.html-2"></a>
+<a name="code--ex7.c-pyg.html-3"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex7.c-pyg.html-4"></a><span class="p">{</span>
+<a name="code--ex7.c-pyg.html-5"></a>    <span class="kt">int</span> <span class="n">bugs</span> <span class="o">=</span> <span class="mi">100</span><span class="p">;</span>
+<a name="code--ex7.c-pyg.html-6"></a>    <span class="kt">double</span> <span class="n">bug_rate</span> <span class="o">=</span> <span class="mf">1.2</span><span class="p">;</span>
+<a name="code--ex7.c-pyg.html-7"></a>
+<a name="code--ex7.c-pyg.html-8"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You have %d bugs at the imaginary rate of %f.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex7.c-pyg.html-9"></a>            <span class="n">bugs</span><span class="p">,</span> <span class="n">bug_rate</span><span class="p">);</span>
+<a name="code--ex7.c-pyg.html-10"></a>
+<a name="code--ex7.c-pyg.html-11"></a>    <span class="kt">long</span> <span class="n">universe_of_defects</span> <span class="o">=</span> <span class="mi">1L</span> <span class="o">*</span> <span class="mi">1024L</span> <span class="o">*</span> <span class="mi">1024L</span> <span class="o">*</span> <span class="mi">1024L</span><span class="p">;</span>
+<a name="code--ex7.c-pyg.html-12"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;The entire universe has %ld bugs.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex7.c-pyg.html-13"></a>            <span class="n">universe_of_defects</span><span class="p">);</span>
+<a name="code--ex7.c-pyg.html-14"></a>
+<a name="code--ex7.c-pyg.html-15"></a>    <span class="kt">double</span> <span class="n">expected_bugs</span> <span class="o">=</span> <span class="n">bugs</span> <span class="o">*</span> <span class="n">bug_rate</span><span class="p">;</span>
+<a name="code--ex7.c-pyg.html-16"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You are expected to have %f bugs.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex7.c-pyg.html-17"></a>            <span class="n">expected_bugs</span><span class="p">);</span>
+<a name="code--ex7.c-pyg.html-18"></a>
+<a name="code--ex7.c-pyg.html-19"></a>    <span class="kt">double</span> <span class="n">part_of_universe</span> <span class="o">=</span> <span class="n">expected_bugs</span> <span class="o">/</span> <span class="n">universe_of_defects</span><span class="p">;</span>
+<a name="code--ex7.c-pyg.html-20"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;That is only a %e portion of the universe.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex7.c-pyg.html-21"></a>            <span class="n">part_of_universe</span><span class="p">);</span>
+<a name="code--ex7.c-pyg.html-22"></a>
+<a name="code--ex7.c-pyg.html-23"></a>    <span class="c1">// this makes no sense, just a demo of something weird</span>
+<a name="code--ex7.c-pyg.html-24"></a>    <span class="kt">char</span> <span class="n">nul_byte</span> <span class="o">=</span> <span class="sc">&#39;\0&#39;</span><span class="p">;</span>
+<a name="code--ex7.c-pyg.html-25"></a>    <span class="kt">int</span> <span class="n">care_percentage</span> <span class="o">=</span> <span class="n">bugs</span> <span class="o">*</span> <span class="n">nul_byte</span><span class="p">;</span>
+<a name="code--ex7.c-pyg.html-26"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Which means you should care %d%%.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex7.c-pyg.html-27"></a>            <span class="n">care_percentage</span><span class="p">);</span>
+<a name="code--ex7.c-pyg.html-28"></a>
+<a name="code--ex7.c-pyg.html-29"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex7.c-pyg.html-30"></a><span class="p">}</span>
+</pre></div><p>Here's what's going on in this little bit of nonsense:</p>
+<dl class="docutils">
+<dt>ex7.c:1-4</dt>
+<dd>The usual start of a C program.</dd>
+<dt>ex7.c:5-6</dt>
+<dd>Declare an <tt class="docutils literal">int</tt> and <tt class="docutils literal">double</tt> for some fake bug data.</dd>
+<dt>ex7.c:8-9</dt>
+<dd>Print out those two, so nothing new here.</dd>
+<dt>ex7.c:11</dt>
+<dd>Declare a huge number using a new type <tt class="docutils literal">long</tt> for storing
+big numbers.</dd>
+<dt>ex7.c:12-13</dt>
+<dd>Print out that number using <tt class="docutils literal">%ld</tt> which adds a modifier
+to the usual <tt class="docutils literal">%d</tt>. Adding 'l' (the letter ell) means &quot;print this
+as a long decimal&quot;.</dd>
+<dt>ex7.c:15-17</dt>
+<dd>Just more math and printing.</dd>
+<dt>ex7.c:19-21</dt>
+<dd>Craft up a depiction of your bug rate compared to the bugs in
+the universe, which is a completely inaccurate calculation.  It's so small
+though that we have to use <tt class="docutils literal">%e</tt> to print it in scientific notation.</dd>
+<dt>ex7.c:24</dt>
+<dd>Make a character, with a special syntax <tt class="docutils literal">'\0'</tt> which creates
+a 'nul byte' character.  This is effectively the number 0.</dd>
+<dt>ex7.c:25</dt>
+<dd>Multiply bugs by this character, which produces 0 for how much you
+should care.  This demonstrates an ugly hack you find sometimes.</dd>
+<dt>ex7.c:26-27</dt>
+<dd>Print that out, and notice I've got a <tt class="docutils literal">%%</tt> (two percent
+chars) so I can print a '%' (percent) character.</dd>
+<dt>ex7.c:28-30</dt>
+<dd>The end of the <tt class="docutils literal">main</tt> function.</dd>
+</dl>
+<p>This bit of source is entirely just an exercise, and demonstrates how some math
+works.  At the end, it also demonstrates something you see in C, but not in
+many other languages.  To C, a &quot;character&quot; is just an integer.  It's a really
+small integer, but that's all it is.  This means you can do math on them, and a
+lot of software does just that, for good or bad.</p>
+<p>This last bit is your first glance at how C gives you direct access to the
+machine.  We'll be exploring that more in later exercises.</p>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>As usual, here's what you should see for the output:</p>
+<div class="highlight"><pre><a name="code--ex7.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex7
+<a name="code--ex7.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g    ex7.c   -o ex7</span>
+<a name="code--ex7.sh-session-pyg.html-3"></a><span class="gp">$</span> ./ex7
+<a name="code--ex7.sh-session-pyg.html-4"></a><span class="go">You have 100 bugs at the imaginary rate of 1.200000.</span>
+<a name="code--ex7.sh-session-pyg.html-5"></a><span class="go">The entire universe has 1073741824 bugs.</span>
+<a name="code--ex7.sh-session-pyg.html-6"></a><span class="go">You are expected to have 120.000000 bugs.</span>
+<a name="code--ex7.sh-session-pyg.html-7"></a><span class="go">That is only a 1.117587e-07 portion of the universe.</span>
+<a name="code--ex7.sh-session-pyg.html-8"></a><span class="go">Which means you should care 0%.</span>
+<a name="code--ex7.sh-session-pyg.html-9"></a><span class="gp">$</span>
+</pre></div></div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<p>Again, go through this and try breaking the <tt class="docutils literal">printf</tt> by passing in
+the wrong arguments.  See what happens when you try to print out that
+<tt class="docutils literal">nul_byte</tt> variable too with <tt class="docutils literal">%s</tt> vs. <tt class="docutils literal">%c</tt>.  When you
+break it, run it under <tt class="docutils literal">Valgrind</tt> to see what it says about your
+breaking attempts.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Make the number you assign to <tt class="docutils literal">universe_of_defects</tt> various
+sizes until you get a warning from the compiler.</li>
+<li>What do these really huge numbers actually print out?</li>
+<li>Change <tt class="docutils literal">long</tt> to <tt class="docutils literal">unsigned long</tt> and try to find
+the number that makes that one too big.</li>
+<li>Go search online to find out what <tt class="docutils literal">unsigned</tt> does.</li>
+<li>Try to explain to yourself (before I do in the next exercise)
+why you can multiply a <tt class="docutils literal">char</tt> and an <tt class="docutils literal">int</tt>.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

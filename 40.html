@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 40: Binary Search Trees</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 40: Binary Search Trees</h1>
+            <p>The binary tree is the simplest tree based data structure and while it has been
+replaced by Hash Maps in many languages is still useful for many applications.
+Variants on the binary tree exist for very useful things like database indexes,
+search algorithm structures, and even graphics processing.</p>
+<p>I'm calling my binary tree a <tt class="docutils literal">BSTree</tt> for &quot;binary search tree&quot; and the best
+way to describe it is that it's another way to do a <tt class="docutils literal">Hashmap</tt> style key/value
+store.  The difference is that instead of hashing the key to find a location,
+the <tt class="docutils literal">BSTree</tt> compares the key to nodes in a tree, and then walks the
+tree to find the best place to store it based on how it compares to other nodes.</p>
+<p>Before I really explain how this works, let me show you the <tt class="docutils literal">bstree.h</tt> header
+file so you can see the data structures, then I can use that to explain how
+it's built.</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-1"></a><span class="cp">#ifndef _lcthw_BSTree_h</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-2"></a><span class="cp">#define _lcthw_BSTree_h</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-3"></a>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-4"></a>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-5"></a><span class="k">typedef</span> <span class="nf">int</span> <span class="p">(</span><span class="o">*</span><span class="n">BSTree_compare</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">b</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-6"></a>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-7"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="n">BSTreeNode</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-8"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-9"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-10"></a>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-11"></a>    <span class="k">struct</span> <span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">left</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-12"></a>    <span class="k">struct</span> <span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">right</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-13"></a>    <span class="k">struct</span> <span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">parent</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-14"></a><span class="p">}</span> <span class="n">BSTreeNode</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-15"></a>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-16"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="n">BSTree</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-17"></a>    <span class="kt">int</span> <span class="n">count</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-18"></a>    <span class="n">BSTree_compare</span> <span class="n">compare</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-19"></a>    <span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">root</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-20"></a><span class="p">}</span> <span class="n">BSTree</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-21"></a>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-22"></a><span class="k">typedef</span> <span class="nf">int</span> <span class="p">(</span><span class="o">*</span><span class="n">BSTree_traverse_cb</span><span class="p">)(</span><span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">node</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-23"></a>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-24"></a><span class="n">BSTree</span> <span class="o">*</span><span class="nf">BSTree_create</span><span class="p">(</span><span class="n">BSTree_compare</span> <span class="n">compare</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-25"></a><span class="kt">void</span> <span class="nf">BSTree_destroy</span><span class="p">(</span><span class="n">BSTree</span> <span class="o">*</span><span class="n">map</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-26"></a>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-27"></a><span class="kt">int</span> <span class="nf">BSTree_set</span><span class="p">(</span><span class="n">BSTree</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-28"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">BSTree_get</span><span class="p">(</span><span class="n">BSTree</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-29"></a>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-30"></a><span class="kt">int</span> <span class="nf">BSTree_traverse</span><span class="p">(</span><span class="n">BSTree</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="n">BSTree_traverse_cb</span> <span class="n">traverse_cb</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-31"></a>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-32"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">BSTree_delete</span><span class="p">(</span><span class="n">BSTree</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-33"></a>
+<a name="code--liblcthw--src--lcthw--bstree.h-pyg.html-34"></a><span class="cp">#endif</span>
+</pre></div><p>This follows the same pattern I've been using this whole time where I have a
+base &quot;container&quot; named <tt class="docutils literal">BSTree</tt> and that then has nodes names <tt class="docutils literal">BSTreeNode</tt> that make up the actual contents.  Bored yet?  Good, there's no reason to
+be clever with this kind of structure.</p>
+<p>The important part is how the <tt class="docutils literal">BSTreeNode</tt> is configured and how it gets
+used to do each operation: set, get, and delete.  I'll cover get first since
+it's the easiest operation and I'll pretend I'm doing it manually against
+the data structure:</p>
+<ul class="simple">
+<li>I take the key you're looking for and I start at the root.  First thing
+I do is compare your key with that node's key.</li>
+<li>If your key is less-than the <tt class="docutils literal">node.key</tt>, then I traverse down the tree using
+the <tt class="docutils literal">left</tt> pointer.</li>
+<li>If your key is greater-than the <tt class="docutils literal">node.key</tt>, then I go down with <tt class="docutils literal">right</tt>.</li>
+<li>I repeat step 2 and 3 until either I find a matching node.key, or I get to
+a node that has no left and right.  In the first case I return the <tt class="docutils literal">node.data</tt>, in
+the second I return <tt class="docutils literal">NULL</tt>.</li>
+</ul>
+<p>That's all there is to <tt class="docutils literal">get</tt>, so now to do <tt class="docutils literal">set</tt> it's nearly the
+same thing, except you're looking for where to put a new node:</p>
+<ul class="simple">
+<li>If there is no <tt class="docutils literal">BSTree.root</tt> then I just make that and we're done.  That's the first node.</li>
+<li>After that I compare your key to <tt class="docutils literal">node.key</tt>, starting at the root.</li>
+<li>If your key is less-than or equal to the <tt class="docutils literal">node.key</tt> then I want to
+go left.  If your key is greater-than (not equal) then I want to go right.</li>
+<li>I keep repeating 3 until I reach a node where the left or right doesn't
+exist, but that's the direction I need to go.</li>
+<li>Once there I set that direction (left or right) to a new node for the
+key and data I want, and set this new node's parent to the previous node
+I came from.  I'll use the parent node when I do delete.</li>
+</ul>
+<p>This also makes sense given how get works.  If finding a node involves going
+left or right depending on how they key compares, well then setting a node
+involves the same thing until I can set the left or right for a new node.</p>
+<p>Take some time to draw out a few trees on paper and go through some setting
+and getting nodes so you understand how it work.  After that you are ready
+to look at the implementation so that I can explain delete.  Deleting in
+trees is a <em>major</em> pain, and so it's best explained by doing a
+line-by-line code breakdown.</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-1"></a><span class="cp">#include &lt;lcthw/dbg.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-2"></a><span class="cp">#include &lt;lcthw/bstree.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-3"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-4"></a><span class="cp">#include &lt;lcthw/bstrlib.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-5"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-6"></a><span class="k">static</span> <span class="kt">int</span> <span class="nf">default_compare</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">b</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-7"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-8"></a>    <span class="k">return</span> <span class="n">bstrcmp</span><span class="p">((</span><span class="n">bstring</span><span class="p">)</span><span class="n">a</span><span class="p">,</span> <span class="p">(</span><span class="n">bstring</span><span class="p">)</span><span class="n">b</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-9"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-10"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-11"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-12"></a><span class="n">BSTree</span> <span class="o">*</span><span class="nf">BSTree_create</span><span class="p">(</span><span class="n">BSTree_compare</span> <span class="n">compare</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-13"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-14"></a>    <span class="n">BSTree</span> <span class="o">*</span><span class="n">map</span> <span class="o">=</span> <span class="n">calloc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">BSTree</span><span class="p">));</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-15"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">map</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-16"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-17"></a>    <span class="n">map</span><span class="o">-&gt;</span><span class="n">compare</span> <span class="o">=</span> <span class="n">compare</span> <span class="o">==</span> <span class="nb">NULL</span> <span class="o">?</span> <span class="n">default_compare</span> <span class="o">:</span> <span class="n">compare</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-18"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-19"></a>    <span class="k">return</span> <span class="n">map</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-20"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-21"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-22"></a>    <span class="k">if</span><span class="p">(</span><span class="n">map</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-23"></a>        <span class="n">BSTree_destroy</span><span class="p">(</span><span class="n">map</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-24"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-25"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-26"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-27"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-28"></a><span class="k">static</span> <span class="kt">int</span> <span class="nf">BSTree_destroy_cb</span><span class="p">(</span><span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">node</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-29"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-30"></a>    <span class="n">free</span><span class="p">(</span><span class="n">node</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-31"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-32"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-33"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-34"></a><span class="kt">void</span> <span class="nf">BSTree_destroy</span><span class="p">(</span><span class="n">BSTree</span> <span class="o">*</span><span class="n">map</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-35"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-36"></a>    <span class="k">if</span><span class="p">(</span><span class="n">map</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-37"></a>        <span class="n">BSTree_traverse</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">BSTree_destroy_cb</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-38"></a>        <span class="n">free</span><span class="p">(</span><span class="n">map</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-39"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-40"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-41"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-42"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-43"></a><span class="k">static</span> <span class="kr">inline</span> <span class="n">BSTreeNode</span> <span class="o">*</span><span class="nf">BSTreeNode_create</span><span class="p">(</span><span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">parent</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-44"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-45"></a>    <span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">node</span> <span class="o">=</span> <span class="n">calloc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">BSTreeNode</span><span class="p">));</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-46"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">node</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-47"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-48"></a>    <span class="n">node</span><span class="o">-&gt;</span><span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-49"></a>    <span class="n">node</span><span class="o">-&gt;</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-50"></a>    <span class="n">node</span><span class="o">-&gt;</span><span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-51"></a>    <span class="k">return</span> <span class="n">node</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-52"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-53"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-54"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-55"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-56"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-57"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-58"></a><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">BSTree_setnode</span><span class="p">(</span><span class="n">BSTree</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">node</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-59"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-60"></a>    <span class="kt">int</span> <span class="n">cmp</span> <span class="o">=</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">compare</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">key</span><span class="p">,</span> <span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-61"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-62"></a>    <span class="k">if</span><span class="p">(</span><span class="n">cmp</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-63"></a>        <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-64"></a>            <span class="n">BSTree_setnode</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-65"></a>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-66"></a>            <span class="n">node</span><span class="o">-&gt;</span><span class="n">left</span> <span class="o">=</span> <span class="n">BSTreeNode_create</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-67"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-68"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-69"></a>        <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-70"></a>            <span class="n">BSTree_setnode</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-71"></a>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-72"></a>            <span class="n">node</span><span class="o">-&gt;</span><span class="n">right</span> <span class="o">=</span> <span class="n">BSTreeNode_create</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-73"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-74"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-75"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-76"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-77"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-78"></a><span class="kt">int</span> <span class="nf">BSTree_set</span><span class="p">(</span><span class="n">BSTree</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-79"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-80"></a>    <span class="k">if</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">root</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-81"></a>        <span class="c1">// first so just make it and get out</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-82"></a>        <span class="n">map</span><span class="o">-&gt;</span><span class="n">root</span> <span class="o">=</span> <span class="n">BSTreeNode_create</span><span class="p">(</span><span class="nb">NULL</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-83"></a>        <span class="n">check_mem</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">root</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-84"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-85"></a>        <span class="n">BSTree_setnode</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">root</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-86"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-87"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-88"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-89"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-90"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-91"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-92"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-93"></a><span class="k">static</span> <span class="kr">inline</span> <span class="n">BSTreeNode</span> <span class="o">*</span><span class="nf">BSTree_getnode</span><span class="p">(</span><span class="n">BSTree</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">node</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-94"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-95"></a>    <span class="kt">int</span> <span class="n">cmp</span> <span class="o">=</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">compare</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">key</span><span class="p">,</span> <span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-96"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-97"></a>    <span class="k">if</span><span class="p">(</span><span class="n">cmp</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-98"></a>        <span class="k">return</span> <span class="n">node</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-99"></a>    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">cmp</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-100"></a>        <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-101"></a>            <span class="k">return</span> <span class="n">BSTree_getnode</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">,</span> <span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-102"></a>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-103"></a>            <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-104"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-105"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-106"></a>        <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-107"></a>            <span class="k">return</span> <span class="n">BSTree_getnode</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">,</span> <span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-108"></a>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-109"></a>            <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-110"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-111"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-112"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-113"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-114"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">BSTree_get</span><span class="p">(</span><span class="n">BSTree</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-115"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-116"></a>    <span class="k">if</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">root</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-117"></a>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-118"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-119"></a>        <span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">node</span> <span class="o">=</span> <span class="n">BSTree_getnode</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">root</span><span class="p">,</span> <span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-120"></a>        <span class="k">return</span> <span class="n">node</span> <span class="o">==</span> <span class="nb">NULL</span> <span class="o">?</span> <span class="nb">NULL</span> <span class="o">:</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-121"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-122"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-123"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-124"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-125"></a><span class="k">static</span> <span class="kr">inline</span> <span class="kt">int</span> <span class="nf">BSTree_traverse_nodes</span><span class="p">(</span><span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">node</span><span class="p">,</span> <span class="n">BSTree_traverse_cb</span> <span class="n">traverse_cb</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-126"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-127"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-128"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-129"></a>    <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-130"></a>        <span class="n">rc</span> <span class="o">=</span> <span class="n">BSTree_traverse_nodes</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">,</span> <span class="n">traverse_cb</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-131"></a>        <span class="k">if</span><span class="p">(</span><span class="n">rc</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="k">return</span> <span class="n">rc</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-132"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-133"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-134"></a>    <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-135"></a>        <span class="n">rc</span> <span class="o">=</span> <span class="n">BSTree_traverse_nodes</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">,</span> <span class="n">traverse_cb</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-136"></a>        <span class="k">if</span><span class="p">(</span><span class="n">rc</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="k">return</span> <span class="n">rc</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-137"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-138"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-139"></a>    <span class="k">return</span> <span class="n">traverse_cb</span><span class="p">(</span><span class="n">node</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-140"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-141"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-142"></a><span class="kt">int</span> <span class="nf">BSTree_traverse</span><span class="p">(</span><span class="n">BSTree</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="n">BSTree_traverse_cb</span> <span class="n">traverse_cb</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-143"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-144"></a>    <span class="k">if</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">root</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-145"></a>        <span class="k">return</span> <span class="n">BSTree_traverse_nodes</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">root</span><span class="p">,</span> <span class="n">traverse_cb</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-146"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-147"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-148"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-149"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-150"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-151"></a><span class="k">static</span> <span class="kr">inline</span> <span class="n">BSTreeNode</span> <span class="o">*</span><span class="nf">BSTree_find_min</span><span class="p">(</span><span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">node</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-152"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-153"></a>    <span class="k">while</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-154"></a>        <span class="n">node</span> <span class="o">=</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-155"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-156"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-157"></a>    <span class="k">return</span> <span class="n">node</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-158"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-159"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-160"></a><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">BSTree_replace_node_in_parent</span><span class="p">(</span><span class="n">BSTree</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">node</span><span class="p">,</span> <span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">new_value</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-161"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-162"></a>    <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">parent</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-163"></a>        <span class="k">if</span><span class="p">(</span><span class="n">node</span> <span class="o">==</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">parent</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-164"></a>            <span class="n">node</span><span class="o">-&gt;</span><span class="n">parent</span><span class="o">-&gt;</span><span class="n">left</span> <span class="o">=</span> <span class="n">new_value</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-165"></a>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-166"></a>            <span class="n">node</span><span class="o">-&gt;</span><span class="n">parent</span><span class="o">-&gt;</span><span class="n">right</span> <span class="o">=</span> <span class="n">new_value</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-167"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-168"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-169"></a>        <span class="c1">// this is the root so gotta change it</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-170"></a>        <span class="n">map</span><span class="o">-&gt;</span><span class="n">root</span> <span class="o">=</span> <span class="n">new_value</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-171"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-172"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-173"></a>    <span class="k">if</span><span class="p">(</span><span class="n">new_value</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-174"></a>        <span class="n">new_value</span><span class="o">-&gt;</span><span class="n">parent</span> <span class="o">=</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">parent</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-175"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-176"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-177"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-178"></a><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">BSTree_swap</span><span class="p">(</span><span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">b</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-179"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-180"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">temp</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-181"></a>    <span class="n">temp</span> <span class="o">=</span> <span class="n">b</span><span class="o">-&gt;</span><span class="n">key</span><span class="p">;</span> <span class="n">b</span><span class="o">-&gt;</span><span class="n">key</span> <span class="o">=</span> <span class="n">a</span><span class="o">-&gt;</span><span class="n">key</span><span class="p">;</span> <span class="n">a</span><span class="o">-&gt;</span><span class="n">key</span> <span class="o">=</span> <span class="n">temp</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-182"></a>    <span class="n">temp</span> <span class="o">=</span> <span class="n">b</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">;</span> <span class="n">b</span><span class="o">-&gt;</span><span class="n">data</span> <span class="o">=</span> <span class="n">a</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">;</span> <span class="n">a</span><span class="o">-&gt;</span><span class="n">data</span> <span class="o">=</span> <span class="n">temp</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-183"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-184"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-185"></a><span class="k">static</span> <span class="kr">inline</span> <span class="n">BSTreeNode</span> <span class="o">*</span><span class="nf">BSTree_node_delete</span><span class="p">(</span><span class="n">BSTree</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">node</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-186"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-187"></a>    <span class="kt">int</span> <span class="n">cmp</span> <span class="o">=</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">compare</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">key</span><span class="p">,</span> <span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-188"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-189"></a>    <span class="k">if</span><span class="p">(</span><span class="n">cmp</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-190"></a>        <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-191"></a>            <span class="k">return</span> <span class="n">BSTree_node_delete</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">,</span> <span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-192"></a>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-193"></a>            <span class="c1">// not found</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-194"></a>            <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-195"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-196"></a>    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">cmp</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-197"></a>        <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-198"></a>            <span class="k">return</span> <span class="n">BSTree_node_delete</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">,</span> <span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-199"></a>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-200"></a>            <span class="c1">// not found</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-201"></a>            <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-202"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-203"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-204"></a>        <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">left</span> <span class="o">&amp;&amp;</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-205"></a>            <span class="c1">// swap this node for the smallest node that is bigger than us</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-206"></a>            <span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">successor</span> <span class="o">=</span> <span class="n">BSTree_find_min</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-207"></a>            <span class="n">BSTree_swap</span><span class="p">(</span><span class="n">successor</span><span class="p">,</span> <span class="n">node</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-208"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-209"></a>            <span class="c1">// this leaves the old successor with possibly a right child</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-210"></a>            <span class="c1">// so replace it with that right child</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-211"></a>            <span class="n">BSTree_replace_node_in_parent</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">successor</span><span class="p">,</span> <span class="n">successor</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-212"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-213"></a>            <span class="c1">// finally it&#39;s swapped, so return successor instead of node</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-214"></a>            <span class="k">return</span> <span class="n">successor</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-215"></a>        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-216"></a>            <span class="n">BSTree_replace_node_in_parent</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">left</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-217"></a>        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-218"></a>            <span class="n">BSTree_replace_node_in_parent</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">right</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-219"></a>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-220"></a>            <span class="n">BSTree_replace_node_in_parent</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-221"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-222"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-223"></a>        <span class="k">return</span> <span class="n">node</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-224"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-225"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-226"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-227"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">BSTree_delete</span><span class="p">(</span><span class="n">BSTree</span> <span class="o">*</span><span class="n">map</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">key</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-228"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-229"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">data</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-230"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-231"></a>    <span class="k">if</span><span class="p">(</span><span class="n">map</span><span class="o">-&gt;</span><span class="n">root</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-232"></a>        <span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">node</span> <span class="o">=</span> <span class="n">BSTree_node_delete</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">map</span><span class="o">-&gt;</span><span class="n">root</span><span class="p">,</span> <span class="n">key</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-233"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-234"></a>        <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-235"></a>            <span class="n">data</span> <span class="o">=</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">data</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-236"></a>            <span class="n">free</span><span class="p">(</span><span class="n">node</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-237"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-238"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-239"></a>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-240"></a>    <span class="k">return</span> <span class="n">data</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--bstree.c-pyg.html-241"></a><span class="p">}</span>
+</pre></div><p>Before getting into how <tt class="docutils literal">BSTree_delete</tt> works I want to explain a
+pattern I'm using for doing recursive function calls in a sane way.
+You'll find that many tree based data structures are easy to write
+if you use recursion, but that forumlating a single recursive function
+is difficult.  Part of the problem is that you need to setup some
+initial data for the first operation, <em>then</em> recurse into
+the data structure, which is hard to do with one function.</p>
+<p>The solution is to use two functions.  One function &quot;sets up&quot; the
+data structure and initial recursion conditions so that a second
+function can do the real work.   Take a look at <tt class="docutils literal">BSTree_get</tt>
+first to see what I mean:</p>
+<ul class="simple">
+<li>I have an initial condition to handle that if <tt class="docutils literal"><span class="pre">map-&gt;root</span></tt>
+is <tt class="docutils literal">NULL</tt> then return <tt class="docutils literal">NULL</tt> and don't recurse.</li>
+<li>I then setup a call to the real recursion, which is in
+<tt class="docutils literal">BSTree_getnode</tt>.  I create the initial condition of
+the root node to start with, the key, and the <tt class="docutils literal">map</tt>.</li>
+<li>In the <tt class="docutils literal">BSTree_getnode</tt> then I do the actual recursive
+logic.  I compare the keys with <tt class="docutils literal"><span class="pre">map-&gt;compare(node-&gt;key,</span> key)</tt>
+and go left, right, or equal depending on that.</li>
+<li>Since this function is &quot;self-similar&quot; and doesn't have to handle
+any initial conditions (because <tt class="docutils literal">BSTree_get</tt> did) then
+I can structure it verys simply.  When it's done it returns
+to the caller, and that return then comes back to <tt class="docutils literal">BSTree_get</tt>
+the result.</li>
+<li>At the end, the <tt class="docutils literal">BSTree_get</tt> then handles getting the
+<tt class="docutils literal">node.data</tt> element but only if the result isn't <tt class="docutils literal">NULL</tt>.</li>
+</ul>
+<p>This way of structuring a recursive algorithm matches the way I structure
+my recursive data structures.  I have an initial &quot;base function&quot; that handles
+initial conditions and some edge cases, then it calls a clean recursive
+function that does the work.  Compare that with how I have a &quot;base struct&quot;
+in <tt class="docutils literal">BStree</tt> combined with recursive <tt class="docutils literal">BSTreeNode</tt> structures
+that all reference each other in a tree.  Using this pattern makes it
+easy to deal with recursion and keep it straight.</p>
+<p>Next, go look at <tt class="docutils literal">BSTree_set</tt> and <tt class="docutils literal">BSTree_setnode</tt> to see
+the exact same pattern going on.  I use <tt class="docutils literal">BSTree_set</tt> to configure
+the initial conditions and edge cases.  A common edge case is that there's
+no root node, so I have to make one to get things started.</p>
+<p>This pattern will work with nearly any recursive algorithm you have to figure
+out.  The way I do this is I follow this pattern:</p>
+<ul class="simple">
+<li>Figure out the initial variables, how they change, and what the stopping
+conditions are for each recursive step.</li>
+<li>Write a recursive function that calls itself, with arguments for
+each stopping condition and initial variable.</li>
+<li>Write a setup function to set initial starting conditions for the
+algorithm and handle edge cases, then it calls the recursive function.</li>
+<li>Finally, the setup function returns the final result and possibly
+alters it if the recursive function can't handle final edge cases.</li>
+</ul>
+<p>Which leads me finally to <tt class="docutils literal">BSTree_delete</tt> and <tt class="docutils literal">BSTree_node_delete</tt>.
+First you can just look at <tt class="docutils literal">BSTree_delete</tt> and see that it's the setup
+function, and what it is doing is grabbing the resulting node data and freeing
+the node that's found.  In <tt class="docutils literal">BSTree_node_delete</tt> is where things
+get complex because to delete a node at any point in the tree, I have to
+<em>rotate</em> that node's children up to the parent.  I'll break this
+function down and the ones it uses:</p>
+<dl class="docutils">
+<dt>bstree.c:190</dt>
+<dd>I run the compare function to figure out which direction I'm going.</dd>
+<dt>bstree.c:192-198</dt>
+<dd>This is the usual &quot;less-than&quot; branch where I want to go left.
+I'm handling the case that left doesn't exist here and returning <tt class="docutils literal">NULL</tt>
+to say &quot;not found&quot;.  This handles deleting something that isn't in the
+<tt class="docutils literal">BSTree</tt>.</dd>
+<dt>bstree.c:199-205</dt>
+<dd>The same thing but for the right branch of the tree.  Just keep
+recursing down into the tree just like in the other functions, and return
+<tt class="docutils literal">NULL</tt> if it doesn't exist.</dd>
+<dt>bstree.c:206</dt>
+<dd>This is where I have found the node since the key is equal (<tt class="docutils literal">compare</tt>
+return 0).</dd>
+<dt>bstree.c:207</dt>
+<dd>This node has both a <tt class="docutils literal">left</tt> and <tt class="docutils literal">right</tt> branch, so it's
+deeply embedded in the tree.</dd>
+<dt>bstree.c:209</dt>
+<dd>To remove this node I need to first find the smallest node that's
+greater than this node, which means I call <tt class="docutils literal">BSTree_find_min</tt> on
+the right child.</dd>
+<dt>bstree.c:210</dt>
+<dd>Once I have this node, I will do a swap on its <tt class="docutils literal">key</tt> and
+<tt class="docutils literal">data</tt> with the current node's.  This will effectively take this
+node that was down at the bottom of the tree, and put it's contents
+here so that I don't have to try and shuffle this node out by its
+pointers.</dd>
+<dt>bstree.c:214</dt>
+<dd>The <tt class="docutils literal">successor</tt> is now this dead branch that has the current
+node's values.  It could just be removed, but there's a chance that it has
+a right node value, which means I need to do a single rotate so that
+the successor's right node gets moved up to completely detach it.</dd>
+<dt>bstree.c:217</dt>
+<dd>At this point, the successor is removed from the tree, its values
+replaced the current node's values, and any children it had are moved up
+into the parent.  I can return the <tt class="docutils literal">successor</tt> as if it were the
+<tt class="docutils literal">node</tt>.</dd>
+<dt>bstree.c:218</dt>
+<dd>At this branch I know that the node has a left but no right, so
+I want to replace this node with its left child.</dd>
+<dt>bstree.c:219</dt>
+<dd>I again use <tt class="docutils literal">BSTree_replace_node_in_parent</tt> to do the
+replace, rotating the left child up.</dd>
+<dt>bstree.c:220</dt>
+<dd>This branch of the if-statement means I have a right child but
+no left child, so I want to rotate the right child up.</dd>
+<dt>bstree.c:221</dt>
+<dd>Again, use the function to do the rotate, but this time of the
+right node.</dd>
+<dt>bstree.c:222</dt>
+<dd>Finally, the only thing that's left is the condition
+that I've found the node, and it has no children (no left or right).
+In this case, I simply replace this node with NULL using the same
+function I did with all the others.</dd>
+<dt>bstree.c:210</dt>
+<dd>After all that, I have the current node rotated out of the tree
+and replaced with some child element that will fit in the tree.  I just
+return this to the caller so it can be freed and managed.</dd>
+</dl>
+<p>This operation is very complex, and to be honest, in some tree data structures
+I just don't bother doing deletes and treat them like constant data in my
+software.  If I need to do heavy insert and delete, I use a <tt class="docutils literal">Hashmap</tt>
+instead.</p>
+<p>Finally, you can look at the unit test to see how I'm testing it:</p>
+<div class="highlight"><pre><a name="code--liblcthw--tests--bstree_tests.c-pyg.html-1"></a><span class="cp">#include &quot;minunit.h&quot;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-2"></a><span class="cp">#include &lt;lcthw/bstree.h&gt;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-3"></a><span class="cp">#include &lt;assert.h&gt;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-4"></a><span class="cp">#include &lt;lcthw/bstrlib.h&gt;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-5"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-6"></a><span class="cp">#include &lt;time.h&gt;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-7"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-8"></a><span class="n">BSTree</span> <span class="o">*</span><span class="n">map</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-9"></a><span class="k">static</span> <span class="kt">int</span> <span class="n">traverse_called</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-10"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">test1</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;test data 1&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-11"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">test2</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;test data 2&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-12"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">test3</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;xest data 3&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-13"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">expect1</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;THE VALUE 1&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-14"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">expect2</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;THE VALUE 2&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-15"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">expect3</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;THE VALUE 3&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-16"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-17"></a><span class="k">static</span> <span class="kt">int</span> <span class="nf">traverse_good_cb</span><span class="p">(</span><span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">node</span><span class="p">)</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-18"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-19"></a>    <span class="n">debug</span><span class="p">(</span><span class="s">&quot;KEY: %s&quot;</span><span class="p">,</span> <span class="n">bdata</span><span class="p">((</span><span class="n">bstring</span><span class="p">)</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">key</span><span class="p">));</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-20"></a>    <span class="n">traverse_called</span><span class="o">++</span><span class="p">;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-21"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-22"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-23"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-24"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-25"></a><span class="k">static</span> <span class="kt">int</span> <span class="nf">traverse_fail_cb</span><span class="p">(</span><span class="n">BSTreeNode</span> <span class="o">*</span><span class="n">node</span><span class="p">)</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-26"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-27"></a>    <span class="n">debug</span><span class="p">(</span><span class="s">&quot;KEY: %s&quot;</span><span class="p">,</span> <span class="n">bdata</span><span class="p">((</span><span class="n">bstring</span><span class="p">)</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">key</span><span class="p">));</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-28"></a>    <span class="n">traverse_called</span><span class="o">++</span><span class="p">;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-29"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-30"></a>    <span class="k">if</span><span class="p">(</span><span class="n">traverse_called</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-31"></a>        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-32"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-33"></a>        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-34"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-35"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-36"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-37"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-38"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_create</span><span class="p">()</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-39"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-40"></a>    <span class="n">map</span> <span class="o">=</span> <span class="n">BSTree_create</span><span class="p">(</span><span class="nb">NULL</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-41"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">map</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to create map.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-42"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-43"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-44"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-45"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-46"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_destroy</span><span class="p">()</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-47"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-48"></a>    <span class="n">BSTree_destroy</span><span class="p">(</span><span class="n">map</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-49"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-50"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-51"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-52"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-53"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-54"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_get_set</span><span class="p">()</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-55"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-56"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">BSTree_set</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test1</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">expect1</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-57"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to set &amp;test1&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-58"></a>    <span class="n">bstring</span> <span class="n">result</span> <span class="o">=</span> <span class="n">BSTree_get</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test1</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-59"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">expect1</span><span class="p">,</span> <span class="s">&quot;Wrong value for test1.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-60"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-61"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">BSTree_set</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test2</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">expect2</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-62"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to set test2&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-63"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">BSTree_get</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test2</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-64"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">expect2</span><span class="p">,</span> <span class="s">&quot;Wrong value for test2.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-65"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-66"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">BSTree_set</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test3</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">expect3</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-67"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to set test3&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-68"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">BSTree_get</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test3</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-69"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">expect3</span><span class="p">,</span> <span class="s">&quot;Wrong value for test3.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-70"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-71"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-72"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-73"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-74"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_traverse</span><span class="p">()</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-75"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-76"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">BSTree_traverse</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">traverse_good_cb</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-77"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to traverse.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-78"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">traverse_called</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="s">&quot;Wrong count traverse.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-79"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-80"></a>    <span class="n">traverse_called</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-81"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">BSTree_traverse</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="n">traverse_fail_cb</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-82"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&quot;Failed to traverse.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-83"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">traverse_called</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;Wrong count traverse for fail.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-84"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-85"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-86"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-87"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-88"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_delete</span><span class="p">()</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-89"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-90"></a>    <span class="n">bstring</span> <span class="n">deleted</span> <span class="o">=</span> <span class="p">(</span><span class="n">bstring</span><span class="p">)</span><span class="n">BSTree_delete</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test1</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-91"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">deleted</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Got NULL on delete.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-92"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">deleted</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">expect1</span><span class="p">,</span> <span class="s">&quot;Should get test1&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-93"></a>    <span class="n">bstring</span> <span class="n">result</span> <span class="o">=</span> <span class="n">BSTree_get</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test1</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-94"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Should delete.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-95"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-96"></a>    <span class="n">deleted</span> <span class="o">=</span> <span class="p">(</span><span class="n">bstring</span><span class="p">)</span><span class="n">BSTree_delete</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test1</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-97"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">deleted</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Should get NULL on delete&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-98"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-99"></a>    <span class="n">deleted</span> <span class="o">=</span> <span class="p">(</span><span class="n">bstring</span><span class="p">)</span><span class="n">BSTree_delete</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test2</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-100"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">deleted</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Got NULL on delete.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-101"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">deleted</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">expect2</span><span class="p">,</span> <span class="s">&quot;Should get test2&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-102"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">BSTree_get</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test2</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-103"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Should delete.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-104"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-105"></a>    <span class="n">deleted</span> <span class="o">=</span> <span class="p">(</span><span class="n">bstring</span><span class="p">)</span><span class="n">BSTree_delete</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test3</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-106"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">deleted</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Got NULL on delete.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-107"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">deleted</span> <span class="o">==</span> <span class="o">&amp;</span><span class="n">expect3</span><span class="p">,</span> <span class="s">&quot;Should get test3&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-108"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">BSTree_get</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test3</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-109"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">result</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Should delete.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-110"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-111"></a>    <span class="c1">// test deleting non-existent stuff</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-112"></a>    <span class="n">deleted</span> <span class="o">=</span> <span class="p">(</span><span class="n">bstring</span><span class="p">)</span><span class="n">BSTree_delete</span><span class="p">(</span><span class="n">map</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">test3</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-113"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">deleted</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Should get NULL&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-114"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-115"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-116"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-117"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-118"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_fuzzing</span><span class="p">()</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-119"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-120"></a>    <span class="n">BSTree</span> <span class="o">*</span><span class="n">store</span> <span class="o">=</span> <span class="n">BSTree_create</span><span class="p">(</span><span class="nb">NULL</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-121"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-122"></a>    <span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-123"></a>    <span class="n">bstring</span> <span class="n">numbers</span><span class="p">[</span><span class="mi">100</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="nb">NULL</span><span class="p">};</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-124"></a>    <span class="n">bstring</span> <span class="n">data</span><span class="p">[</span><span class="mi">100</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="nb">NULL</span><span class="p">};</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-125"></a>    <span class="n">srand</span><span class="p">((</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)</span><span class="n">time</span><span class="p">(</span><span class="nb">NULL</span><span class="p">));</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-126"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-127"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-128"></a>        <span class="kt">int</span> <span class="n">num</span> <span class="o">=</span> <span class="n">rand</span><span class="p">();</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-129"></a>        <span class="n">numbers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">bformat</span><span class="p">(</span><span class="s">&quot;%d&quot;</span><span class="p">,</span> <span class="n">num</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-130"></a>        <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">bformat</span><span class="p">(</span><span class="s">&quot;data %d&quot;</span><span class="p">,</span> <span class="n">num</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-131"></a>        <span class="n">BSTree_set</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">numbers</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-132"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-133"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-134"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-135"></a>        <span class="n">bstring</span> <span class="n">value</span> <span class="o">=</span> <span class="n">BSTree_delete</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">numbers</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-136"></a>        <span class="n">mu_assert</span><span class="p">(</span><span class="n">value</span> <span class="o">==</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s">&quot;Failed to delete the right number.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-137"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-138"></a>        <span class="n">mu_assert</span><span class="p">(</span><span class="n">BSTree_delete</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">numbers</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Should get nothing.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-139"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-140"></a>        <span class="k">for</span><span class="p">(</span><span class="n">j</span> <span class="o">=</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="mi">99</span> <span class="o">-</span> <span class="n">i</span><span class="p">;</span> <span class="n">j</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-141"></a>            <span class="n">bstring</span> <span class="n">value</span> <span class="o">=</span> <span class="n">BSTree_get</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">numbers</span><span class="p">[</span><span class="n">j</span><span class="p">]);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-142"></a>            <span class="n">mu_assert</span><span class="p">(</span><span class="n">value</span> <span class="o">==</span> <span class="n">data</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="s">&quot;Failed to get the right number.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-143"></a>        <span class="p">}</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-144"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-145"></a>        <span class="n">bdestroy</span><span class="p">(</span><span class="n">value</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-146"></a>        <span class="n">bdestroy</span><span class="p">(</span><span class="n">numbers</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-147"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-148"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-149"></a>    <span class="n">BSTree_destroy</span><span class="p">(</span><span class="n">store</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-150"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-151"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-152"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-153"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-154"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">all_tests</span><span class="p">()</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-155"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-156"></a>    <span class="n">mu_suite_start</span><span class="p">();</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-157"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-158"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_create</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-159"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_get_set</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-160"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_traverse</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-161"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_delete</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-162"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_destroy</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-163"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_fuzzing</span><span class="p">);</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-164"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-165"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-166"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-167"></a>
+<a name="code--liblcthw--tests--bstree_tests.c-pyg.html-168"></a><span class="n">RUN_TESTS</span><span class="p">(</span><span class="n">all_tests</span><span class="p">);</span>
+</pre></div><p>I'll point you at the <tt class="docutils literal">test_fuzzing</tt> function, which is an interesting
+technique for testing complex data structures.  It is difficult to create a
+set of keys that cover all the branches in <tt class="docutils literal">BSTree_node_delete</tt>, and
+chances are I would miss some edge case.  A better way is to create a &quot;fuzz&quot;
+function that does all the operations, but does them in as horrible and random
+a way as possible.  In this case I'm inserting a set of random string keys,
+then I'm deleting them and trying to get the rest after each delete.</p>
+<p>Doing this prevents the situation where you test only what you know to work,
+which means you'll miss things you don't know.  By throwing random junk at
+your data structures you'll hit things you didn't expect and work out any
+bugs you have.</p>
+<div class="section" id="how-to-improve-it">
+<h1>How To Improve It</h1>
+<p>Do <em>not</em> do any of these yet since in the next exercise I'll be using this
+unit test to teach you some more performance tuning tricks.  You'll come back and do
+these after you do Exercise 41.</p>
+<ul class="simple">
+<li>As usual, you should go through all the defensive programming checks and add
+<tt class="docutils literal"><span class="pre">assert``s</span> for conditions that shouldn't happen.&nbsp; For example, you should
+not be getting ``NULL</tt> values for the recursion functions, so assert that.</li>
+<li>The traverse function traverses the tree in order by traversing left, then right,
+then the current node.  You can create traverse functions for reverse order as well.</li>
+<li>It does a full string compare on every node, but I could use the <tt class="docutils literal">Hashmap</tt>
+hashing functions to speed this up.  I could hash the keys, then keep the hash in
+the <tt class="docutils literal">BSTreeNode</tt>.  Then in each of the set up functions I can hash the
+key ahead of time, and pass it down to the recursive function.  Using this hash I can
+then compare each node much quicker similar to I do in <tt class="docutils literal">Hashmap</tt>.</li>
+</ul>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<p>Again, do <em>not</em> do these yet, wait until Exercise 41 when you can use performance
+tuning features of Valgrind to do them.</p>
+<ul class="simple">
+<li>There's an alternative way to do this data structure without using recursion.  The Wikipedia
+page shows alternatives that don't use recursion but do the same thing.  Why would this
+be better or worse?</li>
+<li>Read up on all the different similar trees you can find. There's AVL trees, Red-Black trees,
+and some non-tree structures like Skip Lists.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

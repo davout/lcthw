@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 5: The Structure Of A C Program</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 5: The Structure Of A C Program</h1>
+            <p>You know how to use <tt class="docutils literal">printf</tt> and have a couple basic tools at your disposal,
+so let's break down a simple C program line-by-line so you know how one is
+structured.  In this program you're going to type in a few more things that
+you're unfamiliar with, and I'm going to lightly break them down.  Then in the
+next few exercises we're going to work with these concepts.</p>
+<div class="highlight"><pre><a name="code--ex5.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex5.c-pyg.html-2"></a>
+<a name="code--ex5.c-pyg.html-3"></a><span class="cm">/* This is a comment. */</span>
+<a name="code--ex5.c-pyg.html-4"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex5.c-pyg.html-5"></a><span class="p">{</span>
+<a name="code--ex5.c-pyg.html-6"></a>    <span class="kt">int</span> <span class="n">distance</span> <span class="o">=</span> <span class="mi">100</span><span class="p">;</span>
+<a name="code--ex5.c-pyg.html-7"></a>
+<a name="code--ex5.c-pyg.html-8"></a>    <span class="c1">// this is also a comment</span>
+<a name="code--ex5.c-pyg.html-9"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You are %d miles away.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">distance</span><span class="p">);</span>
+<a name="code--ex5.c-pyg.html-10"></a>
+<a name="code--ex5.c-pyg.html-11"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex5.c-pyg.html-12"></a><span class="p">}</span>
+</pre></div><p>Type this code in, make it run, and make sure you get <em>no Valgrind errors</em>.
+You probably won't but get in the habit of checking it.</p>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>This has pretty boring output, but the point of this exercise is to analyze the
+code:</p>
+<div class="highlight"><pre><a name="code--ex5.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex5
+<a name="code--ex5.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g    ex5.c   -o ex5</span>
+<a name="code--ex5.sh-session-pyg.html-3"></a><span class="gp">$</span> ./ex5
+<a name="code--ex5.sh-session-pyg.html-4"></a><span class="go">You are 100 miles away.</span>
+<a name="code--ex5.sh-session-pyg.html-5"></a><span class="gp">$</span>
+</pre></div></div>
+<div class="section" id="breaking-it-down">
+<h1>Breaking It Down</h1>
+<p>There's a few features of the C language in this code that you might have only
+slightly figured out while you were typing code.  Let's break this down
+line-by-line quickly, and then we can do exercises to understand each part
+better:</p>
+<dl class="docutils">
+<dt>ex5.c:1</dt>
+<dd>An <tt class="docutils literal">include</tt> and it is the way to import the contents
+of one file into this source file.  C has a convention of using
+<tt class="docutils literal">.h</tt> extensions for &quot;header&quot; files, which then contain lists
+of functions you want to use in your program.</dd>
+<dt>ex5.c:3</dt>
+<dd>This is a multi-line <tt class="docutils literal">comment</tt> and you could put as many
+lines of text between the <tt class="docutils literal">/*</tt> and closing <tt class="docutils literal">*/</tt> characters as you want.</dd>
+<dt>ex5.c:4</dt>
+<dd>A more complex version of the <tt class="docutils literal">main function</tt> you've
+been using blindly so far.  How C programs work is the operating system
+loads your program, and then runs the function named <tt class="docutils literal">main</tt>.
+For the function to be totally complete it needs to return an <tt class="docutils literal">int</tt>
+and take two parameters, an <tt class="docutils literal">int</tt> for the argument count, and
+an array of <tt class="docutils literal">char *</tt> strings for the arguments.  Did that
+just fly over your head?  Do not worry, we'll cover this soon.</dd>
+<dt>ex5.c:5</dt>
+<dd>To start the body of any function you write a <tt class="docutils literal">{</tt> character
+that indicates the beginning of a &quot;block&quot;.  In Python you just
+did a <tt class="docutils literal">:</tt> and indented. In other languages you might have a
+<tt class="docutils literal">begin</tt> or <tt class="docutils literal">do</tt> word to start.</dd>
+<dt>ex5.c:6</dt>
+<dd>A variable declaration and assignment at the same time.
+This is how you create a variable, with the syntax <tt class="docutils literal">type name = value;</tt>.
+In C statements (except for logic) end in a <tt class="docutils literal">';'</tt> (semicolon) character.</dd>
+<dt>ex5.c:8</dt>
+<dd>Another kind of comment, and it works like Python or
+Ruby comments where it starts at the <tt class="docutils literal">//</tt> and goes until the end of
+the line.</dd>
+<dt>ex5.c:9</dt>
+<dd>A call to your old friend <tt class="docutils literal">printf</tt>.  Like in many languages
+function calls work with the syntax <tt class="docutils literal">name(arg1, arg2);</tt> and can have
+no arguments, or any number.  The <tt class="docutils literal">printf</tt> function is actually
+kind of weird and can take multiple arguments. We'll see that later.</dd>
+<dt>ex5.c:11</dt>
+<dd>A return from the main function, which gives the OS your exit
+value.  You may not be familiar with how Unix software uses return
+codes, so we'll cover that as well.</dd>
+<dt>ex5.c:12</dt>
+<dd>Finally, we end the main function with a closing brace <tt class="docutils literal">}</tt>
+character and that's the end of the program.</dd>
+</dl>
+<p>There's a lot of information in this break-down, so study it line-by-line
+and make sure you at least have a little grasp of what's going on.  You
+won't know everything, but you can probably guess before we continue.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>For each line, write out the symbols you don't understand and
+see if you can guess what they mean.  Write a little chart on
+paper with your guess that you can use to check later and see
+if you get it right.</li>
+<li>Go back to the source code from the previous exercises and
+do a similar break-down to see if you're getting it.  Write down
+what you don't know and can't explain to yourself.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

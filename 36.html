@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 36: Safer Strings</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 36: Safer Strings</h1>
+            <p>I've already introduced you to the <a class="reference external" href="http://bstring.sourceforge.net/">Better String</a> library in Exercise 26 when we made <tt class="docutils literal">devpkg</tt>.  This exercise
+is designed to get you into using bstring from now on, why C's strings are
+an incredibly bad idea, and then have you change the <tt class="docutils literal">liblcthw</tt>
+code to use bstring.</p>
+<div class="section" id="why-c-strings-were-a-horrible-idea">
+<h1>Why C Strings Were A Horrible Idea</h1>
+<p>When people talk about problems with C, it's concept of a &quot;string&quot; is one of the top flaws.
+You've been using these extensively, and I've talked about the kinds of flaws they have, but there's
+not much that explains exactly why C strings are flawed and always will be.  I'll try to explain
+that right now, but part of my explanation will just be that after decades of using C's strings
+there's enough evidence that they are just a bad idea.</p>
+<p>It is impossible to confirm that any given C string is valid:</p>
+<ul class="simple">
+<li>A C string is invalid if it does not end in <tt class="docutils literal">'\0'</tt>.</li>
+<li>Any loop that processes an invalid C string will loop infinitely (or, just buffer overflow).</li>
+<li>C strings do not have a known length, so the only way to check if it's terminated correctly is to loop through it.</li>
+<li>Therefore, it is not possible to validate a C string without possibly looping infinitely.</li>
+</ul>
+<p>This is simple logic.  You can't write a loop that checks if a C string is valid
+because invalid C strings cause loops to never terminate.  That's it, and the
+only solution is to <em>include the size</em>.  Once you know the size you can
+avoid the infinite loop problem.  If you look at the two functions I showed
+you from Exercise 27 you can see this:</p>
+<div class="highlight"><pre><a name="code--ex36.c-pyg.html-1"></a><span class="kt">void</span> <span class="nf">copy</span><span class="p">(</span><span class="kt">char</span> <span class="n">to</span><span class="p">[],</span> <span class="kt">char</span> <span class="n">from</span><span class="p">[])</span>
+<a name="code--ex36.c-pyg.html-2"></a><span class="p">{</span>
+<a name="code--ex36.c-pyg.html-3"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex36.c-pyg.html-4"></a>
+<a name="code--ex36.c-pyg.html-5"></a>    <span class="c1">// while loop will not end if from isn&#39;t &#39;\0&#39; terminated</span>
+<a name="code--ex36.c-pyg.html-6"></a>    <span class="k">while</span><span class="p">((</span><span class="n">to</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">from</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">!=</span> <span class="sc">&#39;\0&#39;</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex36.c-pyg.html-7"></a>        <span class="o">++</span><span class="n">i</span><span class="p">;</span>
+<a name="code--ex36.c-pyg.html-8"></a>    <span class="p">}</span>
+<a name="code--ex36.c-pyg.html-9"></a><span class="p">}</span>
+<a name="code--ex36.c-pyg.html-10"></a>
+<a name="code--ex36.c-pyg.html-11"></a><span class="kt">int</span> <span class="nf">safercopy</span><span class="p">(</span><span class="kt">int</span> <span class="n">from_len</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">from</span><span class="p">,</span> <span class="kt">int</span> <span class="n">to_len</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">to</span><span class="p">)</span>
+<a name="code--ex36.c-pyg.html-12"></a><span class="p">{</span>
+<a name="code--ex36.c-pyg.html-13"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex36.c-pyg.html-14"></a>    <span class="kt">int</span> <span class="n">max</span> <span class="o">=</span> <span class="n">from_len</span> <span class="o">&gt;</span> <span class="n">to_len</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">?</span> <span class="n">to_len</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">:</span> <span class="n">from_len</span><span class="p">;</span>
+<a name="code--ex36.c-pyg.html-15"></a>
+<a name="code--ex36.c-pyg.html-16"></a>    <span class="c1">// to_len must have at least 1 byte</span>
+<a name="code--ex36.c-pyg.html-17"></a>    <span class="k">if</span><span class="p">(</span><span class="n">from_len</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">to_len</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex36.c-pyg.html-18"></a>
+<a name="code--ex36.c-pyg.html-19"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">max</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex36.c-pyg.html-20"></a>        <span class="n">to</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">from</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<a name="code--ex36.c-pyg.html-21"></a>    <span class="p">}</span>
+<a name="code--ex36.c-pyg.html-22"></a>
+<a name="code--ex36.c-pyg.html-23"></a>    <span class="n">to</span><span class="p">[</span><span class="n">to_len</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="sc">&#39;\0&#39;</span><span class="p">;</span>
+<a name="code--ex36.c-pyg.html-24"></a>
+<a name="code--ex36.c-pyg.html-25"></a>    <span class="k">return</span> <span class="n">i</span><span class="p">;</span>
+<a name="code--ex36.c-pyg.html-26"></a><span class="p">}</span>
+</pre></div><p>Imagine you want to add a check to the <tt class="docutils literal">copy</tt> function to confirm that
+the <tt class="docutils literal">from</tt> string is valid.  How would you do that?  Why you'd write a
+loop that checked that the string ended in <tt class="docutils literal">'\0'</tt>.  Oh wait, if the string
+doesn't end in <tt class="docutils literal">'\0'</tt> then how does the checking loop end?  It doesn't.
+Checkmate.</p>
+<p>No matter what you do, you can't check that a C string is valid without
+knowing the length of the underlying storage, and in this case the
+<tt class="docutils literal">safercopy</tt> includes those lengths.  This function doesn't have
+the same problem as it's loops will always terminate, even if you lie
+to it about the size, you still have to give it a finite size.</p>
+<p>What the Better String library does is create a struct that always includes
+the length of the string's storage.  Because the length is always available
+to a <tt class="docutils literal">bstring</tt> then all of its operations can be safer.  The loops
+will terminate, the contents can be validated, and it will not have this
+major flaw.  The bstring library also comes with a ton of operations
+you need with strings, like splitting, formatting, searching, and
+they are most likely done right and safer.</p>
+<p>There could be flaws in bstring, but it's been around a long time so
+those are probably minimal.  They still find flaws in <tt class="docutils literal">glibc</tt>
+so what's a programmer to do right?</p>
+</div>
+<div class="section" id="using-bstrlib">
+<h1>Using bstrlib</h1>
+<p>There's quite a few improved string libraries, but I like <tt class="docutils literal">bstrlib</tt>
+because it fits in one file for the basics and has most of the stuff you need
+to deal with strings.  You've already used it a bit, so in this exercise you'll
+go get the two files <tt class="docutils literal">bstrlib.c</tt> and <tt class="docutils literal">bstrlib.h</tt> from the
+<a class="reference external" href="http://bstring.sourceforge.net/">Better String</a></p>
+<p>Here's me doing this in the <tt class="docutils literal">liblcthw</tt> project directory:</p>
+<div class="highlight"><pre><a name="code--ex36.sh-session-pyg.html-1"></a><span class="gp">$</span> mkdir bstrlib
+<a name="code--ex36.sh-session-pyg.html-2"></a><span class="gp">$</span> <span class="nb">cd </span>bstrlib/
+<a name="code--ex36.sh-session-pyg.html-3"></a><span class="gp">$</span> unzip ~/Downloads/bstrlib-05122010.zip
+<a name="code--ex36.sh-session-pyg.html-4"></a><span class="go">Archive:  /Users/zedshaw/Downloads/bstrlib-05122010.zip</span>
+<a name="code--ex36.sh-session-pyg.html-5"></a><span class="go">...</span>
+<a name="code--ex36.sh-session-pyg.html-6"></a><span class="gp">$</span> ls
+<a name="code--ex36.sh-session-pyg.html-7"></a><span class="go">bsafe.c             bstraux.c       bstrlib.h       bstrwrap.h      license.txt     test.cpp</span>
+<a name="code--ex36.sh-session-pyg.html-8"></a><span class="go">bsafe.h             bstraux.h       bstrlib.txt     cpptest.cpp     porting.txt     testaux.c</span>
+<a name="code--ex36.sh-session-pyg.html-9"></a><span class="go">bstest.c    bstrlib.c       bstrwrap.cpp    gpl.txt         security.txt</span>
+<a name="code--ex36.sh-session-pyg.html-10"></a><span class="gp">$</span> mv bstrlib.h bstrlib.c ../src/lcthw/
+<a name="code--ex36.sh-session-pyg.html-11"></a><span class="gp">$</span> <span class="nb">cd</span> ../
+<a name="code--ex36.sh-session-pyg.html-12"></a><span class="gp">$</span> rm -rf bstrlib
+<a name="code--ex36.sh-session-pyg.html-13"></a><span class="gp">#</span> make the edits
+<a name="code--ex36.sh-session-pyg.html-14"></a><span class="gp">$</span> vim src/lcthw/bstrlib.c
+<a name="code--ex36.sh-session-pyg.html-15"></a><span class="gp">$</span> make clean all
+<a name="code--ex36.sh-session-pyg.html-16"></a><span class="go">...</span>
+<a name="code--ex36.sh-session-pyg.html-17"></a><span class="gp">$</span>
+</pre></div><p>On line 14 you seem me edit the <tt class="docutils literal">bstrlib.c</tt> file to move it
+to a new location and to fix a bug on OSX.  Here's the diff:</p>
+<div class="highlight"><pre><a name="code--ex36.diff-pyg.html-1"></a>25c25
+<a name="code--ex36.diff-pyg.html-2"></a>&lt; #include &quot;bstrlib.h&quot;
+<a name="code--ex36.diff-pyg.html-3"></a><span class="gd">---</span>
+<a name="code--ex36.diff-pyg.html-4"></a>&gt; #include &lt;lcthw/bstrlib.h&gt;
+<a name="code--ex36.diff-pyg.html-5"></a>2759c2759
+<a name="code--ex36.diff-pyg.html-6"></a>&lt; #ifdef __GNUC__
+<a name="code--ex36.diff-pyg.html-7"></a><span class="gd">---</span>
+<a name="code--ex36.diff-pyg.html-8"></a>&gt; #if defined(__GNUC__) &amp;&amp; !defined(__APPLE__)
+</pre></div><p>That is, change the include to be <tt class="docutils literal">&lt;lcthw/bstrlib.h&gt;</tt>, and then
+fix one of the <tt class="docutils literal">ifdef</tt> at line 2759.</p>
+</div>
+<div class="section" id="learning-the-library">
+<h1>Learning The Library</h1>
+<p>This exercise is short and simply getting you ready for the remaining
+exercises that use the library.  In the next two exercises I'll use
+<tt class="docutils literal">bstrlib.c</tt> to create a <tt class="docutils literal">Hashmap</tt> data structure.</p>
+<p>You should now get familiar with this library by reading the
+header file, the implementations, and then write a <tt class="docutils literal">tests/bstr_tests.c</tt>
+that tests out the following functions:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">bfromcstr</tt></dt>
+<dd>Create a bstring from a C style constant.</dd>
+<dt><tt class="docutils literal">blk2bstr</tt></dt>
+<dd>Same but give the length of the buffer.</dd>
+<dt><tt class="docutils literal">bstrcpy</tt></dt>
+<dd>Copy a bstring.</dd>
+<dt><tt class="docutils literal">bassign</tt></dt>
+<dd>Set one bstring to another.</dd>
+<dt><tt class="docutils literal">bassigncstr</tt></dt>
+<dd>Set a bstring to a C string's contents.</dd>
+<dt><tt class="docutils literal">bassignblk</tt></dt>
+<dd>Set a bstring to a C string but give the length.</dd>
+<dt><tt class="docutils literal">bdestroy</tt></dt>
+<dd>Destroy a bstring.</dd>
+<dt><tt class="docutils literal">bconcat</tt></dt>
+<dd>Concatenate one bstring onto another.</dd>
+<dt><tt class="docutils literal">bstricmp</tt></dt>
+<dd>Compare two bstrings returning the same result as strcmp.</dd>
+<dt><tt class="docutils literal">biseq</tt></dt>
+<dd>Tests if two bstrings are equal.</dd>
+<dt><tt class="docutils literal">binstr</tt></dt>
+<dd>Tells if one bstring is in another.</dd>
+<dt><tt class="docutils literal">bfindreplace</tt></dt>
+<dd>Find one bstring in another then replace it with a third.</dd>
+<dt><tt class="docutils literal">bsplit</tt></dt>
+<dd>How to split a bstring into a bstrList.</dd>
+<dt><tt class="docutils literal">bformat</tt></dt>
+<dd>Doing a format string, super handy.</dd>
+<dt><tt class="docutils literal">blength</tt></dt>
+<dd>Getting the length of a bstring.</dd>
+<dt><tt class="docutils literal">bdata</tt></dt>
+<dd>Getting the data from a bstring.</dd>
+<dt><tt class="docutils literal">bchar</tt></dt>
+<dd>Getting a char from a bstring.</dd>
+</dl>
+<p>Your test should try out all of these operations, and a few more that you
+find interesting from the header file.  Make sure to run the test under
+<tt class="docutils literal">valgrind</tt> to make sure you use the memory correctly.</p>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

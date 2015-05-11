@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 3: Formatted Printing</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 3: Formatted Printing</h1>
+            <p>Keep that <tt class="docutils literal">Makefile</tt> around since it'll help you spot errors
+and we'll be adding to it when we need to automate more things.</p>
+<p>Many programming languages use the C way of formatting output, so let's try it:</p>
+<div class="highlight"><pre><a name="code--ex3.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex3.c-pyg.html-2"></a>
+<a name="code--ex3.c-pyg.html-3"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">()</span>
+<a name="code--ex3.c-pyg.html-4"></a><span class="p">{</span>
+<a name="code--ex3.c-pyg.html-5"></a>    <span class="kt">int</span> <span class="n">age</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+<a name="code--ex3.c-pyg.html-6"></a>    <span class="kt">int</span> <span class="n">height</span> <span class="o">=</span> <span class="mi">72</span><span class="p">;</span>
+<a name="code--ex3.c-pyg.html-7"></a>
+<a name="code--ex3.c-pyg.html-8"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;I am %d years old.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">age</span><span class="p">);</span>
+<a name="code--ex3.c-pyg.html-9"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;I am %d inches tall.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">height</span><span class="p">);</span>
+<a name="code--ex3.c-pyg.html-10"></a>
+<a name="code--ex3.c-pyg.html-11"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex3.c-pyg.html-12"></a><span class="p">}</span>
+</pre></div><p>Once you have that, do the usual <tt class="docutils literal">make ex3</tt> to build it and run it.
+Make sure you <em>fix all warnings</em>.</p>
+<p>This exercise has a whole lot going on in a small amount of code so
+let's break it down:</p>
+<ul class="simple">
+<li>First you're including another &quot;header file&quot; called <tt class="docutils literal">stdio.h</tt>. This tells the compiler that you're going to use the &quot;standard Input/Output functions&quot;.  One of those is <tt class="docutils literal">printf</tt>.</li>
+<li>Then you're using a variable named <tt class="docutils literal">age</tt> and setting it to 10.</li>
+<li>Next you're using a variable <tt class="docutils literal">height</tt> and setting it to 72.</li>
+<li>Then you use the <tt class="docutils literal">printf</tt> function to print the age and height
+of the tallest 10 year old on the planet.</li>
+<li>In the <tt class="docutils literal">printf</tt> you'll notice you're passing in a string, and
+it's a format string like in many other languages.</li>
+<li>After this format string, you put the variables that should be
+&quot;replaced&quot; into the format string by <tt class="docutils literal">printf</tt>.</li>
+</ul>
+<p>The result of doing this is you are handing <tt class="docutils literal">printf</tt> some variables
+and it is constructing a new string then printing that new string to the
+terminal.</p>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>When you do the whole build you should see something like this:</p>
+<div class="highlight"><pre><a name="code--ex3.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex3
+<a name="code--ex3.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g    ex3.c   -o ex3</span>
+<a name="code--ex3.sh-session-pyg.html-3"></a><span class="gp">$</span> ./ex3
+<a name="code--ex3.sh-session-pyg.html-4"></a><span class="go">I am 10 years old.</span>
+<a name="code--ex3.sh-session-pyg.html-5"></a><span class="go">I am 72 inches tall.</span>
+<a name="code--ex3.sh-session-pyg.html-6"></a><span class="gp">$</span>
+</pre></div><p>Pretty soon I'm going to stop telling you to run <tt class="docutils literal">make</tt> and what
+the build looks like, so please make sure you're getting this right
+and that it's working.</p>
+</div>
+<div class="section" id="external-research">
+<h1>External Research</h1>
+<p>In the <em>Extra Credit</em> section of each exercise I may have you go
+find information on your own and figure things out.  This is an important
+part of being a self-sufficient programmer.  If you constantly run to
+ask someone a question before trying to figure it out first then you
+never learn to solve problems independently.  This leads to you never
+building confidence in your skills and always needing someone else
+around to do your work.</p>
+<p>The way you break this habit is to <em>force</em> yourself to try to answer
+your own questions first, and to confirm that your answer is right.  You
+do this by trying to break things, experimenting with your possible answer,
+and doing your own research.</p>
+<p>For this exercise I want you to go online and find out <em>all</em> of the
+<tt class="docutils literal">printf</tt> escape codes and format sequences.  Escape codes are
+<tt class="docutils literal">\n</tt> or <tt class="docutils literal">\t</tt> that let you print a newline or tab (respectively).
+Format sequences are the <tt class="docutils literal">%s</tt> or <tt class="docutils literal">%d</tt> that let you print a
+string or a integer.  Find all of the ones available, how you can
+modify them, and what kind of &quot;precisions&quot; and widths you can do.</p>
+<p>From now on, these kinds of tasks will be in the Extra Credit and you
+should do them.</p>
+</div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<p>Try a few of these ways to break this program, which may or may
+not cause it to crash on your computer:</p>
+<ul class="simple">
+<li>Take the <tt class="docutils literal">age</tt> variable out of the first <tt class="docutils literal">printf</tt> call
+then recompile. You should get a couple of warnings.</li>
+<li>Run this new program and it will either crash, or print out a really
+crazy age.</li>
+<li>Put the <tt class="docutils literal">printf</tt> back the way it was, and then don't set <tt class="docutils literal">age</tt>
+to an initial value by changing that line to <tt class="docutils literal">int age;</tt> then
+rebuild and run again.</li>
+</ul>
+<div class="highlight"><pre><a name="code--ex3.bad.sh-session-pyg.html-1"></a><span class="gp">#</span> edit ex3.c to <span class="nb">break printf</span>
+<a name="code--ex3.bad.sh-session-pyg.html-2"></a><span class="gp">$</span><span class="nb"> </span>make ex3
+<a name="code--ex3.bad.sh-session-pyg.html-3"></a><span class="go">cc -Wall -g    ex3.c   -o ex3</span>
+<a name="code--ex3.bad.sh-session-pyg.html-4"></a><span class="go">ex3.c: In function &#39;main&#39;:</span>
+<a name="code--ex3.bad.sh-session-pyg.html-5"></a><span class="go">ex3.c:8: warning: too few arguments for format</span>
+<a name="code--ex3.bad.sh-session-pyg.html-6"></a><span class="go">ex3.c:5: warning: unused variable &#39;age&#39;</span>
+<a name="code--ex3.bad.sh-session-pyg.html-7"></a><span class="gp">$</span> ./ex3
+<a name="code--ex3.bad.sh-session-pyg.html-8"></a><span class="go">I am -919092456 years old.</span>
+<a name="code--ex3.bad.sh-session-pyg.html-9"></a><span class="go">I am 72 inches tall.</span>
+<a name="code--ex3.bad.sh-session-pyg.html-10"></a><span class="gp">#</span> edit ex3.c again to fix <span class="nb">printf</span>, but don<span class="err">&#39;</span>t init age
+<a name="code--ex3.bad.sh-session-pyg.html-11"></a><span class="gp">$</span> make ex3
+<a name="code--ex3.bad.sh-session-pyg.html-12"></a><span class="go">cc -Wall -g    ex3.c   -o ex3</span>
+<a name="code--ex3.bad.sh-session-pyg.html-13"></a><span class="go">ex3.c: In function &#39;main&#39;:</span>
+<a name="code--ex3.bad.sh-session-pyg.html-14"></a><span class="go">ex3.c:8: warning: &#39;age&#39; is used uninitialized in this function</span>
+<a name="code--ex3.bad.sh-session-pyg.html-15"></a><span class="gp">$</span> ./ex3
+<a name="code--ex3.bad.sh-session-pyg.html-16"></a><span class="go">I am 0 years old.</span>
+<a name="code--ex3.bad.sh-session-pyg.html-17"></a><span class="go">I am 72 inches tall.</span>
+<a name="code--ex3.bad.sh-session-pyg.html-18"></a><span class="gp">$</span>
+</pre></div></div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Find as many other ways to break <tt class="docutils literal">ex3.c</tt> as you can.</li>
+<li>Run <tt class="docutils literal">man 3 printf</tt> and read about the other '%' format
+characters you can use.  These should look familiar if you used
+them in other languages (<tt class="docutils literal">printf</tt> is where they come from).</li>
+<li>Add <tt class="docutils literal">ex3</tt> to your <tt class="docutils literal">Makefile</tt>'s <tt class="docutils literal">all</tt> list.  Use this
+to <tt class="docutils literal">make clean all</tt> and build all your exercises so far.</li>
+<li>Add <tt class="docutils literal">ex3</tt> to your <tt class="docutils literal">Makefile</tt>'s <tt class="docutils literal">clean</tt> list as well.
+Now use <tt class="docutils literal">make clean</tt> will remove it when you need to.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

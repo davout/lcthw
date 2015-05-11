@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 43: A Simple Statistics Engine</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 43: A Simple Statistics Engine</h1>
+            <p>This is a simple algorithm I use for collecting summary statistics &quot;online&quot;,
+or without storing all of the samples.  I use this in any software that needs
+to keep some statistics such as mean, standard deviation, and sum, but where
+I can't store all the samples needed.  Instead I can just store the rolling
+results of the calculations which is only 5 numbers.</p>
+<div class="section" id="rolling-standard-deviation-and-mean">
+<h1>Rolling Standard Deviation And Mean</h1>
+<p>The first thing you need is a sequence of samples.  This can be anything
+from time to complete a task, numbers of times someone accesses something,
+or even star ratings on a website.  Doesn't really matter what, just so long
+as you have a stream of numbers and you want to know the following summary
+statistics about them:</p>
+<dl class="docutils">
+<dt>sum</dt>
+<dd>This is the total of all the numbers added together.</dd>
+<dt>sum squared (sumsq)</dt>
+<dd>This is the sum of the square of each number.</dd>
+<dt>count (n)</dt>
+<dd>This is the number samples you've taken.</dd>
+<dt>min</dt>
+<dd>This is the smallest sample you've seen.</dd>
+<dt>max</dt>
+<dd>This is the largest sample you've seen.</dd>
+<dt>mean</dt>
+<dd>This is the most likely middle number.  It's not actually the middle,
+since that's the median, but it's an accepted approximation for it.</dd>
+<dt>stddev</dt>
+<dd>Calculated using $sqrt(sumsq - (sum * mean)) / (n - 1) ))$ where <tt class="docutils literal">sqrt</tt> is the square root function in the <tt class="docutils literal">math.h</tt> header.</dd>
+</dl>
+<p>I will confirm this calculation works using R since I know R gets
+these right:</p>
+<div class="highlight"><pre><a name="code--ex43.1.sh-session-pyg.html-1"></a><span class="gp">&gt;</span> s &lt;- runif<span class="o">(</span><span class="nv">n</span><span class="o">=</span>10, <span class="nv">max</span><span class="o">=</span>10<span class="o">)</span>
+<a name="code--ex43.1.sh-session-pyg.html-2"></a><span class="gp">&gt;</span> s
+<a name="code--ex43.1.sh-session-pyg.html-3"></a><span class="go"> [1] 6.1061334 9.6783204 1.2747090 8.2395131 0.3333483 6.9755066 1.0626275</span>
+<a name="code--ex43.1.sh-session-pyg.html-4"></a><span class="go"> [8] 7.6587523 4.9382973 9.5788115</span>
+<a name="code--ex43.1.sh-session-pyg.html-5"></a><span class="gp">&gt;</span> summary<span class="o">(</span>s<span class="o">)</span>
+<a name="code--ex43.1.sh-session-pyg.html-6"></a><span class="go">   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span>
+<a name="code--ex43.1.sh-session-pyg.html-7"></a><span class="go"> 0.3333  2.1910  6.5410  5.5850  8.0940  9.6780 </span>
+<a name="code--ex43.1.sh-session-pyg.html-8"></a><span class="gp">&gt;</span> sd<span class="o">(</span>s<span class="o">)</span>
+<a name="code--ex43.1.sh-session-pyg.html-9"></a><span class="go">[1] 3.547868</span>
+<a name="code--ex43.1.sh-session-pyg.html-10"></a><span class="gp">&gt;</span> sum<span class="o">(</span>s<span class="o">)</span>
+<a name="code--ex43.1.sh-session-pyg.html-11"></a><span class="go">[1] 55.84602</span>
+<a name="code--ex43.1.sh-session-pyg.html-12"></a><span class="gp">&gt;</span> sum<span class="o">(</span>s * s<span class="o">)</span>
+<a name="code--ex43.1.sh-session-pyg.html-13"></a><span class="go">[1] 425.1641</span>
+<a name="code--ex43.1.sh-session-pyg.html-14"></a><span class="gp">&gt;</span> sum<span class="o">(</span>s<span class="o">)</span> * mean<span class="o">(</span>s<span class="o">)</span>
+<a name="code--ex43.1.sh-session-pyg.html-15"></a><span class="go">[1] 311.8778</span>
+<a name="code--ex43.1.sh-session-pyg.html-16"></a><span class="gp">&gt;</span> sum<span class="o">(</span>s * s<span class="o">)</span> - sum<span class="o">(</span>s<span class="o">)</span> * mean<span class="o">(</span>s<span class="o">)</span>
+<a name="code--ex43.1.sh-session-pyg.html-17"></a><span class="go">[1] 113.2863</span>
+<a name="code--ex43.1.sh-session-pyg.html-18"></a><span class="gp">&gt;</span> <span class="o">(</span>sum<span class="o">(</span>s * s<span class="o">)</span> - sum<span class="o">(</span>s<span class="o">)</span> * mean<span class="o">(</span>s<span class="o">))</span> / <span class="o">(</span>length<span class="o">(</span>s<span class="o">)</span> - 1<span class="o">)</span>
+<a name="code--ex43.1.sh-session-pyg.html-19"></a><span class="go">[1] 12.58737</span>
+<a name="code--ex43.1.sh-session-pyg.html-20"></a><span class="gp">&gt;</span> sqrt<span class="o">((</span>sum<span class="o">(</span>s * s<span class="o">)</span> - sum<span class="o">(</span>s<span class="o">)</span> * mean<span class="o">(</span>s<span class="o">))</span> / <span class="o">(</span>length<span class="o">(</span>s<span class="o">)</span> - 1<span class="o">))</span>
+<a name="code--ex43.1.sh-session-pyg.html-21"></a><span class="go">[1] 3.547868</span>
+<a name="code--ex43.1.sh-session-pyg.html-22"></a><span class="gp">&gt;</span>
+</pre></div><p>You don't need to know R, just follow along while I explain how I'm breaking this
+down to check my math:</p>
+<dl class="docutils">
+<dt>lines 1-4</dt>
+<dd>I use the function <tt class="docutils literal">runif</tt> to get a &quot;random uniform&quot; distribution
+of numbers, then print them out.  I'll use these in the unit test later.</dd>
+<dt>lines 5-7</dt>
+<dd>Here's the summary, so you can see the values that R calculates for these.</dd>
+<dt>lines 8-9</dt>
+<dd>This is the <tt class="docutils literal">stddev</tt> using the <tt class="docutils literal">sd</tt> function.</dd>
+<dt>lines 10-11</dt>
+<dd><p class="first">Now I begin to build this calculation manually, first by getting the</p>
+<p class="last"><tt class="docutils literal">sum</tt>.</p>
+</dd>
+<dt>lines 12-13</dt>
+<dd>Next piece of the <tt class="docutils literal">stdev</tt> formula is the <tt class="docutils literal">sumsq</tt>, which I
+can get with <tt class="docutils literal">sum(s * s)</tt> which tells R to multiple the whole <tt class="docutils literal">s</tt>
+list by itself and then <tt class="docutils literal">sum</tt> those. The power of R is being able to
+do math on entire data structures like this.</dd>
+<dt>lines 14-15</dt>
+<dd>Looking at the formula, I then need the <tt class="docutils literal">sum</tt> multiplied by <tt class="docutils literal">mean</tt>, so I do <tt class="docutils literal">sum(s) * mean(s)</tt>.</dd>
+<dt>lines 16-17</dt>
+<dd>I then combine the <tt class="docutils literal">sumsq</tt> with this to get <tt class="docutils literal">sum(s * s) - sum(s) * mean(s)</tt>.</dd>
+<dt>lines 18-19</dt>
+<dd>That needs to be divided by $n-1$, so I do <tt class="docutils literal">(sum(s * s) - sum(s) * mean(s)) / (length(s) - 1)</tt>.</dd>
+<dt>lines 20-21</dt>
+<dd>Finally, I <tt class="docutils literal">sqrt</tt> that and I get 3.547868 which matches
+the number R gave me for <tt class="docutils literal">sd</tt> above.</dd>
+</dl>
+</div>
+<div class="section" id="implemention">
+<h1>Implemention</h1>
+<p>That's how you calculate the <tt class="docutils literal">stddev</tt>, so now I can make some simple code
+to implement this calculation.</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--stats.h-pyg.html-1"></a><span class="cp">#ifndef lcthw_stats_h</span>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-2"></a><span class="cp">#define lctwh_stats_h</span>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-3"></a>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-4"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="n">Stats</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-5"></a>    <span class="kt">double</span> <span class="n">sum</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-6"></a>    <span class="kt">double</span> <span class="n">sumsq</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-7"></a>    <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">n</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-8"></a>    <span class="kt">double</span> <span class="n">min</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-9"></a>    <span class="kt">double</span> <span class="n">max</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-10"></a><span class="p">}</span> <span class="n">Stats</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-11"></a>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-12"></a><span class="n">Stats</span> <span class="o">*</span><span class="nf">Stats_recreate</span><span class="p">(</span><span class="kt">double</span> <span class="n">sum</span><span class="p">,</span> <span class="kt">double</span> <span class="n">sumsq</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">n</span><span class="p">,</span> <span class="kt">double</span> <span class="n">min</span><span class="p">,</span> <span class="kt">double</span> <span class="n">max</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-13"></a>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-14"></a><span class="n">Stats</span> <span class="o">*</span><span class="nf">Stats_create</span><span class="p">();</span>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-15"></a>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-16"></a><span class="kt">double</span> <span class="nf">Stats_mean</span><span class="p">(</span><span class="n">Stats</span> <span class="o">*</span><span class="n">st</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-17"></a>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-18"></a><span class="kt">double</span> <span class="nf">Stats_stddev</span><span class="p">(</span><span class="n">Stats</span> <span class="o">*</span><span class="n">st</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-19"></a>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-20"></a><span class="kt">void</span> <span class="nf">Stats_sample</span><span class="p">(</span><span class="n">Stats</span> <span class="o">*</span><span class="n">st</span><span class="p">,</span> <span class="kt">double</span> <span class="n">s</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-21"></a>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-22"></a><span class="kt">void</span> <span class="nf">Stats_dump</span><span class="p">(</span><span class="n">Stats</span> <span class="o">*</span><span class="n">st</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-23"></a>
+<a name="code--liblcthw--src--lcthw--stats.h-pyg.html-24"></a><span class="cp">#endif</span>
+</pre></div><p>Here you can see I've put the calculations I need to store in a <tt class="docutils literal">struct</tt>
+and then I have functions for sampling and getting the numbers.  Implementing
+this is then just an exercise in converting the math:</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--stats.c-pyg.html-1"></a><span class="cp">#include &lt;math.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-2"></a><span class="cp">#include &lt;lcthw/stats.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-3"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-4"></a><span class="cp">#include &lt;lcthw/dbg.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-5"></a>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-6"></a><span class="n">Stats</span> <span class="o">*</span><span class="nf">Stats_recreate</span><span class="p">(</span><span class="kt">double</span> <span class="n">sum</span><span class="p">,</span> <span class="kt">double</span> <span class="n">sumsq</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">long</span> <span class="n">n</span><span class="p">,</span> <span class="kt">double</span> <span class="n">min</span><span class="p">,</span> <span class="kt">double</span> <span class="n">max</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-7"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-8"></a>    <span class="n">Stats</span> <span class="o">*</span><span class="n">st</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">Stats</span><span class="p">));</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-9"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">st</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-10"></a>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-11"></a>    <span class="n">st</span><span class="o">-&gt;</span><span class="n">sum</span> <span class="o">=</span> <span class="n">sum</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-12"></a>    <span class="n">st</span><span class="o">-&gt;</span><span class="n">sumsq</span> <span class="o">=</span> <span class="n">sumsq</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-13"></a>    <span class="n">st</span><span class="o">-&gt;</span><span class="n">n</span> <span class="o">=</span> <span class="n">n</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-14"></a>    <span class="n">st</span><span class="o">-&gt;</span><span class="n">min</span> <span class="o">=</span> <span class="n">min</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-15"></a>    <span class="n">st</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">=</span> <span class="n">max</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-16"></a>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-17"></a>    <span class="k">return</span> <span class="n">st</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-18"></a>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-19"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-20"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-21"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-22"></a>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-23"></a><span class="n">Stats</span> <span class="o">*</span><span class="nf">Stats_create</span><span class="p">()</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-24"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-25"></a>    <span class="k">return</span> <span class="n">Stats_recreate</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mi">0L</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-26"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-27"></a>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-28"></a><span class="kt">double</span> <span class="nf">Stats_mean</span><span class="p">(</span><span class="n">Stats</span> <span class="o">*</span><span class="n">st</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-29"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-30"></a>    <span class="k">return</span> <span class="n">st</span><span class="o">-&gt;</span><span class="n">sum</span> <span class="o">/</span> <span class="n">st</span><span class="o">-&gt;</span><span class="n">n</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-31"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-32"></a>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-33"></a><span class="kt">double</span> <span class="nf">Stats_stddev</span><span class="p">(</span><span class="n">Stats</span> <span class="o">*</span><span class="n">st</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-34"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-35"></a>   <span class="k">return</span> <span class="n">sqrt</span><span class="p">(</span> <span class="p">(</span><span class="n">st</span><span class="o">-&gt;</span><span class="n">sumsq</span> <span class="o">-</span> <span class="p">(</span> <span class="n">st</span><span class="o">-&gt;</span><span class="n">sum</span> <span class="o">*</span> <span class="n">st</span><span class="o">-&gt;</span><span class="n">sum</span> <span class="o">/</span> <span class="n">st</span><span class="o">-&gt;</span><span class="n">n</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="n">st</span><span class="o">-&gt;</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-36"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-37"></a>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-38"></a><span class="kt">void</span> <span class="nf">Stats_sample</span><span class="p">(</span><span class="n">Stats</span> <span class="o">*</span><span class="n">st</span><span class="p">,</span> <span class="kt">double</span> <span class="n">s</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-39"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-40"></a>    <span class="n">st</span><span class="o">-&gt;</span><span class="n">sum</span> <span class="o">+=</span> <span class="n">s</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-41"></a>    <span class="n">st</span><span class="o">-&gt;</span><span class="n">sumsq</span> <span class="o">+=</span> <span class="n">s</span> <span class="o">*</span> <span class="n">s</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-42"></a>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-43"></a>    <span class="k">if</span><span class="p">(</span><span class="n">st</span><span class="o">-&gt;</span><span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-44"></a>        <span class="n">st</span><span class="o">-&gt;</span><span class="n">min</span> <span class="o">=</span> <span class="n">s</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-45"></a>        <span class="n">st</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">=</span> <span class="n">s</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-46"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-47"></a>        <span class="k">if</span><span class="p">(</span><span class="n">st</span><span class="o">-&gt;</span><span class="n">min</span> <span class="o">&gt;</span> <span class="n">s</span><span class="p">)</span> <span class="n">st</span><span class="o">-&gt;</span><span class="n">min</span> <span class="o">=</span> <span class="n">s</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-48"></a>        <span class="k">if</span><span class="p">(</span><span class="n">st</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">&lt;</span> <span class="n">s</span><span class="p">)</span> <span class="n">st</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">=</span> <span class="n">s</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-49"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-50"></a>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-51"></a>    <span class="n">st</span><span class="o">-&gt;</span><span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-52"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-53"></a>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-54"></a><span class="kt">void</span> <span class="nf">Stats_dump</span><span class="p">(</span><span class="n">Stats</span> <span class="o">*</span><span class="n">st</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-55"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-56"></a>    <span class="n">fprintf</span><span class="p">(</span><span class="n">stderr</span><span class="p">,</span> <span class="s">&quot;sum: %f, sumsq: %f, n: %ld, min: %f, max: %f, mean: %f, stddev: %f&quot;</span><span class="p">,</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-57"></a>            <span class="n">st</span><span class="o">-&gt;</span><span class="n">sum</span><span class="p">,</span> <span class="n">st</span><span class="o">-&gt;</span><span class="n">sumsq</span><span class="p">,</span> <span class="n">st</span><span class="o">-&gt;</span><span class="n">n</span><span class="p">,</span> <span class="n">st</span><span class="o">-&gt;</span><span class="n">min</span><span class="p">,</span> <span class="n">st</span><span class="o">-&gt;</span><span class="n">max</span><span class="p">,</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-58"></a>            <span class="n">Stats_mean</span><span class="p">(</span><span class="n">st</span><span class="p">),</span> <span class="n">Stats_stddev</span><span class="p">(</span><span class="n">st</span><span class="p">));</span>
+<a name="code--liblcthw--src--lcthw--stats.c-pyg.html-59"></a><span class="p">}</span>
+</pre></div><p>Here's what each function in <tt class="docutils literal">stats.c</tt> does:</p>
+<dl class="docutils">
+<dt>Stats_recreate</dt>
+<dd>I'll want to load these numbers from some kind of
+database, and this function let's me recreate a <tt class="docutils literal">Stats</tt> struct.</dd>
+<dt>Stats_create</dt>
+<dd>Simply called <tt class="docutils literal">Stats_recreate</tt> with all 0 values.</dd>
+<dt>Stats_mean</dt>
+<dd>Using the <tt class="docutils literal">sum</tt> and <tt class="docutils literal">n</tt> it gives the mean.</dd>
+<dt>Stats_stddev</dt>
+<dd>Implements the formula I worked out, with the only
+difference being that I calculate the mean with <tt class="docutils literal"><span class="pre">st-&gt;sum</span> / <span class="pre">st-&gt;n</span></tt>
+in this formula instead of calling <tt class="docutils literal">Stats_mean</tt>.</dd>
+<dt>Stats_sample</dt>
+<dd>This does the work of maintaining the numbers in the <tt class="docutils literal">Stats</tt> struct.  When you give it the first value it sees that <tt class="docutils literal">n</tt> is 0 and
+sets <tt class="docutils literal">min</tt> and <tt class="docutils literal">max</tt> accordingly.  Every call after that keeps
+increasing <tt class="docutils literal">sum</tt>, <tt class="docutils literal">sumsq</tt>, and <tt class="docutils literal">n</tt>.  It then figures out
+if this new sample is a new <tt class="docutils literal">min</tt> or <tt class="docutils literal">max</tt>.</dd>
+<dt>Stats_dump</dt>
+<dd>Simple debug function that dumps the stats so you can
+view them.</dd>
+</dl>
+<p>The last thing I need to do is confirm that this math is correct.  I'm going
+to use my numbers and calculations from my R session to create a unit test
+that confirms I'm getting the right results.</p>
+<div class="highlight"><pre><a name="code--liblcthw--tests--stats_tests.c-pyg.html-1"></a><span class="cp">#include &quot;minunit.h&quot;</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-2"></a><span class="cp">#include &lt;lcthw/stats.h&gt;</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-3"></a><span class="cp">#include &lt;math.h&gt;</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-4"></a>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-5"></a><span class="k">const</span> <span class="kt">int</span> <span class="n">NUM_SAMPLES</span> <span class="o">=</span> <span class="mi">10</span><span class="p">;</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-6"></a><span class="kt">double</span> <span class="n">samples</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-7"></a>    <span class="mf">6.1061334</span><span class="p">,</span> <span class="mf">9.6783204</span><span class="p">,</span> <span class="mf">1.2747090</span><span class="p">,</span> <span class="mf">8.2395131</span><span class="p">,</span> <span class="mf">0.3333483</span><span class="p">,</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-8"></a>    <span class="mf">6.9755066</span><span class="p">,</span> <span class="mf">1.0626275</span><span class="p">,</span> <span class="mf">7.6587523</span><span class="p">,</span> <span class="mf">4.9382973</span><span class="p">,</span> <span class="mf">9.5788115</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-9"></a><span class="p">};</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-10"></a>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-11"></a><span class="n">Stats</span> <span class="n">expect</span> <span class="o">=</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-12"></a>    <span class="p">.</span><span class="n">sumsq</span> <span class="o">=</span> <span class="mf">425.1641</span><span class="p">,</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-13"></a>    <span class="p">.</span><span class="n">sum</span> <span class="o">=</span> <span class="mf">55.84602</span><span class="p">,</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-14"></a>    <span class="p">.</span><span class="n">min</span> <span class="o">=</span> <span class="mf">0.333</span><span class="p">,</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-15"></a>    <span class="p">.</span><span class="n">max</span> <span class="o">=</span> <span class="mf">9.678</span><span class="p">,</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-16"></a>    <span class="p">.</span><span class="n">n</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-17"></a><span class="p">};</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-18"></a><span class="kt">double</span> <span class="n">expect_mean</span> <span class="o">=</span> <span class="mf">5.584602</span><span class="p">;</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-19"></a><span class="kt">double</span> <span class="n">expect_stddev</span> <span class="o">=</span> <span class="mf">3.547868</span><span class="p">;</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-20"></a>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-21"></a><span class="cp">#define EQ(X,Y,N) (round((X) * pow(10, N)) == round((Y) * pow(10, N)))</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-22"></a>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-23"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_operations</span><span class="p">()</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-24"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-25"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-26"></a>    <span class="n">Stats</span> <span class="o">*</span><span class="n">st</span> <span class="o">=</span> <span class="n">Stats_create</span><span class="p">();</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-27"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">st</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to create stats.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-28"></a>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-29"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">NUM_SAMPLES</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-30"></a>        <span class="n">Stats_sample</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">samples</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-31"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-32"></a>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-33"></a>    <span class="n">Stats_dump</span><span class="p">(</span><span class="n">st</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-34"></a>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-35"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">EQ</span><span class="p">(</span><span class="n">st</span><span class="o">-&gt;</span><span class="n">sumsq</span><span class="p">,</span> <span class="n">expect</span><span class="p">.</span><span class="n">sumsq</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s">&quot;sumsq not valid&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-36"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">EQ</span><span class="p">(</span><span class="n">st</span><span class="o">-&gt;</span><span class="n">sum</span><span class="p">,</span> <span class="n">expect</span><span class="p">.</span><span class="n">sum</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s">&quot;sum not valid&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-37"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">EQ</span><span class="p">(</span><span class="n">st</span><span class="o">-&gt;</span><span class="n">min</span><span class="p">,</span> <span class="n">expect</span><span class="p">.</span><span class="n">min</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s">&quot;min not valid&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-38"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">EQ</span><span class="p">(</span><span class="n">st</span><span class="o">-&gt;</span><span class="n">max</span><span class="p">,</span> <span class="n">expect</span><span class="p">.</span><span class="n">max</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s">&quot;max not valid&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-39"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">EQ</span><span class="p">(</span><span class="n">st</span><span class="o">-&gt;</span><span class="n">n</span><span class="p">,</span> <span class="n">expect</span><span class="p">.</span><span class="n">n</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s">&quot;max not valid&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-40"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">EQ</span><span class="p">(</span><span class="n">expect_mean</span><span class="p">,</span> <span class="n">Stats_mean</span><span class="p">(</span><span class="n">st</span><span class="p">),</span> <span class="mi">3</span><span class="p">),</span> <span class="s">&quot;mean not valid&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-41"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">EQ</span><span class="p">(</span><span class="n">expect_stddev</span><span class="p">,</span> <span class="n">Stats_stddev</span><span class="p">(</span><span class="n">st</span><span class="p">),</span> <span class="mi">3</span><span class="p">),</span> <span class="s">&quot;stddev not valid&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-42"></a>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-43"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-44"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-45"></a>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-46"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_recreate</span><span class="p">()</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-47"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-48"></a>    <span class="n">Stats</span> <span class="o">*</span><span class="n">st</span> <span class="o">=</span> <span class="n">Stats_recreate</span><span class="p">(</span><span class="n">expect</span><span class="p">.</span><span class="n">sum</span><span class="p">,</span> <span class="n">expect</span><span class="p">.</span><span class="n">sumsq</span><span class="p">,</span> <span class="n">expect</span><span class="p">.</span><span class="n">n</span><span class="p">,</span> <span class="n">expect</span><span class="p">.</span><span class="n">min</span><span class="p">,</span> <span class="n">expect</span><span class="p">.</span><span class="n">max</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-49"></a>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-50"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">st</span><span class="o">-&gt;</span><span class="n">sum</span> <span class="o">==</span> <span class="n">expect</span><span class="p">.</span><span class="n">sum</span><span class="p">,</span> <span class="s">&quot;sum not equal&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-51"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">st</span><span class="o">-&gt;</span><span class="n">sumsq</span> <span class="o">==</span> <span class="n">expect</span><span class="p">.</span><span class="n">sumsq</span><span class="p">,</span> <span class="s">&quot;sumsq not equal&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-52"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">st</span><span class="o">-&gt;</span><span class="n">n</span> <span class="o">==</span> <span class="n">expect</span><span class="p">.</span><span class="n">n</span><span class="p">,</span> <span class="s">&quot;n not equal&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-53"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">st</span><span class="o">-&gt;</span><span class="n">min</span> <span class="o">==</span> <span class="n">expect</span><span class="p">.</span><span class="n">min</span><span class="p">,</span> <span class="s">&quot;min not equal&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-54"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">st</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">==</span> <span class="n">expect</span><span class="p">.</span><span class="n">max</span><span class="p">,</span> <span class="s">&quot;max not equal&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-55"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">EQ</span><span class="p">(</span><span class="n">expect_mean</span><span class="p">,</span> <span class="n">Stats_mean</span><span class="p">(</span><span class="n">st</span><span class="p">),</span> <span class="mi">3</span><span class="p">),</span> <span class="s">&quot;mean not valid&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-56"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">EQ</span><span class="p">(</span><span class="n">expect_stddev</span><span class="p">,</span> <span class="n">Stats_stddev</span><span class="p">(</span><span class="n">st</span><span class="p">),</span> <span class="mi">3</span><span class="p">),</span> <span class="s">&quot;stddev not valid&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-57"></a>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-58"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-59"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-60"></a>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-61"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">all_tests</span><span class="p">()</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-62"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-63"></a>    <span class="n">mu_suite_start</span><span class="p">();</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-64"></a>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-65"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_operations</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-66"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_recreate</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-67"></a>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-68"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-69"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-70"></a>
+<a name="code--liblcthw--tests--stats_tests.c-pyg.html-71"></a><span class="n">RUN_TESTS</span><span class="p">(</span><span class="n">all_tests</span><span class="p">);</span>
+</pre></div><p>There's nothing new in this unit test, except maybe the <tt class="docutils literal">EQ</tt> macro.
+I felt lazy and didn't want to look up the standard way to tell if two
+<tt class="docutils literal">double</tt> values are close, so I made this macro.  The problem with
+<tt class="docutils literal">double</tt> is that equality assumes totally equal, but I'm using two
+different systems with slightly different rounding errors.  The solution
+is to say I want the numbers to be &quot;equal to X decimal places&quot;.</p>
+<p>I do this with <tt class="docutils literal">EQ</tt> by raising the number to a power of 10, then using
+the <tt class="docutils literal">round</tt> function to get an integer.  This is a simple way to round
+to N decimal places and compare the results as an integer.  I'm sure there's
+a billion other ways to do the same thing, but this works for now.</p>
+<p>The expected results are then in a <tt class="docutils literal">Stats</tt> <tt class="docutils literal">struct</tt> and then
+I simply make sure that the number I get is close to the number R gave me.</p>
+</div>
+<div class="section" id="how-to-use-it">
+<h1>How To Use It</h1>
+<p>You can use the standard deviation and mean to determine if a new sample
+is &quot;interesting&quot;, or you can use this to collect statistics on statistics.  The
+first one is easy for people to understand so I'll explain that quickly
+using an example for login times.</p>
+<p>Imagine you're tracking how long users spend on a server and you're using
+stats to analyze it.  Every time someone logs in, you keep track of
+how long they are there, then you call <tt class="docutils literal">Stats_sample</tt>.  I'm looking
+for people are a on &quot;too long&quot; and also people who seem to be on &quot;too quickly&quot;.</p>
+<p>Instead of setting specific levels, what I'd do is compare how long someone
+is on with the <tt class="docutils literal">mean (plus or minus) 2 * stddev</tt> range.  I get the
+<tt class="docutils literal">mean</tt> and <tt class="docutils literal">2 * stddev</tt>, and consider login times to be &quot;interesting&quot;
+if they are outside these two ranges.  Since I'm keeping these statistics
+using a rolling algorithm this is a very fast calculation and I can then have
+the software flag the users who are outside of this range.</p>
+<p>This doesn't necessarily point out people who are behaving badly, but instead
+it flags potential problems that you can review to see what's going on.  It's
+also doing it based on the behavior of all the users, which avoids the problem
+where you pick some arbitrary number that's not based on what's really happening.</p>
+<p>The general rule you can get from this is that the <tt class="docutils literal">mean (plus or minus) 2 *
+stddev</tt> is an estimate of where 90% of the values are expected to fall, and
+that anything outside those ranges is interesting.</p>
+<p>The second way to use these statistics is to go meta and calculate them for
+other <tt class="docutils literal">Stats</tt> calculations.  You basically do your <tt class="docutils literal">Stats_sample</tt> like
+normal, but then you run <tt class="docutils literal">Stats_sample</tt> on the <tt class="docutils literal">min</tt>, <tt class="docutils literal">max</tt>, <tt class="docutils literal">n</tt>,
+<tt class="docutils literal">mean</tt>, and <tt class="docutils literal">stddev</tt> on that sample.  This gives a two-level measurement,
+and let's you compare samples of samples.</p>
+<p>Confusing right?  I'll continue my example above and add that you have 100
+servers that each hold a different application.  You are already tracking
+user's login times for each application server, but you want to compare all 100
+applications and flag any users that are logging in &quot;too much&quot; on all of them.
+Easiest way to do that is each time someone logs in, calculate the new login
+stats, then add <em>that</em> <tt class="docutils literal">Stats structs</tt> elements to a second <tt class="docutils literal">Stat</tt>.</p>
+<p>What you end up with is a series of stats that can be named like this:</p>
+<dl class="docutils">
+<dt>mean of means</dt>
+<dd>This is a full <tt class="docutils literal">Stats struct</tt> that gives you <tt class="docutils literal">mean</tt> and <tt class="docutils literal">stddev</tt> of the means of all the servers.  Any server or user who is outside of this is work looking at on a global level.</dd>
+<dt>mean of stddevs</dt>
+<dd>Another <tt class="docutils literal">Stats struct</tt> that produces the statistics
+of how <em>all</em> of the servers range.  You can then analyze each server and
+see if any of them have unusually wide ranging numbers by comparing their
+<tt class="docutils literal">stddev</tt> to this <tt class="docutils literal">mean of stddevs</tt> statistic.</dd>
+</dl>
+<p>You could do them all, but these are the most useful.  If you wanted to then
+monitor servers for erratic login times you'd do this:</p>
+<ul class="simple">
+<li>User John logs into and out of server A.  Grab server A's stats, update them.</li>
+<li>Grab the <tt class="docutils literal">mean of means</tt> stats, and take A's mean and add it as a sample.
+I'll call this <tt class="docutils literal">m_of_m</tt>.</li>
+<li>Grab the <tt class="docutils literal">mean of stddevs</tt> stats, and add A's stddev to it as a sample.
+I'll call this <tt class="docutils literal">m_of_s</tt>.</li>
+<li>If A's <tt class="docutils literal">mean</tt> is outside of <tt class="docutils literal">m_of_m.mean + 2 * m_of_m.stddev</tt>
+then flag it as possibly having a problem.</li>
+<li>If A's <tt class="docutils literal">stddev</tt> is outside of <tt class="docutils literal">m_of_s.mean + 2 * m_of_s.stddev</tt>
+then flag it as possible behaving too erratically.</li>
+<li>Finally, if John's login time is outside of A's range, or A's <tt class="docutils literal">m_of_m</tt>
+range, then flag it as interesting.</li>
+</ul>
+<p>Using this &quot;mean of means&quot; and &quot;mean of stddevs&quot; calculation you can do efficient
+tracking of many metrics with a minimal amount of processing and storage.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Convert the <tt class="docutils literal">Stats_stddev</tt> and <tt class="docutils literal">Stats_mean</tt> to <tt class="docutils literal">static inline</tt> functions in the <tt class="docutils literal">stats.h</tt> file instead of in the <tt class="docutils literal">stats.c</tt> file.</li>
+<li>Use this code to write a performance test of the <tt class="docutils literal">string_algos_test.c</tt>.
+Make it optional and have it run the base test as a series of samples then report
+the results.</li>
+<li>Write a version of this in another programming language you know.  Confirm that this
+version is correct based on what I have here.</li>
+<li>Write a little program that can take a file full of numbers and spit these statistics
+out for them.</li>
+<li>Make the program accept a table of data that has headers on one line, then all
+the other numbers on lines after it separated by any number of spaces.  Your program
+should then print out these stats for each column by the header name.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

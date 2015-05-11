@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 9: Arrays And Strings</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 9: Arrays And Strings</h1>
+            <p>In the last exercise you went through an introduction to creating basic arrays
+and how they map to strings.  In this exercise we'll more completely show the
+similarity between arrays and strings, and get into more about memory layouts.</p>
+<p>This exercise shows you that C stores its strings simply as an array of bytes,
+terminated with the <tt class="docutils literal">'\0'</tt> (nul) byte.  You probably clued into this in the
+last exercise since we did it manually.  Here's how we do it in another way to
+make it even more clear by comparing it to an array of numbers:</p>
+<div class="highlight"><pre><a name="code--ex9.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex9.c-pyg.html-2"></a>
+<a name="code--ex9.c-pyg.html-3"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex9.c-pyg.html-4"></a><span class="p">{</span>
+<a name="code--ex9.c-pyg.html-5"></a>    <span class="kt">int</span> <span class="n">numbers</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0</span><span class="p">};</span>
+<a name="code--ex9.c-pyg.html-6"></a>    <span class="kt">char</span> <span class="n">name</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="sc">&#39;a&#39;</span><span class="p">};</span>
+<a name="code--ex9.c-pyg.html-7"></a>
+<a name="code--ex9.c-pyg.html-8"></a>    <span class="c1">// first, print them out raw</span>
+<a name="code--ex9.c-pyg.html-9"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;numbers: %d %d %d %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex9.c-pyg.html-10"></a>            <span class="n">numbers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">numbers</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+<a name="code--ex9.c-pyg.html-11"></a>            <span class="n">numbers</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">numbers</span><span class="p">[</span><span class="mi">3</span><span class="p">]);</span>
+<a name="code--ex9.c-pyg.html-12"></a>
+<a name="code--ex9.c-pyg.html-13"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;name each: %c %c %c %c</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex9.c-pyg.html-14"></a>            <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">name</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+<a name="code--ex9.c-pyg.html-15"></a>            <span class="n">name</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">name</span><span class="p">[</span><span class="mi">3</span><span class="p">]);</span>
+<a name="code--ex9.c-pyg.html-16"></a>
+<a name="code--ex9.c-pyg.html-17"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;name: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">);</span>
+<a name="code--ex9.c-pyg.html-18"></a>
+<a name="code--ex9.c-pyg.html-19"></a>    <span class="c1">// setup the numbers</span>
+<a name="code--ex9.c-pyg.html-20"></a>    <span class="n">numbers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex9.c-pyg.html-21"></a>    <span class="n">numbers</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="p">;</span>
+<a name="code--ex9.c-pyg.html-22"></a>    <span class="n">numbers</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span><span class="p">;</span>
+<a name="code--ex9.c-pyg.html-23"></a>    <span class="n">numbers</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span><span class="p">;</span>
+<a name="code--ex9.c-pyg.html-24"></a>
+<a name="code--ex9.c-pyg.html-25"></a>    <span class="c1">// setup the name</span>
+<a name="code--ex9.c-pyg.html-26"></a>    <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="sc">&#39;Z&#39;</span><span class="p">;</span>
+<a name="code--ex9.c-pyg.html-27"></a>    <span class="n">name</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="sc">&#39;e&#39;</span><span class="p">;</span>
+<a name="code--ex9.c-pyg.html-28"></a>    <span class="n">name</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="sc">&#39;d&#39;</span><span class="p">;</span>
+<a name="code--ex9.c-pyg.html-29"></a>    <span class="n">name</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="sc">&#39;\0&#39;</span><span class="p">;</span>
+<a name="code--ex9.c-pyg.html-30"></a>
+<a name="code--ex9.c-pyg.html-31"></a>    <span class="c1">// then print them out initialized</span>
+<a name="code--ex9.c-pyg.html-32"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;numbers: %d %d %d %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex9.c-pyg.html-33"></a>            <span class="n">numbers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">numbers</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+<a name="code--ex9.c-pyg.html-34"></a>            <span class="n">numbers</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">numbers</span><span class="p">[</span><span class="mi">3</span><span class="p">]);</span>
+<a name="code--ex9.c-pyg.html-35"></a>
+<a name="code--ex9.c-pyg.html-36"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;name each: %c %c %c %c</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex9.c-pyg.html-37"></a>            <span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">name</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+<a name="code--ex9.c-pyg.html-38"></a>            <span class="n">name</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">name</span><span class="p">[</span><span class="mi">3</span><span class="p">]);</span>
+<a name="code--ex9.c-pyg.html-39"></a>
+<a name="code--ex9.c-pyg.html-40"></a>    <span class="c1">// print the name like a string</span>
+<a name="code--ex9.c-pyg.html-41"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;name: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">);</span>
+<a name="code--ex9.c-pyg.html-42"></a>
+<a name="code--ex9.c-pyg.html-43"></a>    <span class="c1">// another way to use name</span>
+<a name="code--ex9.c-pyg.html-44"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">another</span> <span class="o">=</span> <span class="s">&quot;Zed&quot;</span><span class="p">;</span>
+<a name="code--ex9.c-pyg.html-45"></a>
+<a name="code--ex9.c-pyg.html-46"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;another: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">another</span><span class="p">);</span>
+<a name="code--ex9.c-pyg.html-47"></a>
+<a name="code--ex9.c-pyg.html-48"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;another each: %c %c %c %c</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex9.c-pyg.html-49"></a>            <span class="n">another</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">another</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+<a name="code--ex9.c-pyg.html-50"></a>            <span class="n">another</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">another</span><span class="p">[</span><span class="mi">3</span><span class="p">]);</span>
+<a name="code--ex9.c-pyg.html-51"></a>
+<a name="code--ex9.c-pyg.html-52"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex9.c-pyg.html-53"></a><span class="p">}</span>
+</pre></div><p>In this code, we setup some arrays the tedious way, by assigning a value to
+each element.  In <tt class="docutils literal">numbers</tt> we are setting up numbers, but in <tt class="docutils literal">name</tt> we're
+actually building a string manually.</p>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>When you run this code you should see first the arrays printed with their
+contents initialized to zero, then in its initialized form:</p>
+<div class="highlight"><pre><a name="code--ex9.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex9
+<a name="code--ex9.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g    ex9.c   -o ex9</span>
+<a name="code--ex9.sh-session-pyg.html-3"></a><span class="gp">$</span> ./ex9
+<a name="code--ex9.sh-session-pyg.html-4"></a><span class="go">numbers: 0 0 0 0</span>
+<a name="code--ex9.sh-session-pyg.html-5"></a><span class="go">name each: a   </span>
+<a name="code--ex9.sh-session-pyg.html-6"></a><span class="go">name: a</span>
+<a name="code--ex9.sh-session-pyg.html-7"></a><span class="go">numbers: 1 2 3 4</span>
+<a name="code--ex9.sh-session-pyg.html-8"></a><span class="go">name each: Z e d </span>
+<a name="code--ex9.sh-session-pyg.html-9"></a><span class="go">name: Zed</span>
+<a name="code--ex9.sh-session-pyg.html-10"></a><span class="go">another: Zed</span>
+<a name="code--ex9.sh-session-pyg.html-11"></a><span class="go">another each: Z e d</span>
+<a name="code--ex9.sh-session-pyg.html-12"></a><span class="gp">$</span>
+</pre></div><p>You'll notice some interesting things about this program:</p>
+<ul class="simple">
+<li>I didn't have to give all 4 elements of the arrays to initialize them.
+This is a short-cut that C has where, if you set just one element, it'll
+fill the rest in with 0.</li>
+<li>When each element of <tt class="docutils literal">numbers</tt> is printed they all come out as
+0.</li>
+<li>When each element of <tt class="docutils literal">name</tt> is printed, only the first element 'a'
+shows up because the <tt class="docutils literal">'\0'</tt> character is special and won't display.</li>
+<li>Then the first time we print <tt class="docutils literal">name</tt> it only prints &quot;a&quot; because,
+since the array will be filled with 0 after the first 'a' in the
+initializer, then the string is correctly terminated by a <tt class="docutils literal">'\0'</tt>
+character.</li>
+<li>We then setup the arrays with a tedious manual assignment to each thing
+and print them out again.  Look at how they changed.  Now the numbers
+are set, but see how the <tt class="docutils literal">name</tt> string prints my name correctly?</li>
+<li>There's also two syntaxes for doing a string:
+<tt class="docutils literal">char name[4] = {'a'}</tt> on line 6
+vs. <tt class="docutils literal">char *another = &quot;name&quot;</tt> on line 44.  The first
+one is less common and the second is what you should use
+for string literals like this.</li>
+</ul>
+<p>Notice that I'm using the same syntax and style of code to interact with both
+an array of integers and an array of characters, but that <tt class="docutils literal">printf</tt> thinks
+that the <tt class="docutils literal">name</tt> is just a string.  Again, this is because to the C language
+there's no difference between a string and an array of characters.</p>
+<p>Finally, when you make string literals you should usually use the <tt class="docutils literal">char
+*another = &quot;Literal&quot;</tt> syntax.  This works out to be the same thing, but it's
+more idiomatic and easier to write.</p>
+</div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<p>The source of almost all bugs in C come from forgetting to have enough space,
+or forgetting to put a <tt class="docutils literal">'\0'</tt> at the end of a string.  In fact it's so common
+and hard to get right that the majority of good C code just doesn't use C style
+strings.  In later exercises we'll actually learn how to avoid C strings
+completely.</p>
+<p>In this program the key to breaking it is to forget to put the <tt class="docutils literal">'\0'</tt>
+character at the end of the strings.  There's a few ways to do this:</p>
+<ul class="simple">
+<li>Get rid of the initializers that setup <tt class="docutils literal">name</tt>.</li>
+<li>Accidentally set <tt class="docutils literal">name[3] = 'A';</tt> so that there's no terminator.</li>
+<li>Set the initializer to <tt class="docutils literal"><span class="pre">{'a','a','a','a'}</span></tt> so there's too many
+'a' characters and no space for the <tt class="docutils literal">'\0'</tt> terminator.</li>
+</ul>
+<p>Try to come up with some other ways to break this, and as usual run all of
+these under Valgrind so you can see exactly what is going on and what the
+errors are called.  Sometimes you'll make these mistakes and even Valgrind
+can't find them, but try moving where you declare the variables to see if you
+get the error.  This is part of the voodoo of C, that sometimes just where the
+variable is located changes the bug.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Assign the characters into <tt class="docutils literal">numbers</tt> and then use <tt class="docutils literal">printf</tt>
+to print them a character at a time.  What kind of compiler warnings
+did you get?</li>
+<li>Do the inverse for <tt class="docutils literal">name</tt>, trying to treat it like an array
+of <tt class="docutils literal">int</tt> and print it out one <tt class="docutils literal">int</tt> at a time.  What
+does Valgrind think of that?</li>
+<li>How many other ways can you print this out?</li>
+<li>If an array of characters is 4 bytes long, and an integer is 4 bytes
+long, then can you treat the whole <tt class="docutils literal">name</tt> array like it's just
+an integer?  How might you accomplish this crazy hack?</li>
+<li>Take out a piece of paper and draw out each of these arrays as a
+row of boxes. Then do the operations you just did on paper to see
+if you get them right.</li>
+<li>Convert <tt class="docutils literal">name</tt> to be in the style of <tt class="docutils literal">another</tt> and see
+if the code keeps working.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

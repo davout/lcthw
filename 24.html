@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 24: Input, Output, Files</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 24: Input, Output, Files</h1>
+            <p>You've been using <tt class="docutils literal">printf</tt> to print things, and that's great and all, but
+you need more.  In this exercise program you're using the functions
+<tt class="docutils literal">fscanf</tt> and <tt class="docutils literal">fgets</tt> to build information about a person in a
+structure.  After this simple introduction to reading input, you'll get
+a full list of the functions that C has for I/O.  Some of these you've
+already seen and used, so this will be another memorization exercise.</p>
+<div class="highlight"><pre><a name="code--ex24.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex24.c-pyg.html-2"></a><span class="cp">#include &quot;dbg.h&quot;</span>
+<a name="code--ex24.c-pyg.html-3"></a>
+<a name="code--ex24.c-pyg.html-4"></a><span class="cp">#define MAX_DATA 100</span>
+<a name="code--ex24.c-pyg.html-5"></a>
+<a name="code--ex24.c-pyg.html-6"></a><span class="k">typedef</span> <span class="k">enum</span> <span class="n">EyeColor</span> <span class="p">{</span>
+<a name="code--ex24.c-pyg.html-7"></a>    <span class="n">BLUE_EYES</span><span class="p">,</span> <span class="n">GREEN_EYES</span><span class="p">,</span> <span class="n">BROWN_EYES</span><span class="p">,</span>
+<a name="code--ex24.c-pyg.html-8"></a>    <span class="n">BLACK_EYES</span><span class="p">,</span> <span class="n">OTHER_EYES</span>
+<a name="code--ex24.c-pyg.html-9"></a><span class="p">}</span> <span class="n">EyeColor</span><span class="p">;</span>
+<a name="code--ex24.c-pyg.html-10"></a>
+<a name="code--ex24.c-pyg.html-11"></a><span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">EYE_COLOR_NAMES</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+<a name="code--ex24.c-pyg.html-12"></a>    <span class="s">&quot;Blue&quot;</span><span class="p">,</span> <span class="s">&quot;Green&quot;</span><span class="p">,</span> <span class="s">&quot;Brown&quot;</span><span class="p">,</span> <span class="s">&quot;Black&quot;</span><span class="p">,</span> <span class="s">&quot;Other&quot;</span>
+<a name="code--ex24.c-pyg.html-13"></a><span class="p">};</span>
+<a name="code--ex24.c-pyg.html-14"></a>
+<a name="code--ex24.c-pyg.html-15"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="n">Person</span> <span class="p">{</span>
+<a name="code--ex24.c-pyg.html-16"></a>    <span class="kt">int</span> <span class="n">age</span><span class="p">;</span>
+<a name="code--ex24.c-pyg.html-17"></a>    <span class="kt">char</span> <span class="n">first_name</span><span class="p">[</span><span class="n">MAX_DATA</span><span class="p">];</span>
+<a name="code--ex24.c-pyg.html-18"></a>    <span class="kt">char</span> <span class="n">last_name</span><span class="p">[</span><span class="n">MAX_DATA</span><span class="p">];</span>
+<a name="code--ex24.c-pyg.html-19"></a>    <span class="n">EyeColor</span> <span class="n">eyes</span><span class="p">;</span>
+<a name="code--ex24.c-pyg.html-20"></a>    <span class="kt">float</span> <span class="n">income</span><span class="p">;</span>
+<a name="code--ex24.c-pyg.html-21"></a><span class="p">}</span> <span class="n">Person</span><span class="p">;</span>
+<a name="code--ex24.c-pyg.html-22"></a>
+<a name="code--ex24.c-pyg.html-23"></a>
+<a name="code--ex24.c-pyg.html-24"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex24.c-pyg.html-25"></a><span class="p">{</span>
+<a name="code--ex24.c-pyg.html-26"></a>    <span class="n">Person</span> <span class="n">you</span> <span class="o">=</span> <span class="p">{.</span><span class="n">age</span> <span class="o">=</span> <span class="mi">0</span><span class="p">};</span>
+<a name="code--ex24.c-pyg.html-27"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex24.c-pyg.html-28"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">in</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex24.c-pyg.html-29"></a>
+<a name="code--ex24.c-pyg.html-30"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;What&#39;s your First Name? &quot;</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-31"></a>    <span class="n">in</span> <span class="o">=</span> <span class="n">fgets</span><span class="p">(</span><span class="n">you</span><span class="p">.</span><span class="n">first_name</span><span class="p">,</span> <span class="n">MAX_DATA</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">stdin</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-32"></a>    <span class="n">check</span><span class="p">(</span><span class="n">in</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to read first name.&quot;</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-33"></a>
+<a name="code--ex24.c-pyg.html-34"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;What&#39;s your Last Name? &quot;</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-35"></a>    <span class="n">in</span> <span class="o">=</span> <span class="n">fgets</span><span class="p">(</span><span class="n">you</span><span class="p">.</span><span class="n">last_name</span><span class="p">,</span> <span class="n">MAX_DATA</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">stdin</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-36"></a>    <span class="n">check</span><span class="p">(</span><span class="n">in</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to read last name.&quot;</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-37"></a>
+<a name="code--ex24.c-pyg.html-38"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;How old are you? &quot;</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-39"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">fscanf</span><span class="p">(</span><span class="n">stdin</span><span class="p">,</span> <span class="s">&quot;%d&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">you</span><span class="p">.</span><span class="n">age</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-40"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;You have to enter a number.&quot;</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-41"></a>
+<a name="code--ex24.c-pyg.html-42"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;What color are your eyes:</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-43"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;=</span> <span class="n">OTHER_EYES</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex24.c-pyg.html-44"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d) %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">EYE_COLOR_NAMES</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="code--ex24.c-pyg.html-45"></a>    <span class="p">}</span>
+<a name="code--ex24.c-pyg.html-46"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;&gt; &quot;</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-47"></a>
+<a name="code--ex24.c-pyg.html-48"></a>    <span class="kt">int</span> <span class="n">eyes</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex24.c-pyg.html-49"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">fscanf</span><span class="p">(</span><span class="n">stdin</span><span class="p">,</span> <span class="s">&quot;%d&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">eyes</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-50"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;You have to enter a number.&quot;</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-51"></a>
+<a name="code--ex24.c-pyg.html-52"></a>    <span class="n">you</span><span class="p">.</span><span class="n">eyes</span> <span class="o">=</span> <span class="n">eyes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex24.c-pyg.html-53"></a>    <span class="n">check</span><span class="p">(</span><span class="n">you</span><span class="p">.</span><span class="n">eyes</span> <span class="o">&lt;=</span> <span class="n">OTHER_EYES</span> <span class="o">&amp;&amp;</span> <span class="n">you</span><span class="p">.</span><span class="n">eyes</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Do it right, that&#39;s not an option.&quot;</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-54"></a>
+<a name="code--ex24.c-pyg.html-55"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;How much do you make an hour? &quot;</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-56"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">fscanf</span><span class="p">(</span><span class="n">stdin</span><span class="p">,</span> <span class="s">&quot;%f&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">you</span><span class="p">.</span><span class="n">income</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-57"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Enter a floating point number.&quot;</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-58"></a>
+<a name="code--ex24.c-pyg.html-59"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;----- RESULTS -----</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-60"></a>
+<a name="code--ex24.c-pyg.html-61"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;First Name: %s&quot;</span><span class="p">,</span> <span class="n">you</span><span class="p">.</span><span class="n">first_name</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-62"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Last Name: %s&quot;</span><span class="p">,</span> <span class="n">you</span><span class="p">.</span><span class="n">last_name</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-63"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Age: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">you</span><span class="p">.</span><span class="n">age</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-64"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Eyes: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">EYE_COLOR_NAMES</span><span class="p">[</span><span class="n">you</span><span class="p">.</span><span class="n">eyes</span><span class="p">]);</span>
+<a name="code--ex24.c-pyg.html-65"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Income: %f</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">you</span><span class="p">.</span><span class="n">income</span><span class="p">);</span>
+<a name="code--ex24.c-pyg.html-66"></a>
+<a name="code--ex24.c-pyg.html-67"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex24.c-pyg.html-68"></a><span class="nl">error:</span>
+<a name="code--ex24.c-pyg.html-69"></a>
+<a name="code--ex24.c-pyg.html-70"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex24.c-pyg.html-71"></a><span class="p">}</span>
+</pre></div><p>This program is deceptively simple, and introduces a function called
+<tt class="docutils literal">fscanf</tt> which is the &quot;file scanf&quot;.  The <tt class="docutils literal">scanf</tt> family of
+functions are the inverse of the <tt class="docutils literal">printf</tt> versions.  Where
+<tt class="docutils literal">printf</tt> printed out data based on a format, <tt class="docutils literal">scanf</tt> reads
+(or scans) input based on a format.</p>
+<p>There's nothing original in the beginning of the file, so here's what
+the <tt class="docutils literal">main</tt> is doing:</p>
+<dl class="docutils">
+<dt>ex24.c:24-28</dt>
+<dd>Set up some variables we'll need.</dd>
+<dt>ex24.c:30-32</dt>
+<dd>Get your first name using the <tt class="docutils literal">fgets</tt> function, which reads a
+string from the input (in this case <tt class="docutils literal">stdin</tt>) but makes sure it
+doesn't overflow the given buffer.</dd>
+<dt>ex24.c:34-36</dt>
+<dd>Same thing for <tt class="docutils literal">you.last_name</tt>, again using <tt class="docutils literal">fgets</tt>.</dd>
+<dt>ex24.c:38-39</dt>
+<dd>Uses <tt class="docutils literal">fscanf</tt> to read an integer from <tt class="docutils literal">stdin</tt> and put it
+into <tt class="docutils literal">you.age</tt>.  You can see that the same format string is used
+as <tt class="docutils literal">printf</tt> to print an integer.  You should also see that you have
+to give the <em>address</em> of <tt class="docutils literal">you.age</tt> so that <tt class="docutils literal">fscanf</tt> has
+a pointer to it and can modify it.  This is a good example of using a
+pointer to a piece of data as an &quot;out parameter&quot;.</dd>
+<dt>ex24.c:41-45</dt>
+<dd>Print out all the options available for eye color, with a matching
+number that works with the <tt class="docutils literal">EyeColor</tt> enum above.</dd>
+<dt>ex24.c:47-50</dt>
+<dd>Using <tt class="docutils literal">fscanf</tt> again, get a number for the <tt class="docutils literal">you.eyes</tt>,
+but make sure the input is valid.  This is important because someone can
+enter a value outside the <tt class="docutils literal">EYE_COLOR_NAMES</tt> array and cause a
+segfault.</dd>
+<dt>ex24.c:52-53</dt>
+<dd>Get how much you make as a <tt class="docutils literal">float</tt> for the <tt class="docutils literal">you.income</tt>.</dd>
+<dt>ex24.c:55-61</dt>
+<dd>Print everything out so you can see if you have it right.  Notice
+that <tt class="docutils literal">EYE_COLOR_NAMES</tt> is used to print out what the <tt class="docutils literal">EyeColor</tt>
+enum is actually called.</dd>
+</dl>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>When you run this program you should see your inputs being properly converted.
+Make sure you try to give it bogus input too so you can see how it protects
+against the input.</p>
+<div class="highlight"><pre><a name="code--ex24.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex24
+<a name="code--ex24.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g -DNDEBUG    ex24.c   -o ex24</span>
+<a name="code--ex24.sh-session-pyg.html-3"></a><span class="gp">$</span> ./ex24
+<a name="code--ex24.sh-session-pyg.html-4"></a><span class="go">What&#39;s your First Name? Zed</span>
+<a name="code--ex24.sh-session-pyg.html-5"></a><span class="go">What&#39;s your Last Name? Shaw</span>
+<a name="code--ex24.sh-session-pyg.html-6"></a><span class="go">How old are you? 37</span>
+<a name="code--ex24.sh-session-pyg.html-7"></a><span class="go">What color are your eyes:</span>
+<a name="code--ex24.sh-session-pyg.html-8"></a><span class="go">1) Blue</span>
+<a name="code--ex24.sh-session-pyg.html-9"></a><span class="go">2) Green</span>
+<a name="code--ex24.sh-session-pyg.html-10"></a><span class="go">3) Brown</span>
+<a name="code--ex24.sh-session-pyg.html-11"></a><span class="go">4) Black</span>
+<a name="code--ex24.sh-session-pyg.html-12"></a><span class="go">5) Other</span>
+<a name="code--ex24.sh-session-pyg.html-13"></a><span class="gp">&gt;</span> 1
+<a name="code--ex24.sh-session-pyg.html-14"></a><span class="go">How much do you make an hour? 1.2345</span>
+<a name="code--ex24.sh-session-pyg.html-15"></a><span class="go">----- RESULTS -----</span>
+<a name="code--ex24.sh-session-pyg.html-16"></a><span class="go">First Name: Zed</span>
+<a name="code--ex24.sh-session-pyg.html-17"></a><span class="go">Last Name: Shaw</span>
+<a name="code--ex24.sh-session-pyg.html-18"></a><span class="go">Age: 37</span>
+<a name="code--ex24.sh-session-pyg.html-19"></a><span class="go">Eyes: Blue</span>
+<a name="code--ex24.sh-session-pyg.html-20"></a><span class="go">Income: 1.234500</span>
+</pre></div></div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<p>This is all fine and good, but the real important part of this exercise is
+how <tt class="docutils literal">scanf</tt> actually sucks.  It's fine for simple conversion of numbers,
+but fails for strings because it's difficult to tell <tt class="docutils literal">scanf</tt> how big a buffer
+is before you read.  There's also a problem with a function like <tt class="docutils literal">gets</tt>
+(not <tt class="docutils literal">fgets</tt>, the non-f version) which we avoided.  That function has
+no idea how big the input buffer is at all and will just trash your program.</p>
+<p>To demonstrate the problems with <tt class="docutils literal">fscanf</tt> and strings, change the lines
+that use <tt class="docutils literal">fgets</tt> so they are <tt class="docutils literal">fscanf(stdin, &quot;%50s&quot;, you.first_name)</tt>
+and then try to use it again.  Notice it seems to read too much and then
+eat your enter key?  This doesn't do what you think it does, and really
+rather than deal with weird <tt class="docutils literal">scanf</tt> issues, just use <tt class="docutils literal">fgets</tt>.</p>
+<p>Next, change the <tt class="docutils literal">fgets</tt> to use <tt class="docutils literal">gets</tt>, then bust out your
+<tt class="docutils literal">valgrind</tt> and do this:  <tt class="docutils literal">valgrind ./ex24 &lt; /dev/urandom</tt>
+to feed random garbage into your program.  This is called &quot;fuzzing&quot;
+your program, and it is a good way to find input bugs.  In this case,
+you're feeding garbage from the <tt class="docutils literal">/dev/urandom</tt> file, and then watching
+it crash.  On some platforms you may have to do this a few times, or even
+adjust the <tt class="docutils literal">MAX_DATA</tt> define so it's small enough.</p>
+<p>The <tt class="docutils literal">gets</tt> function is so bad that some platforms actually warn you
+when the <em>program</em> runs that you're using <tt class="docutils literal">gets</tt>.  You should
+never use this function, ever.</p>
+<p>Finally, take the input for <tt class="docutils literal">you.eyes</tt> and remove the check that the
+number given is within the right range.  Then feed it bad numbers like -1 or
+1000.  Do this under Valgrind too so you can see what happens.</p>
+</div>
+<div class="section" id="the-i-o-functions">
+<h1>The I/O Functions</h1>
+<p>This is a short list of various I/O functions that you should look up and
+create index cards that have the function name, what it does, and all the
+variants similar to it.</p>
+<ul class="simple">
+<li><tt class="docutils literal">fscanf</tt></li>
+<li><tt class="docutils literal">fgets</tt></li>
+<li><tt class="docutils literal">fopen</tt></li>
+<li><tt class="docutils literal">freopen</tt></li>
+<li><tt class="docutils literal">fdopen</tt></li>
+<li><tt class="docutils literal">fclose</tt></li>
+<li><tt class="docutils literal">fcloseall</tt></li>
+<li><tt class="docutils literal">fgetpos</tt></li>
+<li><tt class="docutils literal">fseek</tt></li>
+<li><tt class="docutils literal">ftell</tt></li>
+<li><tt class="docutils literal">rewind</tt></li>
+<li><tt class="docutils literal">fprintf</tt></li>
+<li><tt class="docutils literal">fwrite</tt></li>
+<li><tt class="docutils literal">fread</tt></li>
+</ul>
+<p>Go through these and memorize the different variants and what they do.  For example,
+for the card on <tt class="docutils literal">fscanf</tt> you'll have <tt class="docutils literal">scanf</tt>, <tt class="docutils literal">sscanf</tt>, <tt class="docutils literal">vscanf</tt>,
+etc. and then what each of those do on the back.</p>
+<p>Finally, to get the information you need for these cards, use <tt class="docutils literal">man</tt> to
+read the help for it.  For example, the page for <tt class="docutils literal">fscanf</tt> comes from
+<tt class="docutils literal">man fscanf</tt>.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Rewrite this to not use <tt class="docutils literal">fscanf</tt> at all.  You'll need to use
+functions like <tt class="docutils literal">atoi</tt> to convert the input strings to numbers.</li>
+<li>Change this to use plain <tt class="docutils literal">scanf</tt> instead of <tt class="docutils literal">fscanf</tt> to
+see what the difference is.</li>
+<li>Fix it so that the input names get stripped of the trailing newline
+characters and any whitespace.</li>
+<li>Use <tt class="docutils literal">scanf</tt> to write a function that reads a character at a time
+and files in the names but doesn't go past the end.  Make this function
+generic so it can take a size for the string, and make sure you end
+the string with <tt class="docutils literal">'\0'</tt> no matter what.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

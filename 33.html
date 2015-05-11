@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 33: Linked List Algorithms</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 33: Linked List Algorithms</h1>
+            <p>I'm going to cover two algorithms you can do on a linked list that involve
+sorting.  I'm going to warn you first that if you need to sort the data, then
+don't use a linked list.  These are horrible for sorting things, and there's
+much better data structures you can use if that's a requirement.  I'm covering
+these two algorithms because they are slightly difficult to pull off with a
+linked list and get you thinking about manipulating them efficiently.</p>
+<p>In the interest of writing this book, I'm going to put the algorithms in two
+different files <tt class="docutils literal">list_algos.h</tt> and <tt class="docutils literal">list_algos.c</tt> then write a test
+in <tt class="docutils literal">list_algos_test.c</tt>.  For now just follow my structure, as it does
+keep things clean, but if you ever work on other libraries remember this isn't
+a common structure.</p>
+<p>In this exercise I'm going to also give you an extra challenge and I want you
+to try not to cheat.  I'm going to give you the <em>unit test</em> first, and I
+want you to type it in.  Then I want you to try and implement the two
+algorithms based on their descriptions in Wikipedia before seeing if your code
+is like my code.</p>
+<div class="section" id="bubble-and-merge-sort">
+<h1>Bubble And Merge Sort</h1>
+<p>You know what's awesome about the Internet?  I can just link you to the
+<a class="reference external" href="http://en.wikipedia.org/wiki/Bubble_sort">Bubble Sort page</a>
+<a class="reference external" href="http://en.wikipedia.org/wiki/Merge_sort">Merge Sort page</a>
+and tell you to read that.  Man, that saves me a boat load of typing.   Now I
+can tell you how to actually implement each of these using the pseudo-code they
+have there.  Here's how you can tackle an algorithm like this:</p>
+<ul class="simple">
+<li>Read the description and look at any visualizations it has.</li>
+<li>Either draw the algorithm on paper using boxes and lines, or actually take a deck of numbered cards (like Poker Cards)
+and try to do the algorithm manually.  This gives you a concrete demonstration
+of how the algorithm works.</li>
+<li>Create the skeleton functions in your <tt class="docutils literal">list_algos.c</tt> file and make a working <tt class="docutils literal">list_algos.h</tt> file, then setup
+your test harness.</li>
+<li>Write your first failing test and get everything to compile.</li>
+<li>Go back to the Wikipedia page and copy-paste the pseudo-code (not the C code!) into the guts of the first function you're making.</li>
+<li>Translate this pseudo-code into good C code like I've taught you, using your unit test to make sure it's working.</li>
+<li>Fill out some more tests for edge cases like, empty lists, already sorted lists, etc.</li>
+<li>Repeat for the next algorithm and test.</li>
+</ul>
+<p>I just gave you the secret to figuring out most of the algorithms out there,
+that is until you get to some of the more insane ones.  In this case you're
+just doing the Bubble and Merge Sorts from Wikipedia, but those will be good
+starters.</p>
+</div>
+<div class="section" id="the-unit-test">
+<h1>The Unit Test</h1>
+<p>Here is the unit test you should try to get passing:</p>
+<div class="highlight"><pre><a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-1"></a><span class="cp">#include &quot;minunit.h&quot;</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-2"></a><span class="cp">#include &lt;lcthw/list_algos.h&gt;</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-3"></a><span class="cp">#include &lt;assert.h&gt;</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-4"></a><span class="cp">#include &lt;string.h&gt;</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-5"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-6"></a><span class="kt">char</span> <span class="o">*</span><span class="n">values</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;XXXX&quot;</span><span class="p">,</span> <span class="s">&quot;1234&quot;</span><span class="p">,</span> <span class="s">&quot;abcd&quot;</span><span class="p">,</span> <span class="s">&quot;xjvef&quot;</span><span class="p">,</span> <span class="s">&quot;NDSS&quot;</span><span class="p">};</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-7"></a><span class="cp">#define NUM_VALUES 5</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-8"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-9"></a><span class="n">List</span> <span class="o">*</span><span class="nf">create_words</span><span class="p">()</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-10"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-11"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-12"></a>    <span class="n">List</span> <span class="o">*</span><span class="n">words</span> <span class="o">=</span> <span class="n">List_create</span><span class="p">();</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-13"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-14"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">NUM_VALUES</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-15"></a>        <span class="n">List_push</span><span class="p">(</span><span class="n">words</span><span class="p">,</span> <span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-16"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-17"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-18"></a>    <span class="k">return</span> <span class="n">words</span><span class="p">;</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-19"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-20"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-21"></a><span class="kt">int</span> <span class="nf">is_sorted</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">words</span><span class="p">)</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-22"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-23"></a>    <span class="n">LIST_FOREACH</span><span class="p">(</span><span class="n">words</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">next</span><span class="p">,</span> <span class="n">cur</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-24"></a>        <span class="k">if</span><span class="p">(</span><span class="n">cur</span><span class="o">-&gt;</span><span class="n">next</span> <span class="o">&amp;&amp;</span> <span class="n">strcmp</span><span class="p">(</span><span class="n">cur</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">,</span> <span class="n">cur</span><span class="o">-&gt;</span><span class="n">next</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-25"></a>            <span class="n">debug</span><span class="p">(</span><span class="s">&quot;%s %s&quot;</span><span class="p">,</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">cur</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">cur</span><span class="o">-&gt;</span><span class="n">next</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-26"></a>            <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-27"></a>        <span class="p">}</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-28"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-29"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-30"></a>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-31"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-32"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-33"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_bubble_sort</span><span class="p">()</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-34"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-35"></a>    <span class="n">List</span> <span class="o">*</span><span class="n">words</span> <span class="o">=</span> <span class="n">create_words</span><span class="p">();</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-36"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-37"></a>    <span class="c1">// should work on a list that needs sorting</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-38"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">List_bubble_sort</span><span class="p">(</span><span class="n">words</span><span class="p">,</span> <span class="p">(</span><span class="n">List_compare</span><span class="p">)</span><span class="n">strcmp</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-39"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Bubble sort failed.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-40"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">is_sorted</span><span class="p">(</span><span class="n">words</span><span class="p">),</span> <span class="s">&quot;Words are not sorted after bubble sort.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-41"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-42"></a>    <span class="c1">// should work on an already sorted list</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-43"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">List_bubble_sort</span><span class="p">(</span><span class="n">words</span><span class="p">,</span> <span class="p">(</span><span class="n">List_compare</span><span class="p">)</span><span class="n">strcmp</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-44"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Bubble sort of already sorted failed.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-45"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">is_sorted</span><span class="p">(</span><span class="n">words</span><span class="p">),</span> <span class="s">&quot;Words should be sort if already bubble sorted.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-46"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-47"></a>    <span class="n">List_destroy</span><span class="p">(</span><span class="n">words</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-48"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-49"></a>    <span class="c1">// should work on an empty list</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-50"></a>    <span class="n">words</span> <span class="o">=</span> <span class="n">List_create</span><span class="p">(</span><span class="n">words</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-51"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">List_bubble_sort</span><span class="p">(</span><span class="n">words</span><span class="p">,</span> <span class="p">(</span><span class="n">List_compare</span><span class="p">)</span><span class="n">strcmp</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-52"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Bubble sort failed on empty list.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-53"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">is_sorted</span><span class="p">(</span><span class="n">words</span><span class="p">),</span> <span class="s">&quot;Words should be sorted if empty.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-54"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-55"></a>    <span class="n">List_destroy</span><span class="p">(</span><span class="n">words</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-56"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-57"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-58"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-59"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-60"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_merge_sort</span><span class="p">()</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-61"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-62"></a>    <span class="n">List</span> <span class="o">*</span><span class="n">words</span> <span class="o">=</span> <span class="n">create_words</span><span class="p">();</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-63"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-64"></a>    <span class="c1">// should work on a list that needs sorting</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-65"></a>    <span class="n">List</span> <span class="o">*</span><span class="n">res</span> <span class="o">=</span> <span class="n">List_merge_sort</span><span class="p">(</span><span class="n">words</span><span class="p">,</span> <span class="p">(</span><span class="n">List_compare</span><span class="p">)</span><span class="n">strcmp</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-66"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">is_sorted</span><span class="p">(</span><span class="n">res</span><span class="p">),</span> <span class="s">&quot;Words are not sorted after merge sort.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-67"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-68"></a>    <span class="n">List</span> <span class="o">*</span><span class="n">res2</span> <span class="o">=</span> <span class="n">List_merge_sort</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="p">(</span><span class="n">List_compare</span><span class="p">)</span><span class="n">strcmp</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-69"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">is_sorted</span><span class="p">(</span><span class="n">res</span><span class="p">),</span> <span class="s">&quot;Should still be sorted after merge sort.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-70"></a>    <span class="n">List_destroy</span><span class="p">(</span><span class="n">res2</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-71"></a>    <span class="n">List_destroy</span><span class="p">(</span><span class="n">res</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-72"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-73"></a>    <span class="n">List_destroy</span><span class="p">(</span><span class="n">words</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-74"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-75"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-76"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-77"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-78"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">all_tests</span><span class="p">()</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-79"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-80"></a>    <span class="n">mu_suite_start</span><span class="p">();</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-81"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-82"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_bubble_sort</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-83"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_merge_sort</span><span class="p">);</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-84"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-85"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-86"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-87"></a>
+<a name="code--liblcthw--tests--list_algos_tests.c-pyg.html-88"></a><span class="n">RUN_TESTS</span><span class="p">(</span><span class="n">all_tests</span><span class="p">);</span>
+</pre></div><p>I suggest that you start with the bubble sort and get that working, then move on to the merge sort.  What I would do is lay
+out the function prototypes and skeletons that get all three files compiling, but not passing the test.  Then just fill in
+the implementation until it starts working.</p>
+</div>
+<div class="section" id="the-implementation">
+<h1>The Implementation</h1>
+<p>Are you cheating?  In future exercises I will do exercises where I just give
+you a unit test and tell you to implement it, so it'll be good practice for you
+to not look at this code until you get your own working.  Here's the code for
+the <tt class="docutils literal">list_algos.c</tt> and <tt class="docutils literal">list_algos.h</tt>:</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--list_algos.h-pyg.html-1"></a><span class="cp">#ifndef lcthw_List_algos_h</span>
+<a name="code--liblcthw--src--lcthw--list_algos.h-pyg.html-2"></a><span class="cp">#define lcthw_List_algos_h</span>
+<a name="code--liblcthw--src--lcthw--list_algos.h-pyg.html-3"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.h-pyg.html-4"></a><span class="cp">#include &lt;lcthw/list.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--list_algos.h-pyg.html-5"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.h-pyg.html-6"></a><span class="k">typedef</span> <span class="nf">int</span> <span class="p">(</span><span class="o">*</span><span class="n">List_compare</span><span class="p">)(</span><span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="k">const</span> <span class="kt">void</span> <span class="o">*</span><span class="n">b</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.h-pyg.html-7"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.h-pyg.html-8"></a><span class="kt">int</span> <span class="nf">List_bubble_sort</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">,</span> <span class="n">List_compare</span> <span class="n">cmp</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.h-pyg.html-9"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.h-pyg.html-10"></a><span class="n">List</span> <span class="o">*</span><span class="nf">List_merge_sort</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">,</span> <span class="n">List_compare</span> <span class="n">cmp</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.h-pyg.html-11"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.h-pyg.html-12"></a><span class="cp">#endif</span>
+</pre></div><div class="highlight"><pre><a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-1"></a><span class="cp">#include &lt;lcthw/list_algos.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-2"></a><span class="cp">#include &lt;lcthw/dbg.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-3"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-4"></a><span class="kr">inline</span> <span class="kt">void</span> <span class="nf">ListNode_swap</span><span class="p">(</span><span class="n">ListNode</span> <span class="o">*</span><span class="n">a</span><span class="p">,</span> <span class="n">ListNode</span> <span class="o">*</span><span class="n">b</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-5"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-6"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">temp</span> <span class="o">=</span> <span class="n">a</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-7"></a>    <span class="n">a</span><span class="o">-&gt;</span><span class="n">value</span> <span class="o">=</span> <span class="n">b</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-8"></a>    <span class="n">b</span><span class="o">-&gt;</span><span class="n">value</span> <span class="o">=</span> <span class="n">temp</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-9"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-10"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-11"></a><span class="kt">int</span> <span class="nf">List_bubble_sort</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">,</span> <span class="n">List_compare</span> <span class="n">cmp</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-12"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-13"></a>    <span class="kt">int</span> <span class="n">sorted</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-14"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-15"></a>    <span class="k">if</span><span class="p">(</span><span class="n">List_count</span><span class="p">(</span><span class="n">list</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-16"></a>        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>  <span class="c1">// already sorted</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-17"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-18"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-19"></a>    <span class="k">do</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-20"></a>        <span class="n">sorted</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-21"></a>        <span class="n">LIST_FOREACH</span><span class="p">(</span><span class="n">list</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">next</span><span class="p">,</span> <span class="n">cur</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-22"></a>            <span class="k">if</span><span class="p">(</span><span class="n">cur</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-23"></a>                <span class="k">if</span><span class="p">(</span><span class="n">cmp</span><span class="p">(</span><span class="n">cur</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">,</span> <span class="n">cur</span><span class="o">-&gt;</span><span class="n">next</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-24"></a>                    <span class="n">ListNode_swap</span><span class="p">(</span><span class="n">cur</span><span class="p">,</span> <span class="n">cur</span><span class="o">-&gt;</span><span class="n">next</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-25"></a>                    <span class="n">sorted</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-26"></a>                <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-27"></a>            <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-28"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-29"></a>    <span class="p">}</span> <span class="k">while</span><span class="p">(</span><span class="o">!</span><span class="n">sorted</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-30"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-31"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-32"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-33"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-34"></a><span class="kr">inline</span> <span class="n">List</span> <span class="o">*</span><span class="nf">List_merge</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">left</span><span class="p">,</span> <span class="n">List</span> <span class="o">*</span><span class="n">right</span><span class="p">,</span> <span class="n">List_compare</span> <span class="n">cmp</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-35"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-36"></a>    <span class="n">List</span> <span class="o">*</span><span class="n">result</span> <span class="o">=</span> <span class="n">List_create</span><span class="p">();</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-37"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">val</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-38"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-39"></a>    <span class="k">while</span><span class="p">(</span><span class="n">List_count</span><span class="p">(</span><span class="n">left</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">||</span> <span class="n">List_count</span><span class="p">(</span><span class="n">right</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-40"></a>        <span class="k">if</span><span class="p">(</span><span class="n">List_count</span><span class="p">(</span><span class="n">left</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">List_count</span><span class="p">(</span><span class="n">right</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-41"></a>            <span class="k">if</span><span class="p">(</span><span class="n">cmp</span><span class="p">(</span><span class="n">List_first</span><span class="p">(</span><span class="n">left</span><span class="p">),</span> <span class="n">List_first</span><span class="p">(</span><span class="n">right</span><span class="p">))</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-42"></a>                <span class="n">val</span> <span class="o">=</span> <span class="n">List_shift</span><span class="p">(</span><span class="n">left</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-43"></a>            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-44"></a>                <span class="n">val</span> <span class="o">=</span> <span class="n">List_shift</span><span class="p">(</span><span class="n">right</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-45"></a>            <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-46"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-47"></a>            <span class="n">List_push</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">val</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-48"></a>        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">List_count</span><span class="p">(</span><span class="n">left</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-49"></a>            <span class="n">val</span> <span class="o">=</span> <span class="n">List_shift</span><span class="p">(</span><span class="n">left</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-50"></a>            <span class="n">List_push</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">val</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-51"></a>        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">List_count</span><span class="p">(</span><span class="n">right</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-52"></a>            <span class="n">val</span> <span class="o">=</span> <span class="n">List_shift</span><span class="p">(</span><span class="n">right</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-53"></a>            <span class="n">List_push</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">val</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-54"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-55"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-56"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-57"></a>    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-58"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-59"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-60"></a><span class="n">List</span> <span class="o">*</span><span class="nf">List_merge_sort</span><span class="p">(</span><span class="n">List</span> <span class="o">*</span><span class="n">list</span><span class="p">,</span> <span class="n">List_compare</span> <span class="n">cmp</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-61"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-62"></a>    <span class="k">if</span><span class="p">(</span><span class="n">List_count</span><span class="p">(</span><span class="n">list</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-63"></a>        <span class="k">return</span> <span class="n">list</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-64"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-65"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-66"></a>    <span class="n">List</span> <span class="o">*</span><span class="n">left</span> <span class="o">=</span> <span class="n">List_create</span><span class="p">();</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-67"></a>    <span class="n">List</span> <span class="o">*</span><span class="n">right</span> <span class="o">=</span> <span class="n">List_create</span><span class="p">();</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-68"></a>    <span class="kt">int</span> <span class="n">middle</span> <span class="o">=</span> <span class="n">List_count</span><span class="p">(</span><span class="n">list</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-69"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-70"></a>    <span class="n">LIST_FOREACH</span><span class="p">(</span><span class="n">list</span><span class="p">,</span> <span class="n">first</span><span class="p">,</span> <span class="n">next</span><span class="p">,</span> <span class="n">cur</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-71"></a>        <span class="k">if</span><span class="p">(</span><span class="n">middle</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-72"></a>            <span class="n">List_push</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">cur</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-73"></a>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-74"></a>            <span class="n">List_push</span><span class="p">(</span><span class="n">right</span><span class="p">,</span> <span class="n">cur</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-75"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-76"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-77"></a>        <span class="n">middle</span><span class="o">--</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-78"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-79"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-80"></a>    <span class="n">List</span> <span class="o">*</span><span class="n">sort_left</span> <span class="o">=</span> <span class="n">List_merge_sort</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">cmp</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-81"></a>    <span class="n">List</span> <span class="o">*</span><span class="n">sort_right</span> <span class="o">=</span> <span class="n">List_merge_sort</span><span class="p">(</span><span class="n">right</span><span class="p">,</span> <span class="n">cmp</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-82"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-83"></a>    <span class="k">if</span><span class="p">(</span><span class="n">sort_left</span> <span class="o">!=</span> <span class="n">left</span><span class="p">)</span> <span class="n">List_destroy</span><span class="p">(</span><span class="n">left</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-84"></a>    <span class="k">if</span><span class="p">(</span><span class="n">sort_right</span> <span class="o">!=</span> <span class="n">right</span><span class="p">)</span> <span class="n">List_destroy</span><span class="p">(</span><span class="n">right</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-85"></a>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-86"></a>    <span class="k">return</span> <span class="n">List_merge</span><span class="p">(</span><span class="n">sort_left</span><span class="p">,</span> <span class="n">sort_right</span><span class="p">,</span> <span class="n">cmp</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--list_algos.c-pyg.html-87"></a><span class="p">}</span>
+</pre></div><p>The bubble sort isn't too bad to figure out, although it is really slow.  The
+merge sort is much more complicated, and honestly I could probably spend a bit
+more time optimizing this code if I wanted to sacrifice clarity.</p>
+<p>There is another way to implement merge sort using a &quot;bottom up&quot; method, but
+it's a little harder to understand so I didn't do it.  As I've already said,
+sorting algorithms on linked lists are entirely pointless.  You could spend
+all day trying to make this faster and it will still be slower than almost
+any other sortable data structure.  The nature of linked lists is such that
+you simply don't use them if you need to sort things.</p>
+</div>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>If everything works then you should get something like this:</p>
+<div class="highlight"><pre><a name="code--ex33.sh-session-pyg.html-1"></a><span class="gp">$</span> make clean all
+<a name="code--ex33.sh-session-pyg.html-2"></a><span class="go">rm -rf build src/lcthw/list.o src/lcthw/list_algos.o tests/list_algos_tests tests/list_tests</span>
+<a name="code--ex33.sh-session-pyg.html-3"></a><span class="go">rm -f tests/tests.log </span>
+<a name="code--ex33.sh-session-pyg.html-4"></a><span class="go">find . -name &quot;*.gc*&quot; -exec rm {} \;</span>
+<a name="code--ex33.sh-session-pyg.html-5"></a><span class="go">rm -rf `find . -name &quot;*.dSYM&quot; -print`</span>
+<a name="code--ex33.sh-session-pyg.html-6"></a><span class="go">cc -g -O2 -Wall -Wextra -Isrc -rdynamic -DNDEBUG  -fPIC   -c -o src/lcthw/list.o src/lcthw/list.c</span>
+<a name="code--ex33.sh-session-pyg.html-7"></a><span class="go">cc -g -O2 -Wall -Wextra -Isrc -rdynamic -DNDEBUG  -fPIC   -c -o src/lcthw/list_algos.o src/lcthw/list_algos.c</span>
+<a name="code--ex33.sh-session-pyg.html-8"></a><span class="go">ar rcs build/liblcthw.a src/lcthw/list.o src/lcthw/list_algos.o</span>
+<a name="code--ex33.sh-session-pyg.html-9"></a><span class="go">ranlib build/liblcthw.a</span>
+<a name="code--ex33.sh-session-pyg.html-10"></a><span class="go">cc -shared -o build/liblcthw.so src/lcthw/list.o src/lcthw/list_algos.o</span>
+<a name="code--ex33.sh-session-pyg.html-11"></a><span class="go">cc -g -O2 -Wall -Wextra -Isrc -rdynamic -DNDEBUG  build/liblcthw.a    tests/list_algos_tests.c   -o tests/list_algos_tests</span>
+<a name="code--ex33.sh-session-pyg.html-12"></a><span class="go">cc -g -O2 -Wall -Wextra -Isrc -rdynamic -DNDEBUG  build/liblcthw.a    tests/list_tests.c   -o tests/list_tests</span>
+<a name="code--ex33.sh-session-pyg.html-13"></a><span class="go">sh ./tests/runtests.sh</span>
+<a name="code--ex33.sh-session-pyg.html-14"></a><span class="go">Running unit tests:</span>
+<a name="code--ex33.sh-session-pyg.html-15"></a><span class="go">----</span>
+<a name="code--ex33.sh-session-pyg.html-16"></a><span class="go">RUNNING: ./tests/list_algos_tests</span>
+<a name="code--ex33.sh-session-pyg.html-17"></a><span class="go">ALL TESTS PASSED</span>
+<a name="code--ex33.sh-session-pyg.html-18"></a><span class="go">Tests run: 2</span>
+<a name="code--ex33.sh-session-pyg.html-19"></a><span class="go">tests/list_algos_tests PASS</span>
+<a name="code--ex33.sh-session-pyg.html-20"></a><span class="go">----</span>
+<a name="code--ex33.sh-session-pyg.html-21"></a><span class="go">RUNNING: ./tests/list_tests</span>
+<a name="code--ex33.sh-session-pyg.html-22"></a><span class="go">ALL TESTS PASSED</span>
+<a name="code--ex33.sh-session-pyg.html-23"></a><span class="go">Tests run: 6</span>
+<a name="code--ex33.sh-session-pyg.html-24"></a><span class="go">tests/list_tests PASS</span>
+<a name="code--ex33.sh-session-pyg.html-25"></a><span class="gp">$</span>
+</pre></div><p>After this exercise I'm not going to show you this output unless it's necessary
+to show you how it works.  From now on you should know that I ran the tests and
+they all passed and everything compiled.</p>
+</div>
+<div class="section" id="how-to-improve-it">
+<h1>How To Improve It</h1>
+<p>Going back to the description of the algorithms, there's several ways to
+improve these implementations, and there's a few obvious ones:</p>
+<ul class="simple">
+<li>The merge sort does a crazy amount of copying and creating lists, find ways to reduce this.</li>
+<li>The bubble sort Wikipedia description mentions a few optimizations, implement them.</li>
+<li>Can you use the <tt class="docutils literal">List_split</tt> and <tt class="docutils literal">List_join</tt> (if you implemented them) to improve merge sort?</li>
+<li>Go through all the defensive programming checks and improve the robustness of
+this implementation, protecting against bad <tt class="docutils literal">NULL</tt> pointers, and create
+an optional debug level invariant that does what <tt class="docutils literal">is_sorted</tt> does
+after a sort.</li>
+</ul>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Create a unit test that compares the performance of the two algorithms.  You'll want to look at <tt class="docutils literal">man 3 time</tt> for a basic timer function,
+and you'll want to run enough iterations to at least have a few seconds of samples.</li>
+<li>Play with the amount of data in the lists that need to be sorted and see if that changes your timing.</li>
+<li>Find a way to simulate filling different sized random lists and measuring how long they take, then graph it and see how it compares to the
+description of the algorithm.</li>
+<li>Try to explain why sorting linked lists is a really bad idea.</li>
+<li>Implement a <tt class="docutils literal">List_insert_sorted</tt> that will take a given value, and using the <tt class="docutils literal">List_compare</tt>, insert the element at the
+right position so that the list is always sorted.  How does using this method compare to sorting a list after you've built it?</li>
+<li>Try implementing the &quot;bottom up&quot; merge sort on the wikipedia page.  The code there is already C so it should be easy to
+recreate, but try to understand how it's working compared to the slower one I have here.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

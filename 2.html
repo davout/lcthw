@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 2: Make Is Your Python Now</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 2: Make Is Your Python Now</h1>
+            <p>In <a class="reference external" href="http://learnpythonthehardway.org">Python</a> you ran programs by just
+typing <tt class="docutils literal">python</tt> and the code you wanted to run.  The Python interpreter
+would just run them, and import any other libraries and things you needed
+on the fly as it ran.  C is a different beast completely where you have to
+<em>compile</em> your source files and manually stitch them together into
+a binary that can run on its own.  Doing this manually is a pain, and in
+the last exercise you just ran <tt class="docutils literal">make</tt> to do it.</p>
+<p>In this exercise, you're going to get a crash course in GNU make, and you'll
+be learning to use it as you learn C.  Make will for the rest of this book,
+be your Python.  It will build your code, and run your tests, and set things
+up and do all the stuff for you that Python normally does.</p>
+<p>The difference is, I'm going to show you smarter Makefile wizardry, where you
+don't have to specify every stupid little thing about your C program to get
+it to build.  I won't do that in this exercise, but after you've been using
+&quot;baby make&quot; for a while, I'll show you &quot;master make&quot;.</p>
+<div class="section" id="using-make">
+<h1>Using Make</h1>
+<p>The first stage of using make is to just use it to build programs
+it already knows how to build.  Make has decades of knowledge on building
+a wide variety of files from other files.  In the last exercise you
+did this already using commands like this:</p>
+<pre class="literal-block">
+$ make ex1
+# or this one too
+$ CFLAGS=&quot;-Wall&quot; make ex1
+</pre>
+<p>In the first command you're telling make, &quot;I want a file named ex1 to
+be created.&quot;  Make then does the following:</p>
+<ul class="simple">
+<li>Does the file <tt class="docutils literal">ex1</tt> exist already?</li>
+<li>No. Ok, is there another file that starts with <tt class="docutils literal">ex1</tt>?</li>
+<li>Yes, it's called <tt class="docutils literal">ex1.c</tt>. Do I know how to build <tt class="docutils literal">.c</tt> files?</li>
+<li>Yes, I run this command <tt class="docutils literal">cc ex1.c&nbsp;&nbsp; <span class="pre">-o</span> ex1</tt> to build them.</li>
+<li>I shall make you one <tt class="docutils literal">ex1</tt> by using <tt class="docutils literal">cc</tt> to build it from <tt class="docutils literal">ex1.c</tt>.</li>
+</ul>
+<p>The second command in the listing above is a way to pass &quot;modifiers&quot; to the
+make command.  If you're not familiar with how the Unix shell works, you can
+create these &quot;environment variables&quot; which will get picked up by programs you
+run.  Sometimes you do this with a command like <tt class="docutils literal">export <span class="pre">CFLAGS=&quot;-Wall&quot;</span></tt>
+depending on the shell you use.  You can however also just put them before the
+command you want to run, and that environment variable will be set only while
+that command runs.</p>
+<p>In this example I did <tt class="docutils literal"><span class="pre">CFLAGS=&quot;-Wall&quot;</span> make ex1</tt> so that it would
+add the command line option <tt class="docutils literal"><span class="pre">-Wall</span></tt> to the <tt class="docutils literal">cc</tt> command that
+<tt class="docutils literal">make</tt> normally runs.  That command line option tells the compiler
+<tt class="docutils literal">cc</tt> to report all warnings (which in a sick twist of fate isn't
+actually all the warnings possible).</p>
+<p>You can actually get pretty far with just that way of using <tt class="docutils literal">make</tt>,
+but let's get into making a <tt class="docutils literal">Makefile</tt> so you can understand
+make a little better.  To start off, create a file with just this
+in it:</p>
+<div class="highlight"><pre><a name="code--ex2.1.mak-pyg.html-1"></a><span class="nv">CFLAGS</span><span class="o">=</span>-Wall -g
+<a name="code--ex2.1.mak-pyg.html-2"></a>
+<a name="code--ex2.1.mak-pyg.html-3"></a><span class="nf">clean</span><span class="o">:</span>
+<a name="code--ex2.1.mak-pyg.html-4"></a>   rm -f ex1
+</pre></div><p>Save this file as <tt class="docutils literal">Makefile</tt> in your current directory.  Make
+automatically assumes there's a file called <tt class="docutils literal">Makefile</tt> and will
+just run it.  Also, <em>WARNING: Make sure you are only entering TAB
+characters, not mixtures of TAB and spaces.</em></p>
+<p>This <tt class="docutils literal">Makefile</tt> is showing you some new stuff with make.  First we set
+<tt class="docutils literal">CFLAGS</tt> in the file so we never have to set it again, as well
+as adding the <tt class="docutils literal"><span class="pre">-g</span></tt> flag to get debugging.  Then we have a
+section named <tt class="docutils literal">clean</tt> which tells make how to clean up our
+little project.</p>
+<p>Make sure it's in the same directory as your <tt class="docutils literal">ex1.c</tt> file, and then
+run these commands:</p>
+<pre class="literal-block">
+$ make clean
+$ make ex1
+</pre>
+</div>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>If that worked then you should see this:</p>
+<div class="highlight"><pre><a name="code--ex2.sh-session-pyg.html-1"></a><span class="gp">$</span> make clean
+<a name="code--ex2.sh-session-pyg.html-2"></a><span class="go">rm -f ex1</span>
+<a name="code--ex2.sh-session-pyg.html-3"></a><span class="gp">$</span> make ex1
+<a name="code--ex2.sh-session-pyg.html-4"></a><span class="go">cc -Wall -g    ex1.c   -o ex1</span>
+<a name="code--ex2.sh-session-pyg.html-5"></a><span class="go">ex1.c: In function &#39;main&#39;:</span>
+<a name="code--ex2.sh-session-pyg.html-6"></a><span class="go">ex1.c:3: warning: implicit declaration of function &#39;puts&#39;</span>
+<a name="code--ex2.sh-session-pyg.html-7"></a><span class="gp">$</span>
+</pre></div><p>Here you can see that I'm running <tt class="docutils literal">make clean</tt> which tells
+make to run our <tt class="docutils literal">clean</tt> target.  Go look at the Makefile
+again and you'll see that under this I indent and then I put
+the shell commands I want <tt class="docutils literal">make</tt> to run for me.  You could
+put as many commands as you wanted in there, so it's a great
+automation tool.</p>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p class="last">If you fixed <tt class="docutils literal">ex1.c</tt> to have <tt class="docutils literal">#include &lt;stdio.h&gt;</tt> then your
+output will not have the warning (which should really be an error) about puts.  I have the error
+here because I didn't fix it.</p>
+</div>
+<p>Notice also that, even though we don't mention <tt class="docutils literal">ex1</tt> in the
+<tt class="docutils literal">Makefile</tt>, <tt class="docutils literal">make</tt> still knows how to build it <em>plus</em>
+use our special settings.</p>
+</div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<p>That should be enough to get you started, but first let's break this
+make file in a particular way so you can see what happens.  Take
+the line <tt class="docutils literal">rm <span class="pre">-f</span> ex1</tt> and dedent it (move it all the way left)
+so you can see what happens.  Rerun <tt class="docutils literal">make clean</tt> and you should
+get something like this:</p>
+<pre class="literal-block">
+$ make clean
+Makefile:4: *** missing separator.  Stop.
+</pre>
+<p>Always remember to indent, and if you get weird errors like this
+then double check you're consistently using tab characters since
+some make variants are very picky.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Create an <tt class="docutils literal">all: ex1</tt> target that will build <tt class="docutils literal">ex1</tt> with
+just the command <tt class="docutils literal">make</tt>.</li>
+<li>Read <tt class="docutils literal">man make</tt> to find out more information on how to run it.</li>
+<li>Read <tt class="docutils literal">man cc</tt> to find out more information on what the flags <tt class="docutils literal"><span class="pre">-Wall</span></tt> and <tt class="docutils literal"><span class="pre">-g</span></tt> do.</li>
+<li>Research Makefiles online and see if you can improve this one even more.</li>
+<li>Find a <tt class="docutils literal">Makefile</tt> in another C project and try to understand
+what it's doing.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

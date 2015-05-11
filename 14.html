@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 14: Writing And Using Functions</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 14: Writing And Using Functions</h1>
+            <p>Until now you've just used functions that are part of the
+<tt class="docutils literal">stdio.h</tt> header file.  In this exercise you will write
+some functions and use some other functions.</p>
+<div class="highlight"><pre><a name="code--ex14.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex14.c-pyg.html-2"></a><span class="cp">#include &lt;ctype.h&gt;</span>
+<a name="code--ex14.c-pyg.html-3"></a>
+<a name="code--ex14.c-pyg.html-4"></a><span class="c1">// forward declarations</span>
+<a name="code--ex14.c-pyg.html-5"></a><span class="kt">int</span> <span class="nf">can_print_it</span><span class="p">(</span><span class="kt">char</span> <span class="n">ch</span><span class="p">);</span>
+<a name="code--ex14.c-pyg.html-6"></a><span class="kt">void</span> <span class="nf">print_letters</span><span class="p">(</span><span class="kt">char</span> <span class="n">arg</span><span class="p">[]);</span>
+<a name="code--ex14.c-pyg.html-7"></a>
+<a name="code--ex14.c-pyg.html-8"></a><span class="kt">void</span> <span class="nf">print_arguments</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex14.c-pyg.html-9"></a><span class="p">{</span>
+<a name="code--ex14.c-pyg.html-10"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex14.c-pyg.html-11"></a>
+<a name="code--ex14.c-pyg.html-12"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">argc</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex14.c-pyg.html-13"></a>        <span class="n">print_letters</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="code--ex14.c-pyg.html-14"></a>    <span class="p">}</span>
+<a name="code--ex14.c-pyg.html-15"></a><span class="p">}</span>
+<a name="code--ex14.c-pyg.html-16"></a>
+<a name="code--ex14.c-pyg.html-17"></a><span class="kt">void</span> <span class="nf">print_letters</span><span class="p">(</span><span class="kt">char</span> <span class="n">arg</span><span class="p">[])</span>
+<a name="code--ex14.c-pyg.html-18"></a><span class="p">{</span>
+<a name="code--ex14.c-pyg.html-19"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex14.c-pyg.html-20"></a>
+<a name="code--ex14.c-pyg.html-21"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">arg</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="sc">&#39;\0&#39;</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex14.c-pyg.html-22"></a>        <span class="kt">char</span> <span class="n">ch</span> <span class="o">=</span> <span class="n">arg</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<a name="code--ex14.c-pyg.html-23"></a>
+<a name="code--ex14.c-pyg.html-24"></a>        <span class="k">if</span><span class="p">(</span><span class="n">can_print_it</span><span class="p">(</span><span class="n">ch</span><span class="p">))</span> <span class="p">{</span>
+<a name="code--ex14.c-pyg.html-25"></a>            <span class="n">printf</span><span class="p">(</span><span class="s">&quot;&#39;%c&#39; == %d &quot;</span><span class="p">,</span> <span class="n">ch</span><span class="p">,</span> <span class="n">ch</span><span class="p">);</span>
+<a name="code--ex14.c-pyg.html-26"></a>        <span class="p">}</span>
+<a name="code--ex14.c-pyg.html-27"></a>    <span class="p">}</span>
+<a name="code--ex14.c-pyg.html-28"></a>
+<a name="code--ex14.c-pyg.html-29"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex14.c-pyg.html-30"></a><span class="p">}</span>
+<a name="code--ex14.c-pyg.html-31"></a>
+<a name="code--ex14.c-pyg.html-32"></a><span class="kt">int</span> <span class="nf">can_print_it</span><span class="p">(</span><span class="kt">char</span> <span class="n">ch</span><span class="p">)</span>
+<a name="code--ex14.c-pyg.html-33"></a><span class="p">{</span>
+<a name="code--ex14.c-pyg.html-34"></a>    <span class="k">return</span> <span class="n">isalpha</span><span class="p">(</span><span class="n">ch</span><span class="p">)</span> <span class="o">||</span> <span class="n">isblank</span><span class="p">(</span><span class="n">ch</span><span class="p">);</span>
+<a name="code--ex14.c-pyg.html-35"></a><span class="p">}</span>
+<a name="code--ex14.c-pyg.html-36"></a>
+<a name="code--ex14.c-pyg.html-37"></a>
+<a name="code--ex14.c-pyg.html-38"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex14.c-pyg.html-39"></a><span class="p">{</span>
+<a name="code--ex14.c-pyg.html-40"></a>    <span class="n">print_arguments</span><span class="p">(</span><span class="n">argc</span><span class="p">,</span> <span class="n">argv</span><span class="p">);</span>
+<a name="code--ex14.c-pyg.html-41"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex14.c-pyg.html-42"></a><span class="p">}</span>
+</pre></div><p>In this example you're creating functions to print out the
+characters and ASCII codes for any that are &quot;alpha&quot; or &quot;blanks&quot;.
+Here's the breakdown:</p>
+<dl class="docutils">
+<dt>ex14.c:2</dt>
+<dd>Include a new header file so we can gain access to
+<tt class="docutils literal">isalpha</tt> and <tt class="docutils literal">isblank</tt>.</dd>
+<dt>ex14.c:5-6</dt>
+<dd>Tell C that you will be using some functions later
+in your program, without having to actually define them.
+This is a &quot;forward declaration&quot; and it solves the chicken-and-egg
+problem of needing to use a function before you've defined it.</dd>
+<dt>ex14.c:8-15</dt>
+<dd>Define the <tt class="docutils literal">print_arguments</tt> which knows how
+to print the same array of strings that <tt class="docutils literal">main</tt> typically
+gets.</dd>
+<dt>ex14.c:17-30</dt>
+<dd>Define the next function <tt class="docutils literal">print_letters</tt> that
+is called <em>by</em> <tt class="docutils literal">print_arguments</tt> and knows
+how to print each of the characters and their codes.</dd>
+<dt>ex14.c:32-35</dt>
+<dd>Define <tt class="docutils literal">can_print_it</tt> which simply returns
+the truth value (0 or 1) of <tt class="docutils literal">isalpha(ch) || isblank(ch)</tt>
+back to its caller <tt class="docutils literal">print_letters</tt>.</dd>
+<dt>ex14.c:38-42</dt>
+<dd>Finally <tt class="docutils literal">main</tt> simply calls <tt class="docutils literal">print_arguments</tt>
+to make the whole chain of function calls go.</dd>
+</dl>
+<p>I shouldn't have to describe what's in each function because it's all
+things you've ran into before.  What you should be able to see though
+is that I've simply defined functions the same way you've been defining
+<tt class="docutils literal">main</tt>.  The only difference is you have to help C out by telling
+it ahead of time if you're going to use functions it hasn't encountered
+yet in the file.  That's what the &quot;forward declarations&quot; at the top do.</p>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>To play with this program you just feed it different command line
+arguments, which get passed through your functions.  Here's me
+playing with it to demonstrate:</p>
+<div class="highlight"><pre><a name="code--ex14.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex14
+<a name="code--ex14.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g    ex14.c   -o ex14</span>
+<a name="code--ex14.sh-session-pyg.html-3"></a>
+<a name="code--ex14.sh-session-pyg.html-4"></a><span class="gp">$</span> ./ex14
+<a name="code--ex14.sh-session-pyg.html-5"></a><span class="go">&#39;e&#39; == 101 &#39;x&#39; == 120 </span>
+<a name="code--ex14.sh-session-pyg.html-6"></a>
+<a name="code--ex14.sh-session-pyg.html-7"></a><span class="gp">$</span> ./ex14 hi this is cool
+<a name="code--ex14.sh-session-pyg.html-8"></a><span class="go">&#39;e&#39; == 101 &#39;x&#39; == 120 </span>
+<a name="code--ex14.sh-session-pyg.html-9"></a><span class="go">&#39;h&#39; == 104 &#39;i&#39; == 105 </span>
+<a name="code--ex14.sh-session-pyg.html-10"></a><span class="go">&#39;t&#39; == 116 &#39;h&#39; == 104 &#39;i&#39; == 105 &#39;s&#39; == 115 </span>
+<a name="code--ex14.sh-session-pyg.html-11"></a><span class="go">&#39;i&#39; == 105 &#39;s&#39; == 115 </span>
+<a name="code--ex14.sh-session-pyg.html-12"></a><span class="go">&#39;c&#39; == 99 &#39;o&#39; == 111 &#39;o&#39; == 111 &#39;l&#39; == 108 </span>
+<a name="code--ex14.sh-session-pyg.html-13"></a>
+<a name="code--ex14.sh-session-pyg.html-14"></a><span class="gp">$</span> ./ex14 <span class="s2">&quot;I go 3 spaces&quot;</span>
+<a name="code--ex14.sh-session-pyg.html-15"></a><span class="go">&#39;e&#39; == 101 &#39;x&#39; == 120 </span>
+<a name="code--ex14.sh-session-pyg.html-16"></a><span class="go">&#39;I&#39; == 73 &#39; &#39; == 32 &#39;g&#39; == 103 &#39;o&#39; == 111 &#39; &#39; == 32 &#39; &#39; == 32 &#39;s&#39; == 115 &#39;p&#39; == 112 &#39;a&#39; == 97 &#39;c&#39; == 99 &#39;e&#39; == 101 &#39;s&#39; == 115 </span>
+<a name="code--ex14.sh-session-pyg.html-17"></a><span class="gp">$</span>
+</pre></div><p>The <tt class="docutils literal">isalpha</tt> and <tt class="docutils literal">isblank</tt> do all the work of figuring
+out if the given character is a letter or a blank.  When I do the
+last run it prints everything but the '3' character, since that
+is a digit.</p>
+</div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<p>There's two different kinds of &quot;breaking&quot; in this program:</p>
+<ul class="simple">
+<li>Confuse the compiler by removing the forward declarations
+so it complains about <tt class="docutils literal">can_print_it</tt> and <tt class="docutils literal">print_letters</tt>.</li>
+<li>When you call <tt class="docutils literal">print_arguments</tt> inside <tt class="docutils literal">main</tt> try
+adding 1 to <tt class="docutils literal">argc</tt> so that it goes past the end of the
+<tt class="docutils literal">argv</tt> array.</li>
+</ul>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Rework these functions so that you have fewer functions.  For example,
+do you really need <tt class="docutils literal">can_print_it</tt>?</li>
+<li>Have <tt class="docutils literal">print_arguments</tt> figure how long each argument string
+is using the <tt class="docutils literal">strlen</tt> function, and then pass that length
+to <tt class="docutils literal">print_letters</tt>.  Then, rewrite <tt class="docutils literal">print_letters</tt>
+so it only processes this fixed length and doesn't rely on the
+<tt class="docutils literal">'\0'</tt> terminator. You will need the <tt class="docutils literal">#include &lt;string.h&gt;</tt> for this.</li>
+<li>Use <tt class="docutils literal">man</tt> to lookup information on <tt class="docutils literal">isalpha</tt>
+and <tt class="docutils literal">isblank</tt>.  Use the other similar functions to
+print out only digits or other characters.</li>
+<li>Go read about how different people like to format their
+functions.  Never use the &quot;K&amp;R syntax&quot; as it's antiquated and
+confusing, but understand what it's doing in case you run
+into someone who likes it.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

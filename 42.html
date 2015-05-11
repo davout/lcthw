@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 42: Stacks and Queues</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 42: Stacks and Queues</h1>
+            <p>At this point in the book you know most of the data structures that are used to
+build all the other data structures.  If you have some kind of <tt class="docutils literal">List</tt>,
+<tt class="docutils literal">DArray</tt>, <tt class="docutils literal">Hashmap</tt>, and <tt class="docutils literal">Tree</tt> then you can build most
+anything else that's out there.  Everything else you run into either uses
+these or is some variant on these.  If it's not then it's most likely an
+exotic data structure that you probably will not need.</p>
+<p><tt class="docutils literal">Stacks</tt> and <tt class="docutils literal">Queues</tt> are very simple data structures that are
+really variants of the <tt class="docutils literal">List</tt> data structure.  All they are is using
+a <tt class="docutils literal">List</tt> with a &quot;discipline&quot; or convention that says you'll always
+place elements on one end of the <tt class="docutils literal">List</tt>.  For a <tt class="docutils literal">Stack</tt>, you
+always push and pop.  For a <tt class="docutils literal">Queue</tt>, you always shift to the
+front, but pop from the end.</p>
+<p>I can implement both data structures using nothing but the CPP and two
+header files.  My header files are 21 lines long and do all the
+<tt class="docutils literal">Stack</tt> and <tt class="docutils literal">Queue</tt> operations without any fancy defines.</p>
+<p>To see if you've been paying attention, I'm going to show you the
+unit tests, and then <em>you</em> have to implement the header files
+needed to make them work.  To pass this exercise you can't create any
+<tt class="docutils literal">stack.c</tt> or <tt class="docutils literal">queue.c</tt> implementation files.  Use only the
+<tt class="docutils literal">stack.h</tt> and <tt class="docutils literal">queue.h</tt> files to make the tests runs.</p>
+<div class="highlight"><pre><a name="code--liblcthw--tests--stack_tests.c-pyg.html-1"></a><span class="cp">#include &quot;minunit.h&quot;</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-2"></a><span class="cp">#include &lt;lcthw/stack.h&gt;</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-3"></a><span class="cp">#include &lt;assert.h&gt;</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-4"></a>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-5"></a><span class="k">static</span> <span class="n">Stack</span> <span class="o">*</span><span class="n">stack</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-6"></a><span class="kt">char</span> <span class="o">*</span><span class="n">tests</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;test1 data&quot;</span><span class="p">,</span> <span class="s">&quot;test2 data&quot;</span><span class="p">,</span> <span class="s">&quot;test3 data&quot;</span><span class="p">};</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-7"></a><span class="cp">#define NUM_TESTS 3</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-8"></a>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-9"></a>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-10"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_create</span><span class="p">()</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-11"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-12"></a>    <span class="n">stack</span> <span class="o">=</span> <span class="n">Stack_create</span><span class="p">();</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-13"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">stack</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to create stack.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-14"></a>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-15"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-16"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-17"></a>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-18"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_destroy</span><span class="p">()</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-19"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-20"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">stack</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to make stack #2&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-21"></a>    <span class="n">Stack_destroy</span><span class="p">(</span><span class="n">stack</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-22"></a>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-23"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-24"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-25"></a>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-26"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_push_pop</span><span class="p">()</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-27"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-28"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-29"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">NUM_TESTS</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-30"></a>        <span class="n">Stack_push</span><span class="p">(</span><span class="n">stack</span><span class="p">,</span> <span class="n">tests</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-31"></a>        <span class="n">mu_assert</span><span class="p">(</span><span class="n">Stack_peek</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">==</span> <span class="n">tests</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s">&quot;Wrong next value.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-32"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-33"></a>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-34"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">Stack_count</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">==</span> <span class="n">NUM_TESTS</span><span class="p">,</span> <span class="s">&quot;Wrong count on push.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-35"></a>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-36"></a>    <span class="n">STACK_FOREACH</span><span class="p">(</span><span class="n">stack</span><span class="p">,</span> <span class="n">cur</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-37"></a>        <span class="n">debug</span><span class="p">(</span><span class="s">&quot;VAL: %s&quot;</span><span class="p">,</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">cur</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-38"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-39"></a>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-40"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="n">NUM_TESTS</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">--</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-41"></a>        <span class="kt">char</span> <span class="o">*</span><span class="n">val</span> <span class="o">=</span> <span class="n">Stack_pop</span><span class="p">(</span><span class="n">stack</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-42"></a>        <span class="n">mu_assert</span><span class="p">(</span><span class="n">val</span> <span class="o">==</span> <span class="n">tests</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s">&quot;Wrong value on pop.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-43"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-44"></a>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-45"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">Stack_count</span><span class="p">(</span><span class="n">stack</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Wrong count after pop.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-46"></a>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-47"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-48"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-49"></a>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-50"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">all_tests</span><span class="p">()</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-51"></a>    <span class="n">mu_suite_start</span><span class="p">();</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-52"></a>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-53"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_create</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-54"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_push_pop</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-55"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_destroy</span><span class="p">);</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-56"></a>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-57"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-58"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-59"></a>
+<a name="code--liblcthw--tests--stack_tests.c-pyg.html-60"></a><span class="n">RUN_TESTS</span><span class="p">(</span><span class="n">all_tests</span><span class="p">);</span>
+</pre></div><p>Then the <tt class="docutils literal">queue_tests.c</tt> is almost the same just using <tt class="docutils literal">Queue</tt>:</p>
+<div class="highlight"><pre><a name="code--liblcthw--tests--queue_tests.c-pyg.html-1"></a><span class="cp">#include &quot;minunit.h&quot;</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-2"></a><span class="cp">#include &lt;lcthw/queue.h&gt;</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-3"></a><span class="cp">#include &lt;assert.h&gt;</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-4"></a>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-5"></a><span class="k">static</span> <span class="n">Queue</span> <span class="o">*</span><span class="n">queue</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-6"></a><span class="kt">char</span> <span class="o">*</span><span class="n">tests</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;test1 data&quot;</span><span class="p">,</span> <span class="s">&quot;test2 data&quot;</span><span class="p">,</span> <span class="s">&quot;test3 data&quot;</span><span class="p">};</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-7"></a><span class="cp">#define NUM_TESTS 3</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-8"></a>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-9"></a>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-10"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_create</span><span class="p">()</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-11"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-12"></a>    <span class="n">queue</span> <span class="o">=</span> <span class="n">Queue_create</span><span class="p">();</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-13"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">queue</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to create queue.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-14"></a>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-15"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-16"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-17"></a>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-18"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_destroy</span><span class="p">()</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-19"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-20"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">queue</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to make queue #2&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-21"></a>    <span class="n">Queue_destroy</span><span class="p">(</span><span class="n">queue</span><span class="p">);</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-22"></a>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-23"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-24"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-25"></a>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-26"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_send_recv</span><span class="p">()</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-27"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-28"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-29"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">NUM_TESTS</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-30"></a>        <span class="n">Queue_send</span><span class="p">(</span><span class="n">queue</span><span class="p">,</span> <span class="n">tests</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-31"></a>        <span class="n">mu_assert</span><span class="p">(</span><span class="n">Queue_peek</span><span class="p">(</span><span class="n">queue</span><span class="p">)</span> <span class="o">==</span> <span class="n">tests</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s">&quot;Wrong next value.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-32"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-33"></a>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-34"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">Queue_count</span><span class="p">(</span><span class="n">queue</span><span class="p">)</span> <span class="o">==</span> <span class="n">NUM_TESTS</span><span class="p">,</span> <span class="s">&quot;Wrong count on send.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-35"></a>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-36"></a>    <span class="n">QUEUE_FOREACH</span><span class="p">(</span><span class="n">queue</span><span class="p">,</span> <span class="n">cur</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-37"></a>        <span class="n">debug</span><span class="p">(</span><span class="s">&quot;VAL: %s&quot;</span><span class="p">,</span> <span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="p">)</span><span class="n">cur</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">);</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-38"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-39"></a>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-40"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">NUM_TESTS</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-41"></a>        <span class="kt">char</span> <span class="o">*</span><span class="n">val</span> <span class="o">=</span> <span class="n">Queue_recv</span><span class="p">(</span><span class="n">queue</span><span class="p">);</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-42"></a>        <span class="n">mu_assert</span><span class="p">(</span><span class="n">val</span> <span class="o">==</span> <span class="n">tests</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="s">&quot;Wrong value on recv.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-43"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-44"></a>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-45"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">Queue_count</span><span class="p">(</span><span class="n">queue</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Wrong count after recv.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-46"></a>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-47"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-48"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-49"></a>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-50"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">all_tests</span><span class="p">()</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-51"></a>    <span class="n">mu_suite_start</span><span class="p">();</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-52"></a>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-53"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_create</span><span class="p">);</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-54"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_send_recv</span><span class="p">);</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-55"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_destroy</span><span class="p">);</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-56"></a>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-57"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-58"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-59"></a>
+<a name="code--liblcthw--tests--queue_tests.c-pyg.html-60"></a><span class="n">RUN_TESTS</span><span class="p">(</span><span class="n">all_tests</span><span class="p">);</span>
+</pre></div><div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>Your unit test should run without you changing the tests, and it
+should pass <tt class="docutils literal">valgrind</tt> with no memory errors.  Here's
+what it looks like if I run <tt class="docutils literal">stack_tests</tt> directly:</p>
+<div class="highlight"><pre><a name="code--ex42.1.sh-session-pyg.html-1"></a><span class="gp">$</span> ./tests/stack_tests
+<a name="code--ex42.1.sh-session-pyg.html-2"></a><span class="go">DEBUG tests/stack_tests.c:60: ----- RUNNING: ./tests/stack_tests</span>
+<a name="code--ex42.1.sh-session-pyg.html-3"></a><span class="go">----</span>
+<a name="code--ex42.1.sh-session-pyg.html-4"></a><span class="go">RUNNING: ./tests/stack_tests</span>
+<a name="code--ex42.1.sh-session-pyg.html-5"></a><span class="go">DEBUG tests/stack_tests.c:53: </span>
+<a name="code--ex42.1.sh-session-pyg.html-6"></a><span class="go">----- test_create</span>
+<a name="code--ex42.1.sh-session-pyg.html-7"></a><span class="go">DEBUG tests/stack_tests.c:54: </span>
+<a name="code--ex42.1.sh-session-pyg.html-8"></a><span class="go">----- test_push_pop</span>
+<a name="code--ex42.1.sh-session-pyg.html-9"></a><span class="go">DEBUG tests/stack_tests.c:37: VAL: test3 data</span>
+<a name="code--ex42.1.sh-session-pyg.html-10"></a><span class="go">DEBUG tests/stack_tests.c:37: VAL: test2 data</span>
+<a name="code--ex42.1.sh-session-pyg.html-11"></a><span class="go">DEBUG tests/stack_tests.c:37: VAL: test1 data</span>
+<a name="code--ex42.1.sh-session-pyg.html-12"></a><span class="go">DEBUG tests/stack_tests.c:55: </span>
+<a name="code--ex42.1.sh-session-pyg.html-13"></a><span class="go">----- test_destroy</span>
+<a name="code--ex42.1.sh-session-pyg.html-14"></a><span class="go">ALL TESTS PASSED</span>
+<a name="code--ex42.1.sh-session-pyg.html-15"></a><span class="go">Tests run: 3</span>
+<a name="code--ex42.1.sh-session-pyg.html-16"></a><span class="gp">$</span>
+</pre></div><p>The <tt class="docutils literal">queue_test</tt> is basically the same kind of output so I
+shouldn't have to show it to you at this stage.</p>
+</div>
+<div class="section" id="how-to-improve-it">
+<h1>How To Improve It</h1>
+<p>The only real improvement you could make to this is to switch from
+using a <tt class="docutils literal">List</tt> to using a <tt class="docutils literal">DArray</tt>.  The <tt class="docutils literal">Queue</tt>
+data structure is more difficult to do with a <tt class="docutils literal">DArray</tt> because
+it works at both ends of the list of nodes.</p>
+<p>A disadvantage of doing this entirely in a header file is that you can't
+easily performance tune it.  Mostly what you're doing with this technique
+is establishing a &quot;protocol&quot; for how to use a <tt class="docutils literal">List</tt> in a certain
+style.  When performance tuning, if you make <tt class="docutils literal">List</tt> fast then
+these two should improve as well.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Implement <tt class="docutils literal">Stack</tt> using <tt class="docutils literal">DArray</tt> instead of <tt class="docutils literal">List</tt>
+without changing the unit test.  That means you'll have to create your
+own <tt class="docutils literal">STACK_FOREACH</tt>.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

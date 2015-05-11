@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 46: Ternary Search Tree</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 46: Ternary Search Tree</h1>
+            <p>The final data structure I'll show you is call the <em>TSTree</em> and it's similar to
+the <tt class="docutils literal">BSTree</tt> except it has three branches <tt class="docutils literal">low</tt>, <tt class="docutils literal">equal</tt>, and <tt class="docutils literal">high</tt>.
+It's primarily used to just like <tt class="docutils literal">BSTree</tt> and <tt class="docutils literal">Hashmap</tt> to store key/value
+data, but it is keyed off of the individual characters in the keys.  This gives
+the <tt class="docutils literal">TSTree</tt> some abilities that neither <tt class="docutils literal">BSTree</tt> or <tt class="docutils literal">Hashmap</tt> have.</p>
+<p>How a <tt class="docutils literal">TSTree</tt> works is every key is a string, and it's inserted by walking
+and building a tree based on the equality of the characters in the string.
+Start at the root, look at the character for that node, and if lower, equal to,
+or higher than that then go in that direction.  You can see this in the header
+file:</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-1"></a><span class="cp">#ifndef _lcthw_TSTree_h</span>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-2"></a><span class="cp">#define _lctwh_TSTree_h</span>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-3"></a>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-4"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-5"></a><span class="cp">#include &lt;lcthw/darray.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-6"></a>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-7"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="n">TSTree</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-8"></a>    <span class="kt">char</span> <span class="n">splitchar</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-9"></a>    <span class="k">struct</span> <span class="n">TSTree</span> <span class="o">*</span><span class="n">low</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-10"></a>    <span class="k">struct</span> <span class="n">TSTree</span> <span class="o">*</span><span class="n">equal</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-11"></a>    <span class="k">struct</span> <span class="n">TSTree</span> <span class="o">*</span><span class="n">high</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-12"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-13"></a><span class="p">}</span> <span class="n">TSTree</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-14"></a>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-15"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">TSTree_search</span><span class="p">(</span><span class="n">TSTree</span> <span class="o">*</span><span class="n">root</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">len</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-16"></a>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-17"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">TSTree_search_prefix</span><span class="p">(</span><span class="n">TSTree</span> <span class="o">*</span><span class="n">root</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">len</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-18"></a>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-19"></a><span class="k">typedef</span> <span class="nf">void</span> <span class="p">(</span><span class="o">*</span><span class="n">TSTree_traverse_cb</span><span class="p">)(</span><span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-20"></a>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-21"></a><span class="n">TSTree</span> <span class="o">*</span><span class="nf">TSTree_insert</span><span class="p">(</span><span class="n">TSTree</span> <span class="o">*</span><span class="n">node</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">len</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-22"></a>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-23"></a><span class="kt">void</span> <span class="nf">TSTree_traverse</span><span class="p">(</span><span class="n">TSTree</span> <span class="o">*</span><span class="n">node</span><span class="p">,</span> <span class="n">TSTree_traverse_cb</span> <span class="n">cb</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-24"></a>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-25"></a><span class="kt">void</span> <span class="nf">TSTree_destroy</span><span class="p">(</span><span class="n">TSTree</span> <span class="o">*</span><span class="n">root</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-26"></a>
+<a name="code--liblcthw--src--lcthw--tstree.h-pyg.html-27"></a><span class="cp">#endif</span>
+</pre></div><p>The <tt class="docutils literal">TSTree</tt> has the following elements:</p>
+<dl class="docutils">
+<dt>splitchar</dt>
+<dd>The character at this point in the tree.</dd>
+<dt>low</dt>
+<dd>The branch that is lower than <tt class="docutils literal">splitchar</tt>.</dd>
+<dt>equal</dt>
+<dd>The branch that is equal to <tt class="docutils literal">splitchar</tt>.</dd>
+<dt>high</dt>
+<dd>The branch that is higher than <tt class="docutils literal">splitchar</tt>.</dd>
+<dt>value</dt>
+<dd>The value set for a string at that point with that <tt class="docutils literal">splitchar</tt>.</dd>
+</dl>
+<p>You can see this implementation has the following operations:</p>
+<dl class="docutils">
+<dt>search</dt>
+<dd>Typical &quot;find a value for this <tt class="docutils literal">key</tt>&quot; operation.</dd>
+<dt>search_prefix</dt>
+<dd>Finds the first value that has this as a prefix of its key.
+This is the an operation that you can't easily do in
+a <tt class="docutils literal">BSTree</tt> or <tt class="docutils literal">Hashmap</tt>.</dd>
+<dt>insert</dt>
+<dd>Breaks the <tt class="docutils literal">key</tt> down by each character and inserts it
+into the tree.</dd>
+<dt>traverse</dt>
+<dd>Walks the tree allowing you to collect or analyze all the
+keys and values it contains.</dd>
+</dl>
+<p>The only thing missing is a <tt class="docutils literal">TSTree_delete</tt>, and that's because it is a
+horribly expensive operation, even more than <tt class="docutils literal">BSTree_delete</tt> was.  When I use
+<tt class="docutils literal">TSTree</tt> structures I treat them as constant data that I plan on traversing
+many times and not removing anything from them.  They are very fast for this,
+but are not good if you need to insert and delete quickly.  For that I use
+<tt class="docutils literal">Hashmap</tt> since it beats both <tt class="docutils literal">BSTree</tt> and <tt class="docutils literal">TSTree</tt>.</p>
+<p>The implementation for the <tt class="docutils literal">TSTree</tt> is actually simple, but it might be hard
+to follow at first.  I'll break it down after you enter it in:</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-1"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-2"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-3"></a><span class="cp">#include &lt;assert.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-4"></a><span class="cp">#include &lt;lcthw/dbg.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-5"></a><span class="cp">#include &lt;lcthw/tstree.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-6"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-7"></a><span class="k">static</span> <span class="kr">inline</span> <span class="n">TSTree</span> <span class="o">*</span><span class="nf">TSTree_insert_base</span><span class="p">(</span><span class="n">TSTree</span> <span class="o">*</span><span class="n">root</span><span class="p">,</span> <span class="n">TSTree</span> <span class="o">*</span><span class="n">node</span><span class="p">,</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-8"></a>        <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">len</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-9"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-10"></a>    <span class="k">if</span><span class="p">(</span><span class="n">node</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-11"></a>        <span class="n">node</span> <span class="o">=</span> <span class="p">(</span><span class="n">TSTree</span> <span class="o">*</span><span class="p">)</span> <span class="n">calloc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">TSTree</span><span class="p">));</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-12"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-13"></a>        <span class="k">if</span><span class="p">(</span><span class="n">root</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-14"></a>            <span class="n">root</span> <span class="o">=</span> <span class="n">node</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-15"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-16"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-17"></a>        <span class="n">node</span><span class="o">-&gt;</span><span class="n">splitchar</span> <span class="o">=</span> <span class="o">*</span><span class="n">key</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-18"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-19"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-20"></a>    <span class="k">if</span><span class="p">(</span><span class="o">*</span><span class="n">key</span> <span class="o">&lt;</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">splitchar</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-21"></a>        <span class="n">node</span><span class="o">-&gt;</span><span class="n">low</span> <span class="o">=</span> <span class="n">TSTree_insert_base</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">low</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">len</span><span class="p">,</span> <span class="n">value</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-22"></a>    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="o">*</span><span class="n">key</span> <span class="o">==</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">splitchar</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-23"></a>        <span class="k">if</span><span class="p">(</span><span class="n">len</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-24"></a>            <span class="n">node</span><span class="o">-&gt;</span><span class="n">equal</span> <span class="o">=</span> <span class="n">TSTree_insert_base</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">equal</span><span class="p">,</span> <span class="n">key</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">len</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">value</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-25"></a>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-26"></a>            <span class="n">assert</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">value</span> <span class="o">==</span> <span class="nb">NULL</span> <span class="o">&amp;&amp;</span> <span class="s">&quot;Duplicate insert into tst.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-27"></a>            <span class="n">node</span><span class="o">-&gt;</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-28"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-29"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-30"></a>        <span class="n">node</span><span class="o">-&gt;</span><span class="n">high</span> <span class="o">=</span> <span class="n">TSTree_insert_base</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">high</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">len</span><span class="p">,</span> <span class="n">value</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-31"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-32"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-33"></a>    <span class="k">return</span> <span class="n">node</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-34"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-35"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-36"></a><span class="n">TSTree</span> <span class="o">*</span><span class="nf">TSTree_insert</span><span class="p">(</span><span class="n">TSTree</span> <span class="o">*</span><span class="n">node</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">len</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-37"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-38"></a>    <span class="k">return</span> <span class="n">TSTree_insert_base</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">node</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">len</span><span class="p">,</span> <span class="n">value</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-39"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-40"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-41"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">TSTree_search</span><span class="p">(</span><span class="n">TSTree</span> <span class="o">*</span><span class="n">root</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">len</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-42"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-43"></a>    <span class="n">TSTree</span> <span class="o">*</span><span class="n">node</span> <span class="o">=</span> <span class="n">root</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-44"></a>    <span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-45"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-46"></a>    <span class="k">while</span><span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">len</span> <span class="o">&amp;&amp;</span> <span class="n">node</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-47"></a>        <span class="k">if</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">splitchar</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-48"></a>            <span class="n">node</span> <span class="o">=</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">low</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-49"></a>        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">splitchar</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-50"></a>            <span class="n">i</span><span class="o">++</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-51"></a>            <span class="k">if</span><span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">len</span><span class="p">)</span> <span class="n">node</span> <span class="o">=</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">equal</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-52"></a>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-53"></a>            <span class="n">node</span> <span class="o">=</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">high</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-54"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-55"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-56"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-57"></a>    <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-58"></a>        <span class="k">return</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-59"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-60"></a>        <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-61"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-62"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-63"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-64"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">TSTree_search_prefix</span><span class="p">(</span><span class="n">TSTree</span> <span class="o">*</span><span class="n">root</span><span class="p">,</span> <span class="k">const</span> <span class="kt">char</span> <span class="o">*</span><span class="n">key</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">len</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-65"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-66"></a>    <span class="k">if</span><span class="p">(</span><span class="n">len</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-67"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-68"></a>    <span class="n">TSTree</span> <span class="o">*</span><span class="n">node</span> <span class="o">=</span> <span class="n">root</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-69"></a>    <span class="n">TSTree</span> <span class="o">*</span><span class="n">last</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-70"></a>    <span class="kt">size_t</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-71"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-72"></a>    <span class="k">while</span><span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">len</span> <span class="o">&amp;&amp;</span> <span class="n">node</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-73"></a>        <span class="k">if</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">splitchar</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-74"></a>            <span class="n">node</span> <span class="o">=</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">low</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-75"></a>        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">splitchar</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-76"></a>            <span class="n">i</span><span class="o">++</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-77"></a>            <span class="k">if</span><span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">len</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-78"></a>                <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">)</span> <span class="n">last</span> <span class="o">=</span> <span class="n">node</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-79"></a>                <span class="n">node</span> <span class="o">=</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">equal</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-80"></a>            <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-81"></a>        <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-82"></a>            <span class="n">node</span> <span class="o">=</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">high</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-83"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-84"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-85"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-86"></a>    <span class="n">node</span> <span class="o">=</span> <span class="n">node</span> <span class="o">?</span> <span class="n">node</span> <span class="o">:</span> <span class="n">last</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-87"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-88"></a>    <span class="c1">// traverse until we find the first value in the equal chain</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-89"></a>    <span class="c1">// this is then the first node with this prefix</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-90"></a>    <span class="k">while</span><span class="p">(</span><span class="n">node</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-91"></a>        <span class="n">node</span> <span class="o">=</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">equal</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-92"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-93"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-94"></a>    <span class="k">return</span> <span class="n">node</span> <span class="o">?</span> <span class="n">node</span><span class="o">-&gt;</span><span class="n">value</span> <span class="o">:</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-95"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-96"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-97"></a><span class="kt">void</span> <span class="nf">TSTree_traverse</span><span class="p">(</span><span class="n">TSTree</span> <span class="o">*</span><span class="n">node</span><span class="p">,</span> <span class="n">TSTree_traverse_cb</span> <span class="n">cb</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-98"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-99"></a>    <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">node</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-100"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-101"></a>    <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">low</span><span class="p">)</span> <span class="n">TSTree_traverse</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">low</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-102"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-103"></a>    <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">equal</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-104"></a>        <span class="n">TSTree_traverse</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">equal</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-105"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-106"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-107"></a>    <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">high</span><span class="p">)</span> <span class="n">TSTree_traverse</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">high</span><span class="p">,</span> <span class="n">cb</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-108"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-109"></a>    <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">)</span> <span class="n">cb</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">value</span><span class="p">,</span> <span class="n">data</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-110"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-111"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-112"></a><span class="kt">void</span> <span class="nf">TSTree_destroy</span><span class="p">(</span><span class="n">TSTree</span> <span class="o">*</span><span class="n">node</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-113"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-114"></a>    <span class="k">if</span><span class="p">(</span><span class="n">node</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-115"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-116"></a>    <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">low</span><span class="p">)</span> <span class="n">TSTree_destroy</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">low</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-117"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-118"></a>    <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">equal</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-119"></a>        <span class="n">TSTree_destroy</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">equal</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-120"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-121"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-122"></a>    <span class="k">if</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">high</span><span class="p">)</span> <span class="n">TSTree_destroy</span><span class="p">(</span><span class="n">node</span><span class="o">-&gt;</span><span class="n">high</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-123"></a>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-124"></a>    <span class="n">free</span><span class="p">(</span><span class="n">node</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--tstree.c-pyg.html-125"></a><span class="p">}</span>
+</pre></div><p>For <tt class="docutils literal">TSTree_insert</tt> I'm using the same pattern for recursive structures where
+I have a small function that calls the real recursive function.  I'm not doing
+any additional check here but you should add the usual defensive programming to
+it.  One thing to keep in mind is it is using a slightly different design where
+you don't have a separate <tt class="docutils literal">TSTree_create</tt> function, and instead if you pass
+it a <tt class="docutils literal">NULL</tt> for the <tt class="docutils literal">node</tt> then it will create it, and returns the final
+value.</p>
+<p>That means I need to break down <tt class="docutils literal">TSTree_insert_base</tt> for you
+to understand the insert operation:</p>
+<dl class="docutils">
+<dt>tstree.c:10-18</dt>
+<dd>As I mentioned, if I'm given a <tt class="docutils literal">NULL</tt> then I need to make
+this node and assign the <tt class="docutils literal">*key</tt> (current char) to it. This is used
+to build the tree as we insert keys.</dd>
+<dt>tstree.c:20-21</dt>
+<dd>If the <tt class="docutils literal">*key</tt> &lt; this then recurse, but go to the <tt class="docutils literal">low</tt>
+branch.</dd>
+<dt>tstree.c:22</dt>
+<dd>This <tt class="docutils literal">splitchar</tt> is equal, so I want to go to deal with equality.
+This will happen if we just created this node, so we'll be building the
+tree at this point.</dd>
+<dt>tstree.c:23-24</dt>
+<dd>There's still characters to handle, so recurse down the <tt class="docutils literal">equal</tt>
+branch, but go to the next <tt class="docutils literal">*key</tt> char.</dd>
+<dt>tstree.c:26-27</dt>
+<dd>This is the last char, so I set the value and that's it.  I have
+an <tt class="docutils literal">assert</tt> here in case of a duplicate.</dd>
+<dt>tstree.c:29-30</dt>
+<dd>The last condition is that this <tt class="docutils literal">*key</tt> is greater than
+<tt class="docutils literal">splitchar</tt> so I need to recurse down the <tt class="docutils literal">high</tt> branch.</dd>
+</dl>
+<p>The key to some of the properties of this data structure is the fact that I'm
+only incrementing the character I analyze when a <tt class="docutils literal">splitchar</tt> is equal.
+The other two conditions I just walk the tree until I hit an equal character to
+recurse into next.  What this does is it makes it very fast to <em>not</em>
+find a key.  I can get a bad key, and simply walk a few <tt class="docutils literal">high</tt> and <tt class="docutils literal">low</tt>
+nodes until I hit a dead end to know that this key doesn't exist.  I don't need
+to process every character of the key, or every node of the tree.</p>
+<p>Once you understand that then move onto analyzing how <tt class="docutils literal">TSTree_search</tt>
+works:</p>
+<dl class="docutils">
+<dt>tstree.c:46</dt>
+<dd>I don't need to process the tree recursively in the <tt class="docutils literal">TSTree</tt>,
+I can just use a while loop and a <tt class="docutils literal">node</tt> for where I am currently.</dd>
+<dt>tstree.c:47-48</dt>
+<dd>If the current char is less than the node <tt class="docutils literal">splitchar</tt>, then go low.</dd>
+<dt>tstree.c:49-51</dt>
+<dd>If it's equal, then increment <tt class="docutils literal">i</tt> and go equal as long as it's
+not the last character.  That's why the <tt class="docutils literal">if(i &lt; len)</tt> is there, so that
+I don't go too far past the final <tt class="docutils literal">value</tt>.</dd>
+<dt>tstree.c:52-53</dt>
+<dd>Otherwise I go <tt class="docutils literal">high</tt> since the char is greater.</dd>
+<dt>tstree.c:57-61</dt>
+<dd>If after the loop I have a node, then return its <tt class="docutils literal">value</tt>,
+otherwise return <tt class="docutils literal">NULL</tt>.</dd>
+</dl>
+<p>This isn't too difficult to understand, and you can then see that it's almost
+exacty the same algorithm for the <tt class="docutils literal">TSTree_search_prefix</tt> function.
+The only difference is I'm trying to not find an exact match, but the longest
+prefix I can.  To do that I keep track of the <tt class="docutils literal">last</tt> node that was equal,
+and then after the search loop, walk that node until I find a <tt class="docutils literal">value</tt>.</p>
+<p>Looking at <tt class="docutils literal">TSTree_search_prefix</tt> you can start to see the second advantage
+a <tt class="docutils literal">TSTree</tt> has over the <tt class="docutils literal">BSTree</tt> and <tt class="docutils literal">Hashmap</tt> for finding
+strings.  Given any key of X length, you can find any key in X moves.  You can
+also find the first prefix in X moves, plus N more depending on how big the matching
+key is.  If the biggest key in the tree is 10 characters long, then you can find
+any prefix in that key in 10 moves.  More importantly, you can do all of this
+by only comparing each character of the key <em>once</em>.</p>
+<p>In comparison, to do the same with a <tt class="docutils literal">BSTree</tt> you would have to check the
+prefixes of each character in every possibly matching node in the <tt class="docutils literal">BSTree</tt>
+against the characters in the prefix.  It's the same for finding keys, or seeing
+if a key doesn't exist.  You have to compare each character against most of the
+characters in the <tt class="docutils literal">BSTree</tt> to find or not find a match.</p>
+<p>A <tt class="docutils literal">Hashamp</tt> is even worse for finding prefixes since you can't hash just
+the prefix.  You basically can't do this efficiently in a <tt class="docutils literal">Hashmap</tt>
+unless the data is something you can parse like a URL.  Even then that usually
+requires whole trees of <tt class="docutils literal">Hashmaps</tt>.</p>
+<p>The last two functions should be easy for you to analyze as they are the typical
+traversing and destroying operations you've seen already for other data structures.</p>
+<p>Finally, I have a simple unit test for the whole thing to make sure it works
+right:</p>
+<div class="highlight"><pre><a name="code--liblcthw--tests--tstree_tests.c-pyg.html-1"></a><span class="cp">#include &quot;minunit.h&quot;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-2"></a><span class="cp">#include &lt;lcthw/tstree.h&gt;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-3"></a><span class="cp">#include &lt;string.h&gt;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-4"></a><span class="cp">#include &lt;assert.h&gt;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-5"></a><span class="cp">#include &lt;lcthw/bstrlib.h&gt;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-6"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-7"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-8"></a><span class="n">TSTree</span> <span class="o">*</span><span class="n">node</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-9"></a><span class="kt">char</span> <span class="o">*</span><span class="n">valueA</span> <span class="o">=</span> <span class="s">&quot;VALUEA&quot;</span><span class="p">;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-10"></a><span class="kt">char</span> <span class="o">*</span><span class="n">valueB</span> <span class="o">=</span> <span class="s">&quot;VALUEB&quot;</span><span class="p">;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-11"></a><span class="kt">char</span> <span class="o">*</span><span class="n">value2</span> <span class="o">=</span> <span class="s">&quot;VALUE2&quot;</span><span class="p">;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-12"></a><span class="kt">char</span> <span class="o">*</span><span class="n">value4</span> <span class="o">=</span> <span class="s">&quot;VALUE4&quot;</span><span class="p">;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-13"></a><span class="kt">char</span> <span class="o">*</span><span class="n">reverse</span> <span class="o">=</span> <span class="s">&quot;VALUER&quot;</span><span class="p">;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-14"></a><span class="kt">int</span> <span class="n">traverse_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-15"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-16"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">test1</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;TEST&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-17"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">test2</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;TEST2&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-18"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">test3</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;TSET&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-19"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">test4</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;T&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-20"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-21"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_insert</span><span class="p">()</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-22"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-23"></a>    <span class="n">node</span> <span class="o">=</span> <span class="n">TSTree_insert</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">bdata</span><span class="p">(</span><span class="o">&amp;</span><span class="n">test1</span><span class="p">),</span> <span class="n">blength</span><span class="p">(</span><span class="o">&amp;</span><span class="n">test1</span><span class="p">),</span> <span class="n">valueA</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-24"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">node</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to insert into tst.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-25"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-26"></a>    <span class="n">node</span> <span class="o">=</span> <span class="n">TSTree_insert</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">bdata</span><span class="p">(</span><span class="o">&amp;</span><span class="n">test2</span><span class="p">),</span> <span class="n">blength</span><span class="p">(</span><span class="o">&amp;</span><span class="n">test2</span><span class="p">),</span> <span class="n">value2</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-27"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">node</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to insert into tst with second name.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-28"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-29"></a>    <span class="n">node</span> <span class="o">=</span> <span class="n">TSTree_insert</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">bdata</span><span class="p">(</span><span class="o">&amp;</span><span class="n">test3</span><span class="p">),</span> <span class="n">blength</span><span class="p">(</span><span class="o">&amp;</span><span class="n">test3</span><span class="p">),</span> <span class="n">reverse</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-30"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">node</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to insert into tst with reverse name.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-31"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-32"></a>    <span class="n">node</span> <span class="o">=</span> <span class="n">TSTree_insert</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">bdata</span><span class="p">(</span><span class="o">&amp;</span><span class="n">test4</span><span class="p">),</span> <span class="n">blength</span><span class="p">(</span><span class="o">&amp;</span><span class="n">test4</span><span class="p">),</span> <span class="n">value4</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-33"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">node</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to insert into tst with second name.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-34"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-35"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-36"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-37"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-38"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_search_exact</span><span class="p">()</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-39"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-40"></a>    <span class="c1">// tst returns the last one inserted</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-41"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">res</span> <span class="o">=</span> <span class="n">TSTree_search</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">bdata</span><span class="p">(</span><span class="o">&amp;</span><span class="n">test1</span><span class="p">),</span> <span class="n">blength</span><span class="p">(</span><span class="o">&amp;</span><span class="n">test1</span><span class="p">));</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-42"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">res</span> <span class="o">==</span> <span class="n">valueA</span><span class="p">,</span> <span class="s">&quot;Got the wrong value back, should get A not B.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-43"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-44"></a>    <span class="c1">// tst does not find if not exact</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-45"></a>    <span class="n">res</span> <span class="o">=</span> <span class="n">TSTree_search</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="s">&quot;TESTNO&quot;</span><span class="p">,</span> <span class="n">strlen</span><span class="p">(</span><span class="s">&quot;TESTNO&quot;</span><span class="p">));</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-46"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">res</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Should not find anything.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-47"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-48"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-49"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-50"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-51"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_search_prefix</span><span class="p">()</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-52"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-53"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">res</span> <span class="o">=</span> <span class="n">TSTree_search_prefix</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">bdata</span><span class="p">(</span><span class="o">&amp;</span><span class="n">test1</span><span class="p">),</span> <span class="n">blength</span><span class="p">(</span><span class="o">&amp;</span><span class="n">test1</span><span class="p">));</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-54"></a>    <span class="n">debug</span><span class="p">(</span><span class="s">&quot;result: %p, expected: %p&quot;</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">valueA</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-55"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">res</span> <span class="o">==</span> <span class="n">valueA</span><span class="p">,</span> <span class="s">&quot;Got wrong valueA by prefix.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-56"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-57"></a>    <span class="n">res</span> <span class="o">=</span> <span class="n">TSTree_search_prefix</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">bdata</span><span class="p">(</span><span class="o">&amp;</span><span class="n">test1</span><span class="p">),</span> <span class="mi">1</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-58"></a>    <span class="n">debug</span><span class="p">(</span><span class="s">&quot;result: %p, expected: %p&quot;</span><span class="p">,</span> <span class="n">res</span><span class="p">,</span> <span class="n">valueA</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-59"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">res</span> <span class="o">==</span> <span class="n">value4</span><span class="p">,</span> <span class="s">&quot;Got wrong value4 for prefix of 1.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-60"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-61"></a>    <span class="n">res</span> <span class="o">=</span> <span class="n">TSTree_search_prefix</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="s">&quot;TE&quot;</span><span class="p">,</span> <span class="n">strlen</span><span class="p">(</span><span class="s">&quot;TE&quot;</span><span class="p">));</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-62"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">res</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Should find for short prefix.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-63"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-64"></a>    <span class="n">res</span> <span class="o">=</span> <span class="n">TSTree_search_prefix</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="s">&quot;TE--&quot;</span><span class="p">,</span> <span class="n">strlen</span><span class="p">(</span><span class="s">&quot;TE--&quot;</span><span class="p">));</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-65"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">res</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Should find for partial prefix.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-66"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-67"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-68"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-69"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-70"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-71"></a><span class="kt">void</span> <span class="nf">TSTree_traverse_test_cb</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="n">value</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">data</span><span class="p">)</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-72"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-73"></a>    <span class="n">assert</span><span class="p">(</span><span class="n">value</span> <span class="o">!=</span> <span class="nb">NULL</span> <span class="o">&amp;&amp;</span> <span class="s">&quot;Should not get NULL value.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-74"></a>    <span class="n">assert</span><span class="p">(</span><span class="n">data</span> <span class="o">==</span> <span class="n">valueA</span> <span class="o">&amp;&amp;</span> <span class="s">&quot;Expecting valueA as the data.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-75"></a>    <span class="n">traverse_count</span><span class="o">++</span><span class="p">;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-76"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-77"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-78"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_traverse</span><span class="p">()</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-79"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-80"></a>    <span class="n">traverse_count</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-81"></a>    <span class="n">TSTree_traverse</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="n">TSTree_traverse_test_cb</span><span class="p">,</span> <span class="n">valueA</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-82"></a>    <span class="n">debug</span><span class="p">(</span><span class="s">&quot;traverse count is: %d&quot;</span><span class="p">,</span> <span class="n">traverse_count</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-83"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">traverse_count</span> <span class="o">==</span> <span class="mi">4</span><span class="p">,</span> <span class="s">&quot;Didn&#39;t find 4 keys.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-84"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-85"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-86"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-87"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-88"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_destroy</span><span class="p">()</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-89"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-90"></a>    <span class="n">TSTree_destroy</span><span class="p">(</span><span class="n">node</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-91"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-92"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-93"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-94"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-95"></a><span class="kt">char</span> <span class="o">*</span> <span class="nf">all_tests</span><span class="p">()</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-96"></a>    <span class="n">mu_suite_start</span><span class="p">();</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-97"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-98"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_insert</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-99"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_search_exact</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-100"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_search_prefix</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-101"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_traverse</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-102"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_destroy</span><span class="p">);</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-103"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-104"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-105"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-106"></a>
+<a name="code--liblcthw--tests--tstree_tests.c-pyg.html-107"></a><span class="n">RUN_TESTS</span><span class="p">(</span><span class="n">all_tests</span><span class="p">);</span>
+</pre></div><div class="section" id="advantages-and-disadvantages">
+<h1>Advantages And Disadvantages</h1>
+<p>There's other interesting practical things you can do with a <tt class="docutils literal">TSTree</tt>:</p>
+<ul class="simple">
+<li>In addition to finding prefixes, you can reverse all the keys you insert,
+and then find by <em>suffix</em>.  I use this to lookup host names, since
+I want to find <tt class="docutils literal">*.learncodethehardway.com</tt> so if I go backwards
+I can match them quickly.</li>
+<li>You can do &quot;approximate&quot; matching, where you gather all the nodes that
+have most of the same characters as the key, or using other algorithms
+for what's a close match.</li>
+<li>You can find all the keys that have a part in the middle.</li>
+</ul>
+<p>I've already talked about some of the things <tt class="docutils literal">TSTrees</tt> can do, but they
+aren't the best data structure all the time.  The disadvantages of the <tt class="docutils literal">TSTree</tt>
+are:</p>
+<ul class="simple">
+<li>As I mentioned, deleting from them is murder.  They are better for
+data that needs to be looked up fast and you rarely remove from.  If you
+need to delete then simply disable the <tt class="docutils literal">value</tt> and then periodically
+rebuild the tree when it gets too big.</li>
+<li>It uses a ton of memory compared to <tt class="docutils literal">BSTree</tt> and <tt class="docutils literal">Hashmaps</tt>
+for the same key space.  Think about it, it's using a full node for
+each character in every key.  It might do better for smaller keys, but if you
+put a lot in a <tt class="docutils literal">TSTree</tt> it will get huge.</li>
+<li>They also do not work well with large keys, but &quot;large&quot; is subjective
+so as usual test first.  If you're trying to store 10k character sized keys then use a <tt class="docutils literal">Hashmap</tt>.</li>
+</ul>
+</div>
+<div class="section" id="how-to-improve-it">
+<h1>How To Improve It</h1>
+<p>As usual, go through and improve this by adding the defensive preconditions,
+asserts, and checks to each function.  There's some other possible
+improvements, but you don't necessarily have to implement all of these:</p>
+<ul class="simple">
+<li>You could allow duplicates by using a <tt class="docutils literal">DArray</tt> instead of the
+<tt class="docutils literal">value</tt>.</li>
+<li>As I mentioned deleting is hard, but you could simulate it by setting
+the values to <tt class="docutils literal">NULL</tt> so they are effectively gone.</li>
+<li>There are no ways to collect all the possible matching values.  I'll have
+you implement that in an extra credit.</li>
+<li>There are other algorithms that are more complex but have slightly
+better properties.  Take a look at Suffix Array, Suffix Tree, and
+Radix Tree structures.</li>
+</ul>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Implement a <tt class="docutils literal">TSTree_collect</tt> that returns a <tt class="docutils literal">DArray</tt> containing
+all the keys that match the given prefix.</li>
+<li>Implement <tt class="docutils literal">TSTree_search_suffix</tt> and a <tt class="docutils literal">TSTree_insert_suffix</tt>
+so you can do suffix searches and inserts.</li>
+<li>Use <tt class="docutils literal">valgrind</tt> to see how much memory this structure uses to store
+data compared to the <tt class="docutils literal">BSTree</tt> and <tt class="docutils literal">Hashmap</tt>.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

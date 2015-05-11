@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 12: If, Else-If, Else</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 12: If, Else-If, Else</h1>
+            <p>Something common in every language is the <tt class="docutils literal"><span class="pre">if-statement</span></tt>, and
+C has one.  Here's code that uses an <tt class="docutils literal"><span class="pre">if-statement</span></tt> to make
+sure you enter only 1 or 2 arguments:</p>
+<div class="highlight"><pre><a name="code--ex12.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex12.c-pyg.html-2"></a>
+<a name="code--ex12.c-pyg.html-3"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex12.c-pyg.html-4"></a><span class="p">{</span>
+<a name="code--ex12.c-pyg.html-5"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex12.c-pyg.html-6"></a>
+<a name="code--ex12.c-pyg.html-7"></a>    <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex12.c-pyg.html-8"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You only have one argument. You suck.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex12.c-pyg.html-9"></a>    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="o">&amp;&amp;</span> <span class="n">argc</span> <span class="o">&lt;</span> <span class="mi">4</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex12.c-pyg.html-10"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Here&#39;s your arguments:</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex12.c-pyg.html-11"></a>
+<a name="code--ex12.c-pyg.html-12"></a>        <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">argc</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex12.c-pyg.html-13"></a>            <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%s &quot;</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="code--ex12.c-pyg.html-14"></a>        <span class="p">}</span>
+<a name="code--ex12.c-pyg.html-15"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex12.c-pyg.html-16"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--ex12.c-pyg.html-17"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You have too many arguments. You suck.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex12.c-pyg.html-18"></a>    <span class="p">}</span>
+<a name="code--ex12.c-pyg.html-19"></a>
+<a name="code--ex12.c-pyg.html-20"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex12.c-pyg.html-21"></a><span class="p">}</span>
+</pre></div><p>The format for the <tt class="docutils literal"><span class="pre">if-statement</span></tt> is this:</p>
+<pre class="literal-block">
+if(TEST) {
+    CODE;
+} else if(TEST) {
+    CODE;
+} else {
+    CODE;
+}
+</pre>
+<p>This is like most other languages except for some specific C
+differences:</p>
+<ul class="simple">
+<li>As mentioned before, the <tt class="docutils literal">TEST</tt> parts are false if they
+evaluate to 0, and true otherwise.</li>
+<li>You have to put parenthesis around the <tt class="docutils literal">TEST</tt> elements,
+while some other languages let you skip that.</li>
+<li>You don't need the <tt class="docutils literal">{}</tt> braces to enclose the code, but
+it is <em>very</em> bad form to not use them.  The braces make it
+clear where one branch of code begins and ends.  If you don't
+include it then obnoxious errors come up.</li>
+</ul>
+<p>Other than that, they work like others do.  You don't need to have
+either <tt class="docutils literal">else if</tt> or <tt class="docutils literal">else</tt> parts.</p>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>This one is pretty simple to run and try out:</p>
+<div class="highlight"><pre><a name="code--ex12.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex12
+<a name="code--ex12.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g    ex12.c   -o ex12</span>
+<a name="code--ex12.sh-session-pyg.html-3"></a><span class="gp">$</span> ./ex12
+<a name="code--ex12.sh-session-pyg.html-4"></a><span class="go">You only have one argument. You suck.</span>
+<a name="code--ex12.sh-session-pyg.html-5"></a><span class="gp">$</span> ./ex12 one
+<a name="code--ex12.sh-session-pyg.html-6"></a><span class="go">Here&#39;s your arguments:</span>
+<a name="code--ex12.sh-session-pyg.html-7"></a><span class="go">./ex12 one </span>
+<a name="code--ex12.sh-session-pyg.html-8"></a><span class="gp">$</span> ./ex12 one two
+<a name="code--ex12.sh-session-pyg.html-9"></a><span class="go">Here&#39;s your arguments:</span>
+<a name="code--ex12.sh-session-pyg.html-10"></a><span class="go">./ex12 one two </span>
+<a name="code--ex12.sh-session-pyg.html-11"></a><span class="gp">$</span> ./ex12 one two three
+<a name="code--ex12.sh-session-pyg.html-12"></a><span class="go">You have too many arguments. You suck.</span>
+<a name="code--ex12.sh-session-pyg.html-13"></a><span class="gp">$</span>
+</pre></div></div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<p>This one isn't easy to break because it's so simple, but try messing up the
+tests in the <tt class="docutils literal"><span class="pre">if-statement</span></tt>.</p>
+<ul class="simple">
+<li>Remove the <tt class="docutils literal">else</tt> at the end and it won't catch the edge case.</li>
+<li>Change the <tt class="docutils literal">&amp;&amp;</tt> to a <tt class="docutils literal">||</tt> so you get an &quot;or&quot; instead of &quot;and&quot; test
+and see how that works.</li>
+</ul>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>You were briefly introduced to <tt class="docutils literal">&amp;&amp;</tt>, which does an &quot;and&quot; comparison,
+so go research online the different &quot;boolean operators&quot;.</li>
+<li>Write a few more test cases for this program to see what you can come
+up with.</li>
+<li>Go back to Exercises 10 and 11, and use <tt class="docutils literal"><span class="pre">if-statements</span></tt> to make
+the loops exit early.  You'll need the <tt class="docutils literal">break</tt> statement to do that.
+Go read about it.</li>
+<li>Is the first test really saying the right thing?  To you the &quot;first argument&quot;
+isn't the same first argument a user entered.  Fix it.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

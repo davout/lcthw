@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 16: Structs And Pointers To Them</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 16: Structs And Pointers To Them</h1>
+            <p>In this exercise you'll learn how to make a <tt class="docutils literal">struct</tt>, point a pointer
+at them, and use them to make sense of internal memory structures.  I'll also
+apply the knowledge of pointers from the last exercise and get you
+constructing these structures from raw memory using <tt class="docutils literal">malloc</tt>.</p>
+<p>As usual, here's the program we'll talk about, so type it in and
+make it work:</p>
+<div class="highlight"><pre><a name="code--ex16.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex16.c-pyg.html-2"></a><span class="cp">#include &lt;assert.h&gt;</span>
+<a name="code--ex16.c-pyg.html-3"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--ex16.c-pyg.html-4"></a><span class="cp">#include &lt;string.h&gt;</span>
+<a name="code--ex16.c-pyg.html-5"></a>
+<a name="code--ex16.c-pyg.html-6"></a><span class="k">struct</span> <span class="n">Person</span> <span class="p">{</span>
+<a name="code--ex16.c-pyg.html-7"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">;</span>
+<a name="code--ex16.c-pyg.html-8"></a>    <span class="kt">int</span> <span class="n">age</span><span class="p">;</span>
+<a name="code--ex16.c-pyg.html-9"></a>    <span class="kt">int</span> <span class="n">height</span><span class="p">;</span>
+<a name="code--ex16.c-pyg.html-10"></a>    <span class="kt">int</span> <span class="n">weight</span><span class="p">;</span>
+<a name="code--ex16.c-pyg.html-11"></a><span class="p">};</span>
+<a name="code--ex16.c-pyg.html-12"></a>
+<a name="code--ex16.c-pyg.html-13"></a><span class="k">struct</span> <span class="n">Person</span> <span class="o">*</span><span class="nf">Person_create</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">name</span><span class="p">,</span> <span class="kt">int</span> <span class="n">age</span><span class="p">,</span> <span class="kt">int</span> <span class="n">height</span><span class="p">,</span> <span class="kt">int</span> <span class="n">weight</span><span class="p">)</span>
+<a name="code--ex16.c-pyg.html-14"></a><span class="p">{</span>
+<a name="code--ex16.c-pyg.html-15"></a>    <span class="k">struct</span> <span class="n">Person</span> <span class="o">*</span><span class="n">who</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="k">struct</span> <span class="n">Person</span><span class="p">));</span>
+<a name="code--ex16.c-pyg.html-16"></a>    <span class="n">assert</span><span class="p">(</span><span class="n">who</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-17"></a>
+<a name="code--ex16.c-pyg.html-18"></a>    <span class="n">who</span><span class="o">-&gt;</span><span class="n">name</span> <span class="o">=</span> <span class="n">strdup</span><span class="p">(</span><span class="n">name</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-19"></a>    <span class="n">who</span><span class="o">-&gt;</span><span class="n">age</span> <span class="o">=</span> <span class="n">age</span><span class="p">;</span>
+<a name="code--ex16.c-pyg.html-20"></a>    <span class="n">who</span><span class="o">-&gt;</span><span class="n">height</span> <span class="o">=</span> <span class="n">height</span><span class="p">;</span>
+<a name="code--ex16.c-pyg.html-21"></a>    <span class="n">who</span><span class="o">-&gt;</span><span class="n">weight</span> <span class="o">=</span> <span class="n">weight</span><span class="p">;</span>
+<a name="code--ex16.c-pyg.html-22"></a>
+<a name="code--ex16.c-pyg.html-23"></a>    <span class="k">return</span> <span class="n">who</span><span class="p">;</span>
+<a name="code--ex16.c-pyg.html-24"></a><span class="p">}</span>
+<a name="code--ex16.c-pyg.html-25"></a>
+<a name="code--ex16.c-pyg.html-26"></a><span class="kt">void</span> <span class="nf">Person_destroy</span><span class="p">(</span><span class="k">struct</span> <span class="n">Person</span> <span class="o">*</span><span class="n">who</span><span class="p">)</span>
+<a name="code--ex16.c-pyg.html-27"></a><span class="p">{</span>
+<a name="code--ex16.c-pyg.html-28"></a>    <span class="n">assert</span><span class="p">(</span><span class="n">who</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-29"></a>
+<a name="code--ex16.c-pyg.html-30"></a>    <span class="n">free</span><span class="p">(</span><span class="n">who</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-31"></a>    <span class="n">free</span><span class="p">(</span><span class="n">who</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-32"></a><span class="p">}</span>
+<a name="code--ex16.c-pyg.html-33"></a>
+<a name="code--ex16.c-pyg.html-34"></a><span class="kt">void</span> <span class="nf">Person_print</span><span class="p">(</span><span class="k">struct</span> <span class="n">Person</span> <span class="o">*</span><span class="n">who</span><span class="p">)</span>
+<a name="code--ex16.c-pyg.html-35"></a><span class="p">{</span>
+<a name="code--ex16.c-pyg.html-36"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Name: %s</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">who</span><span class="o">-&gt;</span><span class="n">name</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-37"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\t</span><span class="s">Age: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">who</span><span class="o">-&gt;</span><span class="n">age</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-38"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\t</span><span class="s">Height: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">who</span><span class="o">-&gt;</span><span class="n">height</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-39"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\t</span><span class="s">Weight: %d</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">who</span><span class="o">-&gt;</span><span class="n">weight</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-40"></a><span class="p">}</span>
+<a name="code--ex16.c-pyg.html-41"></a>
+<a name="code--ex16.c-pyg.html-42"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex16.c-pyg.html-43"></a><span class="p">{</span>
+<a name="code--ex16.c-pyg.html-44"></a>    <span class="c1">// make two people structures</span>
+<a name="code--ex16.c-pyg.html-45"></a>    <span class="k">struct</span> <span class="n">Person</span> <span class="o">*</span><span class="n">joe</span> <span class="o">=</span> <span class="n">Person_create</span><span class="p">(</span>
+<a name="code--ex16.c-pyg.html-46"></a>            <span class="s">&quot;Joe Alex&quot;</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">140</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-47"></a>
+<a name="code--ex16.c-pyg.html-48"></a>    <span class="k">struct</span> <span class="n">Person</span> <span class="o">*</span><span class="n">frank</span> <span class="o">=</span> <span class="n">Person_create</span><span class="p">(</span>
+<a name="code--ex16.c-pyg.html-49"></a>            <span class="s">&quot;Frank Blank&quot;</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">72</span><span class="p">,</span> <span class="mi">180</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-50"></a>
+<a name="code--ex16.c-pyg.html-51"></a>    <span class="c1">// print them out and where they are in memory</span>
+<a name="code--ex16.c-pyg.html-52"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Joe is at memory location %p:</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">joe</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-53"></a>    <span class="n">Person_print</span><span class="p">(</span><span class="n">joe</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-54"></a>
+<a name="code--ex16.c-pyg.html-55"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;Frank is at memory location %p:</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">frank</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-56"></a>    <span class="n">Person_print</span><span class="p">(</span><span class="n">frank</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-57"></a>
+<a name="code--ex16.c-pyg.html-58"></a>    <span class="c1">// make everyone age 20 years and print them again</span>
+<a name="code--ex16.c-pyg.html-59"></a>    <span class="n">joe</span><span class="o">-&gt;</span><span class="n">age</span> <span class="o">+=</span> <span class="mi">20</span><span class="p">;</span>
+<a name="code--ex16.c-pyg.html-60"></a>    <span class="n">joe</span><span class="o">-&gt;</span><span class="n">height</span> <span class="o">-=</span> <span class="mi">2</span><span class="p">;</span>
+<a name="code--ex16.c-pyg.html-61"></a>    <span class="n">joe</span><span class="o">-&gt;</span><span class="n">weight</span> <span class="o">+=</span> <span class="mi">40</span><span class="p">;</span>
+<a name="code--ex16.c-pyg.html-62"></a>    <span class="n">Person_print</span><span class="p">(</span><span class="n">joe</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-63"></a>
+<a name="code--ex16.c-pyg.html-64"></a>    <span class="n">frank</span><span class="o">-&gt;</span><span class="n">age</span> <span class="o">+=</span> <span class="mi">20</span><span class="p">;</span>
+<a name="code--ex16.c-pyg.html-65"></a>    <span class="n">frank</span><span class="o">-&gt;</span><span class="n">weight</span> <span class="o">+=</span> <span class="mi">20</span><span class="p">;</span>
+<a name="code--ex16.c-pyg.html-66"></a>    <span class="n">Person_print</span><span class="p">(</span><span class="n">frank</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-67"></a>
+<a name="code--ex16.c-pyg.html-68"></a>    <span class="c1">// destroy them both so we clean up</span>
+<a name="code--ex16.c-pyg.html-69"></a>    <span class="n">Person_destroy</span><span class="p">(</span><span class="n">joe</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-70"></a>    <span class="n">Person_destroy</span><span class="p">(</span><span class="n">frank</span><span class="p">);</span>
+<a name="code--ex16.c-pyg.html-71"></a>
+<a name="code--ex16.c-pyg.html-72"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex16.c-pyg.html-73"></a><span class="p">}</span>
+</pre></div><p>To describe this program, I'm going to use a different approach
+than before.  I'm not going to give you a line-by-line breakdown
+of the program, but I'm going to make <em>you</em> write it.  I'm
+going to give you a guide through the program based on the
+parts it contains, and your job is to write out what each line does.</p>
+<dl class="docutils">
+<dt>includes</dt>
+<dd>I include some new header files here to gain
+access to some new functions.  What does each give you?</dd>
+<dt><tt class="docutils literal">struct Person</tt></dt>
+<dd>This is where I'm creating a structure that
+has 4 elements to describe a person.  The final result is a
+new compound type that lets me reference these elements all
+as one, or each piece by name.  It's similar to a row of a database
+table or a class in an OOP language.</dd>
+<dt>function <tt class="docutils literal">Person_create</tt></dt>
+<dd><p class="first">I need a way to create these structures
+so I've made a function to do that.  Here's the important
+things this function is doing:</p>
+<ul class="last simple">
+<li>I use <tt class="docutils literal">malloc</tt> for &quot;memory allocate&quot; to ask the OS to give me a piece of raw memory.</li>
+<li>I pass to <tt class="docutils literal">malloc</tt> the <tt class="docutils literal">sizeof(struct Person)</tt>
+which calculates the total size of the struct, given all the
+fields inside it.</li>
+<li>I use <tt class="docutils literal">assert</tt> to make sure that I have a valid
+piece of memory back from malloc.  There's a special constant called
+<tt class="docutils literal">NULL</tt> that you use to mean &quot;unset or invalid pointer&quot;.  This
+<tt class="docutils literal">assert</tt> is basically checking that malloc didn't return a
+NULL invalid pointer.</li>
+<li>I initialize each field of <tt class="docutils literal">struct Person</tt> using the
+<tt class="docutils literal"><span class="pre">x-&gt;y</span></tt> syntax, to say what part of the struct I want to set.</li>
+<li>I use the <tt class="docutils literal">strdup</tt> function to duplicate the string
+for the name, just to make sure that this structure actually owns
+it.  The <tt class="docutils literal">strdup</tt> actually is like <tt class="docutils literal">malloc</tt> and it also
+copies the original string into the memory it creates.</li>
+</ul>
+</dd>
+<dt>function <tt class="docutils literal">Person_destroy</tt></dt>
+<dd>If I have a create, then I always need
+a destroy function, and this is what destroys <tt class="docutils literal">Person</tt> structs.
+I again use <tt class="docutils literal">assert</tt> to make sure I'm not getting bad input.
+Then I use the function <tt class="docutils literal">free</tt> to return the memory I got with
+<tt class="docutils literal">malloc</tt> and <tt class="docutils literal">strdup</tt>.  If you don't do this you get
+a &quot;memory leak&quot;.</dd>
+<dt>function <tt class="docutils literal">Person_print</tt></dt>
+<dd>I then need a way to print out people,
+which is all this function does.  It uses the same <tt class="docutils literal"><span class="pre">x-&gt;y</span></tt>
+syntax to get the field from the struct to print it.</dd>
+<dt>function <tt class="docutils literal">main</tt></dt>
+<dd><p class="first">In the main function I use all the previous
+functions and the <tt class="docutils literal">struct Person</tt> to do the following:</p>
+<ul class="last simple">
+<li>Create two people, <tt class="docutils literal">joe</tt> and <tt class="docutils literal">frank</tt>.</li>
+<li>Print them out, but notice I'm using the <tt class="docutils literal">%p</tt>
+format so you can see <em>where</em> the program
+has actually put your struct in memory.</li>
+<li>Age both of them by 20 years, with changes to their body too.</li>
+<li>Print each one after aging them.</li>
+<li>Finally destroy the structures so we can clean up correctly.</li>
+</ul>
+</dd>
+</dl>
+<p>Go through this description carefully, and do the following:</p>
+<ul class="simple">
+<li>Look up every function and header file you don't know about.
+Remember that you can usually do <tt class="docutils literal">man 2 function</tt> or
+<tt class="docutils literal">man 3 function</tt> and it'll tell you about it.  You can also
+search online for the information.</li>
+<li>Write a <em>comment</em> above each and every single line saying
+what the line does in English.</li>
+<li>Trace through each function call and variable so you know where
+it comes from in the program.</li>
+<li>Look up any symbols you don't know as well.</li>
+</ul>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>After you augment the program with your description comments,
+make sure it really runs and produces this output:</p>
+<div class="highlight"><pre><a name="code--ex16.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex16
+<a name="code--ex16.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g    ex16.c   -o ex16</span>
+<a name="code--ex16.sh-session-pyg.html-3"></a>
+<a name="code--ex16.sh-session-pyg.html-4"></a><span class="gp">$</span> ./ex16
+<a name="code--ex16.sh-session-pyg.html-5"></a><span class="go">Joe is at memory location 0xeba010:</span>
+<a name="code--ex16.sh-session-pyg.html-6"></a><span class="go">Name: Joe Alex</span>
+<a name="code--ex16.sh-session-pyg.html-7"></a><span class="go">    Age: 32</span>
+<a name="code--ex16.sh-session-pyg.html-8"></a><span class="go">    Height: 64</span>
+<a name="code--ex16.sh-session-pyg.html-9"></a><span class="go">    Weight: 140</span>
+<a name="code--ex16.sh-session-pyg.html-10"></a><span class="go">Frank is at memory location 0xeba050:</span>
+<a name="code--ex16.sh-session-pyg.html-11"></a><span class="go">Name: Frank Blank</span>
+<a name="code--ex16.sh-session-pyg.html-12"></a><span class="go">   Age: 20</span>
+<a name="code--ex16.sh-session-pyg.html-13"></a><span class="go">   Height: 72</span>
+<a name="code--ex16.sh-session-pyg.html-14"></a><span class="go">   Weight: 180</span>
+<a name="code--ex16.sh-session-pyg.html-15"></a><span class="go">Name: Joe Alex</span>
+<a name="code--ex16.sh-session-pyg.html-16"></a><span class="go">   Age: 52</span>
+<a name="code--ex16.sh-session-pyg.html-17"></a><span class="go">   Height: 62</span>
+<a name="code--ex16.sh-session-pyg.html-18"></a><span class="go">   Weight: 180</span>
+<a name="code--ex16.sh-session-pyg.html-19"></a><span class="go">Name: Frank Blank</span>
+<a name="code--ex16.sh-session-pyg.html-20"></a><span class="go">   Age: 40</span>
+<a name="code--ex16.sh-session-pyg.html-21"></a><span class="go">   Height: 72</span>
+<a name="code--ex16.sh-session-pyg.html-22"></a><span class="go">   Weight: 200</span>
+</pre></div></div>
+<div class="section" id="explaining-structures">
+<h1>Explaining Structures</h1>
+<p>If you've done the work I asked you then structures should be
+making sense, but let me explain them explicitly just to make
+sure you've understood it.</p>
+<p>A structure in C is a collection of other data types (variables)
+that are stored in one block of memory but let you access each
+variable independently by name.  They are similar to a record
+in a database table, or a very simplistic class in an object
+oriented language.  We can break one down this way:</p>
+<ul class="simple">
+<li>In the above code, you make a <tt class="docutils literal">struct</tt> that has the fields
+you'd expect for a person: name, age, weight, height.</li>
+<li>Each of those fields has a type, like <tt class="docutils literal">int</tt>.</li>
+<li>C then packs those together so they can all be contained in
+one single <tt class="docutils literal">struct</tt>.</li>
+<li>The <tt class="docutils literal">struct Person</tt> is now a <em>compound data type</em>, which
+means you can now refer to <tt class="docutils literal">struct Person</tt> in the same kinds
+of expressions you would other data types.</li>
+<li>This lets you pass the whole cohesive grouping to other
+functions, as you did with <tt class="docutils literal">Person_print</tt>.</li>
+<li>You can then access the individual parts of a
+<tt class="docutils literal">struct</tt> by their names using <tt class="docutils literal"><span class="pre">x-&gt;y</span></tt> if you're
+dealing with a pointer.</li>
+<li>There's also a way to make a struct that doesn't need
+a pointer, and you use the <tt class="docutils literal">x.y</tt> (period) syntax
+to work with it.  You'll do this in the Extra Credit.</li>
+</ul>
+<p>If you didn't have <tt class="docutils literal">struct</tt> you'd need to figure out
+the size, packing, and location of pieces of memory with
+contents like this.  In fact, in most early assembler code
+(and even some now) this is what you do.  With C you can
+let C handle the memory structuring of these compound data types
+and then focus on what you do with them.</p>
+</div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<p>With this program the ways to break it involve how you use
+the pointers and the <tt class="docutils literal">malloc</tt> system:</p>
+<ul class="simple">
+<li>Try passing <tt class="docutils literal">NULL</tt> to <tt class="docutils literal">Person_destroy</tt> to see what
+it does.  If it doesn't abort then you must not have the
+<tt class="docutils literal"><span class="pre">-g</span></tt> option in your Makefile's <tt class="docutils literal">CFLAGS</tt>.</li>
+<li>Forget to call <tt class="docutils literal">Person_destroy</tt> at the end, then run
+it under <tt class="docutils literal">Valgrind</tt> to see it report that you forgot
+to free the memory.  Figure out the options you need to pass
+to <tt class="docutils literal">Valgrind</tt> to get it to print how you leaked
+this memory.</li>
+<li>Forget to free <tt class="docutils literal"><span class="pre">who-&gt;name</span></tt> in <tt class="docutils literal">Person_destroy</tt>
+and compare the output.  Again, use the right options to
+see how <tt class="docutils literal">Valgrind</tt> tells you exactly where you messed
+up.</li>
+<li>This time, pass <tt class="docutils literal">NULL</tt> to <tt class="docutils literal">Person_print</tt> and
+see what <tt class="docutils literal">Valgrind</tt> thinks of that.</li>
+<li>You should be figuring out that <tt class="docutils literal">NULL</tt> is a quick way
+to crash your program.</li>
+</ul>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<p>In this exercise I want you to attempt something difficult for
+the extra credit:  Convert this program to <em>not</em> use pointers
+and <tt class="docutils literal">malloc</tt>.  This will be hard, so you'll want to research
+the following:</p>
+<ul class="simple">
+<li>How to create a <tt class="docutils literal">struct</tt> on the <em>stack</em>, which
+means just like you've been making any other variable.</li>
+<li>How to initialize it using the <tt class="docutils literal">x.y</tt> (period) character
+instead of the <tt class="docutils literal"><span class="pre">x-&gt;y</span></tt> syntax.</li>
+<li>How to pass a structure to other functions without using
+a pointer.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

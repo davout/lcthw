@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 20: Zed's Awesome Debug Macros</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 20: Zed's Awesome Debug Macros</h1>
+            <p>There is a constant problem in C that you have been dancing around but which I
+am going to solve in this exercise using a set of macros I developed.  You can
+thank me later when you realize how insanely awesome these macros are.  Right
+now you won't realize how awesome they are, so you'll just have to use them and
+then you can walk up to me one day and say, &quot;Zed, those Debug Macros were the
+bomb. I owe you my first born child because you saved me a decade of heartache
+and prevented me from killing myself more than once. Thank you good sir, here's
+a million dollars and the original Snakehead Telecaster prototype signed by Leo
+Fender.&quot;</p>
+<p>Yes, they are that awesome.</p>
+<div class="section" id="the-c-error-handling-problem">
+<h1>The C Error Handling Problem</h1>
+<p>In almost every programming language handling errors is a difficult activity.
+There's entire programming languages that try as hard as they can to avoid even
+the concept of an error.  Other languages invent complex control structures
+like exceptions to pass error conditions around.  The problem exists mostly
+because programmers assume errors don't happen and this optimism infects the
+type of languages they use and create.</p>
+<p>C tackles the problem by returning error codes and setting a global
+<tt class="docutils literal">errno</tt> value that you check.  This makes for complex code that
+simply exists to check if something you did had an error.  As you
+write more and more C code you'll write code with the pattern:</p>
+<ul class="simple">
+<li>Call a function.</li>
+<li>If the return value is an error (must look that up each time too).</li>
+<li>Then cleanup all the resource created so far.</li>
+<li>and print out an error message that hopefully helps.</li>
+</ul>
+<p>This means for every function call (and yes, <em>every</em> function)
+you are potentially writing 3-4 more lines just to make sure it worked.
+That doesn't include the problem of cleaning up all of the junk you've
+built to that point.  If you have 10 different structures, 3 files, and
+a database connection, when you get an error then you
+would have 14 more lines.</p>
+<p>In the past this wasn't a problem because C programs did what you've
+been doing when there's an error: die.  No point in bothering with cleanup
+when the OS will do it for you.  Today though many C programs need to run
+for weeks, months, or years and handle errors from many different sources
+gracefully.  You can't just have your webserver die at the slightest
+touch, and you definitely can't have a library you've written nuke a
+the program its used in.  That's just rude.</p>
+<p>Other languages solve this problem with exceptions, but those have problems
+in C (and in other languages too).  In C you only have one return value,
+but exceptions are an entire stack based return system with arbitrary
+values.  Trying to marshal exceptions up the stack in C is difficult, and
+no other libraries will understand it.</p>
+</div>
+<div class="section" id="the-debug-macros">
+<h1>The Debug Macros</h1>
+<p>The solution I've been using for years is a small set of &quot;debug macros&quot;
+that implement a basic debugging and error handling system for C.  This
+system is easy to understand, works with every library, and makes C code
+more solid and clearer.</p>
+<p>It does this by adopting the convention that whenever there's an error, your
+function will jump to an &quot;error:&quot; part of the function that knows how to
+cleanup everything and return an error code.  You use a macro called
+<tt class="docutils literal">check</tt> to check return codes, print an error message, and then
+jump to the cleanup section.  You combine that with a set of logging
+functions for printing out useful debug messages.</p>
+<p>I'll now show you the entire contents of the most awesome set of brilliance
+you've ever seen:</p>
+<div class="highlight"><pre><a name="code--dbg.h-pyg.html-1"></a><span class="cp">#ifndef __dbg_h__</span>
+<a name="code--dbg.h-pyg.html-2"></a><span class="cp">#define __dbg_h__</span>
+<a name="code--dbg.h-pyg.html-3"></a>
+<a name="code--dbg.h-pyg.html-4"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--dbg.h-pyg.html-5"></a><span class="cp">#include &lt;errno.h&gt;</span>
+<a name="code--dbg.h-pyg.html-6"></a><span class="cp">#include &lt;string.h&gt;</span>
+<a name="code--dbg.h-pyg.html-7"></a>
+<a name="code--dbg.h-pyg.html-8"></a><span class="cp">#ifdef NDEBUG</span>
+<a name="code--dbg.h-pyg.html-9"></a><span class="cp">#define debug(M, ...)</span>
+<a name="code--dbg.h-pyg.html-10"></a><span class="cp">#else</span>
+<a name="code--dbg.h-pyg.html-11"></a><span class="cp">#define debug(M, ...) fprintf(stderr, &quot;DEBUG %s:%d: &quot; M &quot;\n&quot;, __FILE__, __LINE__, ##__VA_ARGS__)</span>
+<a name="code--dbg.h-pyg.html-12"></a><span class="cp">#endif</span>
+<a name="code--dbg.h-pyg.html-13"></a>
+<a name="code--dbg.h-pyg.html-14"></a><span class="cp">#define clean_errno() (errno == 0 ? &quot;None&quot; : strerror(errno))</span>
+<a name="code--dbg.h-pyg.html-15"></a>
+<a name="code--dbg.h-pyg.html-16"></a><span class="cp">#define log_err(M, ...) fprintf(stderr, &quot;[ERROR] (%s:%d: errno: %s) &quot; M &quot;\n&quot;, __FILE__, __LINE__, clean_errno(), ##__VA_ARGS__)</span>
+<a name="code--dbg.h-pyg.html-17"></a>
+<a name="code--dbg.h-pyg.html-18"></a><span class="cp">#define log_warn(M, ...) fprintf(stderr, &quot;[WARN] (%s:%d: errno: %s) &quot; M &quot;\n&quot;, __FILE__, __LINE__, clean_errno(), ##__VA_ARGS__)</span>
+<a name="code--dbg.h-pyg.html-19"></a>
+<a name="code--dbg.h-pyg.html-20"></a><span class="cp">#define log_info(M, ...) fprintf(stderr, &quot;[INFO] (%s:%d) &quot; M &quot;\n&quot;, __FILE__, __LINE__, ##__VA_ARGS__)</span>
+<a name="code--dbg.h-pyg.html-21"></a>
+<a name="code--dbg.h-pyg.html-22"></a><span class="cp">#define check(A, M, ...) if(!(A)) { log_err(M, ##__VA_ARGS__); errno=0; goto error; }</span>
+<a name="code--dbg.h-pyg.html-23"></a>
+<a name="code--dbg.h-pyg.html-24"></a><span class="cp">#define sentinel(M, ...)  { log_err(M, ##__VA_ARGS__); errno=0; goto error; }</span>
+<a name="code--dbg.h-pyg.html-25"></a>
+<a name="code--dbg.h-pyg.html-26"></a><span class="cp">#define check_mem(A) check((A), &quot;Out of memory.&quot;)</span>
+<a name="code--dbg.h-pyg.html-27"></a>
+<a name="code--dbg.h-pyg.html-28"></a><span class="cp">#define check_debug(A, M, ...) if(!(A)) { debug(M, ##__VA_ARGS__); errno=0; goto error; }</span>
+<a name="code--dbg.h-pyg.html-29"></a>
+<a name="code--dbg.h-pyg.html-30"></a><span class="cp">#endif</span>
+</pre></div><p>Yes, that's it, and here's what every line does:</p>
+<dl class="docutils">
+<dt>dbg.h:1-2</dt>
+<dd>The usual defense against accidentally including the file
+twice, which you saw in the last exercise.</dd>
+<dt>dbg.h:4-6</dt>
+<dd>Includes for the functions that these macros need.</dd>
+<dt>dbg.h:8</dt>
+<dd>The start of a <tt class="docutils literal">#ifdef</tt> which lets you recompile your
+program so that all the debug log messages are removed.</dd>
+<dt>dbg.h:9</dt>
+<dd>If you compile with <tt class="docutils literal">NDEBUG</tt> defined, then &quot;no debug&quot; messages
+will remain.  You can see in this case the <tt class="docutils literal">#define debug()</tt> is just
+replaced with nothing (the right side is empty).</dd>
+<dt>dbg.h:10</dt>
+<dd>The matching <tt class="docutils literal">#else</tt> for the above <tt class="docutils literal">#ifdef</tt>.</dd>
+<dt>dbg.h:11</dt>
+<dd>The alternative <tt class="docutils literal">#define debug</tt> that translates any use
+of <tt class="docutils literal"><span class="pre">debug(&quot;format&quot;,</span> arg1, arg2)</tt> into an <tt class="docutils literal">fprintf</tt> call
+to <tt class="docutils literal">stderr</tt>.  Many C programmers don't know, but you can create
+macros that actually work like <tt class="docutils literal">printf</tt> and take variable arguments.
+Some C compilers (actually cpp) don't support this, but the ones that matter do.
+The magic here is the use of <tt class="docutils literal">##__VA_ARGS__</tt> which says
+&quot;put whatever they had for extra arguments (...) here&quot;.  Also notice
+the use of <tt class="docutils literal">__FILE__</tt> and <tt class="docutils literal">__LINE__</tt> to get the
+current <tt class="docutils literal">file:line</tt> for the debug message.  <em>Very</em> helpful.</dd>
+<dt>dbg.h:12</dt>
+<dd>The end of the <tt class="docutils literal">#ifdef</tt>.</dd>
+<dt>dbg.h:14</dt>
+<dd>The <tt class="docutils literal">clean_errno</tt> macro that's used in the others to get a
+safe readable version of <tt class="docutils literal">errno</tt>.  That strange syntax in the
+middle is a &quot;ternary operator&quot; and you'll learn what it does later.</dd>
+<dt>dbg.h:16-20</dt>
+<dd>The <tt class="docutils literal">log_err</tt>, <tt class="docutils literal">log_warn</tt>, and <tt class="docutils literal">log_info</tt>,
+macros for logging messages meant for the end user.  Works
+like <tt class="docutils literal">debug</tt> but can't be compiled out.</dd>
+<dt>dbg.h:22</dt>
+<dd>The best macro ever, <tt class="docutils literal">check</tt> will make sure the condition
+<tt class="docutils literal">A</tt> is true, and if not logs the error <tt class="docutils literal">M</tt> (with variable
+arguments for <tt class="docutils literal">log_err</tt>), then jumps to the function's <tt class="docutils literal">error:</tt>
+for cleanup.</dd>
+<dt>dbg.h:24</dt>
+<dd>The 2nd best macro ever, <tt class="docutils literal">sentinel</tt> is placed in any part of a
+function that shouldn't run, and if it does prints an error message then
+jumps to the <tt class="docutils literal">error:</tt> label.  You put this in <tt class="docutils literal"><span class="pre">if-statements</span></tt>
+and <tt class="docutils literal"><span class="pre">switch-statements</span></tt> to catch conditions that shouldn't happen,
+like the <tt class="docutils literal">default:</tt>.</dd>
+<dt>dbg.h:26</dt>
+<dd>A short-hand macro <tt class="docutils literal">check_mem</tt> that makes sure a pointer is
+valid, and if it isn't reports it as an error with &quot;Out of memory.&quot;</dd>
+<dt>dbg.h:28</dt>
+<dd>An alternative macro <tt class="docutils literal">check_debug</tt> that still checks and
+handles an error, but if the error is common then you don't want to bother
+reporting it.  In this one it will use <tt class="docutils literal">debug</tt> instead of <tt class="docutils literal">log_err</tt>
+to report the message, so when you define <tt class="docutils literal">NDEBUG</tt> the check still
+happens, the error jump goes off, but the message isn't printed.</dd>
+</dl>
+</div>
+<div class="section" id="using-dbg-h">
+<h1>Using dbg.h</h1>
+<p>Here's an example of using all of <tt class="docutils literal">dbg.h</tt> in a small program.
+This doesn't actually do anything but demonstrate how to use each
+macro, but we'll be using these macros in all of the programs we
+write from now on, so be sure to understand how to use them.</p>
+<div class="highlight"><pre><a name="code--ex20.c-pyg.html-1"></a><span class="cp">#include &quot;dbg.h&quot;</span>
+<a name="code--ex20.c-pyg.html-2"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--ex20.c-pyg.html-3"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex20.c-pyg.html-4"></a>
+<a name="code--ex20.c-pyg.html-5"></a>
+<a name="code--ex20.c-pyg.html-6"></a><span class="kt">void</span> <span class="nf">test_debug</span><span class="p">()</span>
+<a name="code--ex20.c-pyg.html-7"></a><span class="p">{</span>
+<a name="code--ex20.c-pyg.html-8"></a>    <span class="c1">// notice you don&#39;t need the \n</span>
+<a name="code--ex20.c-pyg.html-9"></a>    <span class="n">debug</span><span class="p">(</span><span class="s">&quot;I have Brown Hair.&quot;</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-10"></a>
+<a name="code--ex20.c-pyg.html-11"></a>    <span class="c1">// passing in arguments like printf</span>
+<a name="code--ex20.c-pyg.html-12"></a>    <span class="n">debug</span><span class="p">(</span><span class="s">&quot;I am %d years old.&quot;</span><span class="p">,</span> <span class="mi">37</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-13"></a><span class="p">}</span>
+<a name="code--ex20.c-pyg.html-14"></a>
+<a name="code--ex20.c-pyg.html-15"></a><span class="kt">void</span> <span class="nf">test_log_err</span><span class="p">()</span>
+<a name="code--ex20.c-pyg.html-16"></a><span class="p">{</span>
+<a name="code--ex20.c-pyg.html-17"></a>    <span class="n">log_err</span><span class="p">(</span><span class="s">&quot;I believe everything is broken.&quot;</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-18"></a>    <span class="n">log_err</span><span class="p">(</span><span class="s">&quot;There are %d problems in %s.&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;space&quot;</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-19"></a><span class="p">}</span>
+<a name="code--ex20.c-pyg.html-20"></a>
+<a name="code--ex20.c-pyg.html-21"></a><span class="kt">void</span> <span class="nf">test_log_warn</span><span class="p">()</span>
+<a name="code--ex20.c-pyg.html-22"></a><span class="p">{</span>
+<a name="code--ex20.c-pyg.html-23"></a>    <span class="n">log_warn</span><span class="p">(</span><span class="s">&quot;You can safely ignore this.&quot;</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-24"></a>    <span class="n">log_warn</span><span class="p">(</span><span class="s">&quot;Maybe consider looking at: %s.&quot;</span><span class="p">,</span> <span class="s">&quot;/etc/passwd&quot;</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-25"></a><span class="p">}</span>
+<a name="code--ex20.c-pyg.html-26"></a>
+<a name="code--ex20.c-pyg.html-27"></a><span class="kt">void</span> <span class="nf">test_log_info</span><span class="p">()</span>
+<a name="code--ex20.c-pyg.html-28"></a><span class="p">{</span>
+<a name="code--ex20.c-pyg.html-29"></a>    <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;Well I did something mundane.&quot;</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-30"></a>    <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;It happened %f times today.&quot;</span><span class="p">,</span> <span class="mf">1.3f</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-31"></a><span class="p">}</span>
+<a name="code--ex20.c-pyg.html-32"></a>
+<a name="code--ex20.c-pyg.html-33"></a><span class="kt">int</span> <span class="nf">test_check</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">file_name</span><span class="p">)</span>
+<a name="code--ex20.c-pyg.html-34"></a><span class="p">{</span>
+<a name="code--ex20.c-pyg.html-35"></a>    <span class="kt">FILE</span> <span class="o">*</span><span class="n">input</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex20.c-pyg.html-36"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">block</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex20.c-pyg.html-37"></a>
+<a name="code--ex20.c-pyg.html-38"></a>    <span class="n">block</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-39"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">block</span><span class="p">);</span> <span class="c1">// should work</span>
+<a name="code--ex20.c-pyg.html-40"></a>
+<a name="code--ex20.c-pyg.html-41"></a>    <span class="n">input</span> <span class="o">=</span> <span class="n">fopen</span><span class="p">(</span><span class="n">file_name</span><span class="p">,</span><span class="s">&quot;r&quot;</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-42"></a>    <span class="n">check</span><span class="p">(</span><span class="n">input</span><span class="p">,</span> <span class="s">&quot;Failed to open %s.&quot;</span><span class="p">,</span> <span class="n">file_name</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-43"></a>
+<a name="code--ex20.c-pyg.html-44"></a>    <span class="n">free</span><span class="p">(</span><span class="n">block</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-45"></a>    <span class="n">fclose</span><span class="p">(</span><span class="n">input</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-46"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex20.c-pyg.html-47"></a>
+<a name="code--ex20.c-pyg.html-48"></a><span class="nl">error:</span>
+<a name="code--ex20.c-pyg.html-49"></a>    <span class="k">if</span><span class="p">(</span><span class="n">block</span><span class="p">)</span> <span class="n">free</span><span class="p">(</span><span class="n">block</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-50"></a>    <span class="k">if</span><span class="p">(</span><span class="n">input</span><span class="p">)</span> <span class="n">fclose</span><span class="p">(</span><span class="n">input</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-51"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex20.c-pyg.html-52"></a><span class="p">}</span>
+<a name="code--ex20.c-pyg.html-53"></a>
+<a name="code--ex20.c-pyg.html-54"></a><span class="kt">int</span> <span class="nf">test_sentinel</span><span class="p">(</span><span class="kt">int</span> <span class="n">code</span><span class="p">)</span>
+<a name="code--ex20.c-pyg.html-55"></a><span class="p">{</span>
+<a name="code--ex20.c-pyg.html-56"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">temp</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="mi">100</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-57"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">temp</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-58"></a>
+<a name="code--ex20.c-pyg.html-59"></a>    <span class="k">switch</span><span class="p">(</span><span class="n">code</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex20.c-pyg.html-60"></a>        <span class="k">case</span> <span class="mi">1</span>:
+<a name="code--ex20.c-pyg.html-61"></a>            <span class="n">log_info</span><span class="p">(</span><span class="s">&quot;It worked.&quot;</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-62"></a>            <span class="k">break</span><span class="p">;</span>
+<a name="code--ex20.c-pyg.html-63"></a>        <span class="nl">default:</span>
+<a name="code--ex20.c-pyg.html-64"></a>            <span class="n">sentinel</span><span class="p">(</span><span class="s">&quot;I shouldn&#39;t run.&quot;</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-65"></a>    <span class="p">}</span>
+<a name="code--ex20.c-pyg.html-66"></a>
+<a name="code--ex20.c-pyg.html-67"></a>    <span class="n">free</span><span class="p">(</span><span class="n">temp</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-68"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex20.c-pyg.html-69"></a>
+<a name="code--ex20.c-pyg.html-70"></a><span class="nl">error:</span>
+<a name="code--ex20.c-pyg.html-71"></a>    <span class="k">if</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span> <span class="n">free</span><span class="p">(</span><span class="n">temp</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-72"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex20.c-pyg.html-73"></a><span class="p">}</span>
+<a name="code--ex20.c-pyg.html-74"></a>
+<a name="code--ex20.c-pyg.html-75"></a><span class="kt">int</span> <span class="nf">test_check_mem</span><span class="p">()</span>
+<a name="code--ex20.c-pyg.html-76"></a><span class="p">{</span>
+<a name="code--ex20.c-pyg.html-77"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">test</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--ex20.c-pyg.html-78"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">test</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-79"></a>
+<a name="code--ex20.c-pyg.html-80"></a>    <span class="n">free</span><span class="p">(</span><span class="n">test</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-81"></a>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex20.c-pyg.html-82"></a>
+<a name="code--ex20.c-pyg.html-83"></a><span class="nl">error:</span>
+<a name="code--ex20.c-pyg.html-84"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex20.c-pyg.html-85"></a><span class="p">}</span>
+<a name="code--ex20.c-pyg.html-86"></a>
+<a name="code--ex20.c-pyg.html-87"></a><span class="kt">int</span> <span class="nf">test_check_debug</span><span class="p">()</span>
+<a name="code--ex20.c-pyg.html-88"></a><span class="p">{</span>
+<a name="code--ex20.c-pyg.html-89"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex20.c-pyg.html-90"></a>    <span class="n">check_debug</span><span class="p">(</span><span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Oops, I was 0.&quot;</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-91"></a>
+<a name="code--ex20.c-pyg.html-92"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex20.c-pyg.html-93"></a><span class="nl">error:</span>
+<a name="code--ex20.c-pyg.html-94"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--ex20.c-pyg.html-95"></a><span class="p">}</span>
+<a name="code--ex20.c-pyg.html-96"></a>
+<a name="code--ex20.c-pyg.html-97"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex20.c-pyg.html-98"></a><span class="p">{</span>
+<a name="code--ex20.c-pyg.html-99"></a>    <span class="n">check</span><span class="p">(</span><span class="n">argc</span> <span class="o">==</span> <span class="mi">2</span><span class="p">,</span> <span class="s">&quot;Need an argument.&quot;</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-100"></a>
+<a name="code--ex20.c-pyg.html-101"></a>    <span class="n">test_debug</span><span class="p">();</span>
+<a name="code--ex20.c-pyg.html-102"></a>    <span class="n">test_log_err</span><span class="p">();</span>
+<a name="code--ex20.c-pyg.html-103"></a>    <span class="n">test_log_warn</span><span class="p">();</span>
+<a name="code--ex20.c-pyg.html-104"></a>    <span class="n">test_log_info</span><span class="p">();</span>
+<a name="code--ex20.c-pyg.html-105"></a>
+<a name="code--ex20.c-pyg.html-106"></a>    <span class="n">check</span><span class="p">(</span><span class="n">test_check</span><span class="p">(</span><span class="s">&quot;ex20.c&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;failed with ex20.c&quot;</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-107"></a>    <span class="n">check</span><span class="p">(</span><span class="n">test_check</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;failed with argv&quot;</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-108"></a>    <span class="n">check</span><span class="p">(</span><span class="n">test_sentinel</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;test_sentinel failed.&quot;</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-109"></a>    <span class="n">check</span><span class="p">(</span><span class="n">test_sentinel</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;test_sentinel failed.&quot;</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-110"></a>    <span class="n">check</span><span class="p">(</span><span class="n">test_check_mem</span><span class="p">()</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;test_check_mem failed.&quot;</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-111"></a>    <span class="n">check</span><span class="p">(</span><span class="n">test_check_debug</span><span class="p">()</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;test_check_debug failed.&quot;</span><span class="p">);</span>
+<a name="code--ex20.c-pyg.html-112"></a>
+<a name="code--ex20.c-pyg.html-113"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex20.c-pyg.html-114"></a>
+<a name="code--ex20.c-pyg.html-115"></a><span class="nl">error:</span>
+<a name="code--ex20.c-pyg.html-116"></a>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex20.c-pyg.html-117"></a><span class="p">}</span>
+</pre></div><p>Pay attention to how <tt class="docutils literal">check</tt> is used, and how when it is
+<tt class="docutils literal">false</tt> it will jump to the <tt class="docutils literal">error:</tt> label to do a cleanup.
+The way to read those lines is, &quot;check that A is true and if not say M
+and jump out.&quot;</p>
+</div>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>When you run this, give it some bogus first parameter and you should see
+this:</p>
+<div class="highlight"><pre><a name="code--ex20.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex20
+<a name="code--ex20.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g -DNDEBUG    ex20.c   -o ex20</span>
+<a name="code--ex20.sh-session-pyg.html-3"></a><span class="gp">$</span> ./ex20 <span class="nb">test</span>
+<a name="code--ex20.sh-session-pyg.html-4"></a><span class="go">[ERROR] (ex20.c:16: errno: None) I believe everything is broken.</span>
+<a name="code--ex20.sh-session-pyg.html-5"></a><span class="go">[ERROR] (ex20.c:17: errno: None) There are 0 problems in space.</span>
+<a name="code--ex20.sh-session-pyg.html-6"></a><span class="go">[WARN] (ex20.c:22: errno: None) You can safely ignore this.</span>
+<a name="code--ex20.sh-session-pyg.html-7"></a><span class="go">[WARN] (ex20.c:23: errno: None) Maybe consider looking at: /etc/passwd.</span>
+<a name="code--ex20.sh-session-pyg.html-8"></a><span class="go">[INFO] (ex20.c:28) Well I did something mundane.</span>
+<a name="code--ex20.sh-session-pyg.html-9"></a><span class="go">[INFO] (ex20.c:29) It happened 1.300000 times today.</span>
+<a name="code--ex20.sh-session-pyg.html-10"></a><span class="go">[ERROR] (ex20.c:38: errno: No such file or directory) Failed to open test.</span>
+<a name="code--ex20.sh-session-pyg.html-11"></a><span class="go">[INFO] (ex20.c:57) It worked.</span>
+<a name="code--ex20.sh-session-pyg.html-12"></a><span class="go">[ERROR] (ex20.c:60: errno: None) I shouldn&#39;t run.</span>
+<a name="code--ex20.sh-session-pyg.html-13"></a><span class="go">[ERROR] (ex20.c:74: errno: None) Out of memory.</span>
+</pre></div><p>See how it reports the exact line number where the <tt class="docutils literal">check</tt> failed?
+That's going to save you hours of debugging later.  See also how it
+prints the error message for you when <tt class="docutils literal">errno</tt> is set? Again,
+that will save you hours of debugging.</p>
+</div>
+<div class="section" id="how-the-cpp-expands-macros">
+<h1>How The CPP Expands Macros</h1>
+<p>It's now time for you to get a small introduction to the CPP so that you
+know how these macros actually work.  To do this, I'm going to break down
+the most complex macro from <tt class="docutils literal">dbg.h</tt> and have you run <tt class="docutils literal">cpp</tt> so
+you can see what it's actually doing.</p>
+<p>Imagine I have a function called <tt class="docutils literal">dosomething()</tt> that return the typical
+0 for success and -1 for an error.  Every time I call <tt class="docutils literal">dosomething</tt> I have
+to check for this error code, so I'd write code like this:</p>
+<pre class="literal-block">
+int rc = dosomething();
+
+if(rc != 0) {
+    fprintf(stderr, &quot;There was an error: %s\n&quot;, strerror());
+    goto error;
+}
+</pre>
+<p>What I want to use the CPP for is to encapsulate this <tt class="docutils literal"><span class="pre">if-statement</span></tt> I have
+to use all the time into a more readable and memorable line of code.  I want
+what you've been doing in <tt class="docutils literal">dbg.h</tt> with the <tt class="docutils literal">check</tt> macro:</p>
+<pre class="literal-block">
+int rc = dosomething();
+check(rc == 0, &quot;There was an error.&quot;);
+</pre>
+<p>This is <em>much</em> clearer and explains exactly what's going on: check that the
+function worked, and if not report an error.  To do this, we need some special
+CPP &quot;tricks&quot; that make the CPP useful as a code generation tool.  Take a look
+at the <tt class="docutils literal">check</tt> and <tt class="docutils literal">log_err</tt> macros again:</p>
+<pre class="literal-block">
+#define log_err(M, ...) fprintf(stderr, &quot;[ERROR] (%s:%d: errno: %s) &quot; M &quot;\n&quot;, __FILE__, __LINE__, clean_errno(), ##__VA_ARGS__)
+#define check(A, M, ...) if(!(A)) { log_err(M, ##__VA_ARGS__); errno=0; goto error; }
+</pre>
+<p>The first macro, <tt class="docutils literal">log_err</tt> is simpler and simply replace itself with a
+call to <tt class="docutils literal">fprintf</tt> to <tt class="docutils literal">stderr</tt>.  The only tricky part of this macro
+is the use of <tt class="docutils literal">...</tt> in the definition <tt class="docutils literal">log_err(M, <span class="pre">...)</span></tt>.  What this
+does is let you pass variable arguments to the macro, so you can pass in the
+arguments that should go to <tt class="docutils literal">fprintf</tt>.  How do they get injected into the
+<tt class="docutils literal">fprintf</tt> call?  Look at the end to the <tt class="docutils literal">##__VA_ARGS__</tt> and
+that's telling the CPP to take the args entered where the <tt class="docutils literal">...</tt> is, and
+inject them at that part of the <tt class="docutils literal">fprintf</tt> call.  You can then do things
+like this:</p>
+<p><tt class="docutils literal"><span class="pre">log_err(&quot;Age:</span> %d, name: %s&quot;, age, name);</tt></p>
+<p>The arguments <tt class="docutils literal">age, name</tt> are the <tt class="docutils literal">...</tt> part of the definition, and those
+get injected into the fprintf output to become:</p>
+<pre class="literal-block">
+fprintf(stderr, &quot;[ERROR] (%s:%d: errno: %s) Age %d: name %d\n&quot;,
+    __FILE__, __LINE__, clean_errno(), age, name);
+</pre>
+<p>See the <tt class="docutils literal">age, name</tt> at the end? That's how <tt class="docutils literal">...</tt> and
+<tt class="docutils literal">##__VA_ARGS__</tt> work together, and it will work in macros that call other
+variable argument macros.  Look at the <tt class="docutils literal">check</tt> macro now and see it calls
+<tt class="docutils literal">log_err</tt>, but <tt class="docutils literal">check</tt> is <em>also</em> using the <tt class="docutils literal">...</tt> and
+<tt class="docutils literal">##__VA_ARGS__</tt> to do the call.  That's how you can pass full
+<tt class="docutils literal">printf</tt> style format strings to <tt class="docutils literal">check</tt>, which go to
+<tt class="docutils literal">log_err</tt>, and then make both work like <tt class="docutils literal">printf</tt>.</p>
+<p>Next thing to study is how <tt class="docutils literal">check</tt> crafts the <tt class="docutils literal"><span class="pre">if-statement</span></tt> for the
+error checking.  If we strip out the <tt class="docutils literal">log_err</tt> usage we see this:</p>
+<p><tt class="docutils literal"><span class="pre">if(!(A))</span> { errno=0; goto error; }</tt></p>
+<p>Which means, if <tt class="docutils literal">A</tt> is false, then clear errno and goto the error label.
+That has <tt class="docutils literal">check</tt> macro being replaced with the <tt class="docutils literal"><span class="pre">if-statement</span></tt> so if
+we manually expanded out the macro <tt class="docutils literal">check(rc == 0, &quot;There was an <span class="pre">error.&quot;)</span></tt>
+we'd get:</p>
+<pre class="literal-block">
+if(!(rc == 0)) {
+    log_err(&quot;There was an error.&quot;);
+    errno=0;
+    goto error;
+}
+</pre>
+<p>What you should be getting from this trip through these two macros is that
+the CPP replaces macros with the expanded version of their definition, but
+that it will do this <em>recursively</em>, expanding all the macros in macros.
+The CPP then is just a recursive templating system, as I mentioned before.
+Its power comes from its ability to generate whole blocks of parameterized
+code thus becoming a handy code generation tool.</p>
+<p>That leaves one question:  Why not just use a function like <tt class="docutils literal">die</tt>?
+The reason is you want <tt class="docutils literal">file:line</tt> numbers and the <tt class="docutils literal">goto</tt> operation
+for an error handling exit.  If you did this inside a function, you wouldn't
+get a line number for where the error actually happened, and the goto would
+be much more complicated.</p>
+<p>Another reason is you still have to write the raw <tt class="docutils literal"><span class="pre">if-statement</span></tt>, which
+looks like all the other <tt class="docutils literal"><span class="pre">if-statements</span></tt> in your code, so it's not as
+clear that this one is an error check.  By wrapping the <tt class="docutils literal"><span class="pre">if-statement</span></tt>
+in a macro called <tt class="docutils literal">check</tt> you make it clear that this is just error
+checking, and not part of the main flow.</p>
+<p>Finally, CPP has the ability to <em>conditionally compile</em> portions
+of code, so you can have code that's only present when you build a developer
+or debug version of the program.  You can see this already in the
+<tt class="docutils literal">dbg.h</tt> file where the <tt class="docutils literal">debug</tt> macro has a body only if
+it's asked for by the compiler.  Without this ability, you'd need a
+wasted <tt class="docutils literal"><span class="pre">if-statement</span></tt> that checks for &quot;debug mode&quot;, and then still
+wastes CPU doing that check for no value.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Put <tt class="docutils literal">#define NDEBUG</tt> at the top of the file and check that all
+the debug messages go away.</li>
+<li>Undo that line, and add <tt class="docutils literal"><span class="pre">-DNDEBUG</span></tt> to <tt class="docutils literal">CFLAGS</tt> at the
+top of the <tt class="docutils literal">Makefile</tt> then recompile to see the same thing.</li>
+<li>Modify the logging so that it include the function name as well
+as the <tt class="docutils literal">file:line</tt>.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

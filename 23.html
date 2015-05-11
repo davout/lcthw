@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 23: Meet Duff's Device</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 23: Meet Duff's Device</h1>
+            <p>This exercise is a brain teaser where I introduce you to one of the
+most famous hacks in C called &quot;Duff's Device&quot;, named after Tom Duff
+the &quot;inventor&quot;.  This little slice of awesome (evil?) has nearly everything
+you've been learning wrapped in one tiny little package.  Figuring out
+how it works is also a good fun puzzle.</p>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p class="last">Part of the fun of C is that you can come up with crazy hacks like this,
+but this is also what makes C annoying to use.  It's good to learn about
+these tricks because it gives you a deeper understanding of
+the language and your computer.  But, you should never use this.  Always
+strive for easy to read code.</p>
+</div>
+<p>Duff's device was &quot;discovered&quot; (created?) by Tom Duff and is a trick
+with the C compiler that actually shouldn't work.  I won't tell you what
+it does yet since this is meant to be a puzzle for you to ponder and
+try to solve.  You are to get this code running and then try to figure
+out what it does, and <em>why</em> it does it this way.</p>
+<div class="highlight"><pre><a name="code--ex23.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex23.c-pyg.html-2"></a><span class="cp">#include &lt;string.h&gt;</span>
+<a name="code--ex23.c-pyg.html-3"></a><span class="cp">#include &quot;dbg.h&quot;</span>
+<a name="code--ex23.c-pyg.html-4"></a>
+<a name="code--ex23.c-pyg.html-5"></a>
+<a name="code--ex23.c-pyg.html-6"></a><span class="kt">int</span> <span class="nf">normal_copy</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">from</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">to</span><span class="p">,</span> <span class="kt">int</span> <span class="n">count</span><span class="p">)</span>
+<a name="code--ex23.c-pyg.html-7"></a><span class="p">{</span>
+<a name="code--ex23.c-pyg.html-8"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-9"></a>
+<a name="code--ex23.c-pyg.html-10"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">count</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex23.c-pyg.html-11"></a>        <span class="n">to</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">from</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<a name="code--ex23.c-pyg.html-12"></a>    <span class="p">}</span>
+<a name="code--ex23.c-pyg.html-13"></a>
+<a name="code--ex23.c-pyg.html-14"></a>    <span class="k">return</span> <span class="n">i</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-15"></a><span class="p">}</span>
+<a name="code--ex23.c-pyg.html-16"></a>
+<a name="code--ex23.c-pyg.html-17"></a><span class="kt">int</span> <span class="nf">duffs_device</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">from</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">to</span><span class="p">,</span> <span class="kt">int</span> <span class="n">count</span><span class="p">)</span>
+<a name="code--ex23.c-pyg.html-18"></a><span class="p">{</span>
+<a name="code--ex23.c-pyg.html-19"></a>    <span class="p">{</span>
+<a name="code--ex23.c-pyg.html-20"></a>        <span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="p">(</span><span class="n">count</span> <span class="o">+</span> <span class="mi">7</span><span class="p">)</span> <span class="o">/</span> <span class="mi">8</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-21"></a>
+<a name="code--ex23.c-pyg.html-22"></a>        <span class="k">switch</span><span class="p">(</span><span class="n">count</span> <span class="o">%</span> <span class="mi">8</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex23.c-pyg.html-23"></a>            <span class="k">case</span> <span class="mi">0</span>: <span class="k">do</span> <span class="p">{</span> <span class="o">*</span><span class="n">to</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">from</span><span class="o">++</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-24"></a>                        <span class="k">case</span> <span class="mi">7</span>: <span class="o">*</span><span class="n">to</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">from</span><span class="o">++</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-25"></a>                        <span class="k">case</span> <span class="mi">6</span>: <span class="o">*</span><span class="n">to</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">from</span><span class="o">++</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-26"></a>                        <span class="k">case</span> <span class="mi">5</span>: <span class="o">*</span><span class="n">to</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">from</span><span class="o">++</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-27"></a>                        <span class="k">case</span> <span class="mi">4</span>: <span class="o">*</span><span class="n">to</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">from</span><span class="o">++</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-28"></a>                        <span class="k">case</span> <span class="mi">3</span>: <span class="o">*</span><span class="n">to</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">from</span><span class="o">++</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-29"></a>                        <span class="k">case</span> <span class="mi">2</span>: <span class="o">*</span><span class="n">to</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">from</span><span class="o">++</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-30"></a>                        <span class="k">case</span> <span class="mi">1</span>: <span class="o">*</span><span class="n">to</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">from</span><span class="o">++</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-31"></a>                    <span class="p">}</span> <span class="k">while</span><span class="p">(</span><span class="o">--</span><span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">);</span>
+<a name="code--ex23.c-pyg.html-32"></a>        <span class="p">}</span>
+<a name="code--ex23.c-pyg.html-33"></a>    <span class="p">}</span>
+<a name="code--ex23.c-pyg.html-34"></a>
+<a name="code--ex23.c-pyg.html-35"></a>    <span class="k">return</span> <span class="n">count</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-36"></a><span class="p">}</span>
+<a name="code--ex23.c-pyg.html-37"></a>
+<a name="code--ex23.c-pyg.html-38"></a><span class="kt">int</span> <span class="nf">zeds_device</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">from</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">to</span><span class="p">,</span> <span class="kt">int</span> <span class="n">count</span><span class="p">)</span>
+<a name="code--ex23.c-pyg.html-39"></a><span class="p">{</span>
+<a name="code--ex23.c-pyg.html-40"></a>    <span class="p">{</span>
+<a name="code--ex23.c-pyg.html-41"></a>        <span class="kt">int</span> <span class="n">n</span> <span class="o">=</span> <span class="p">(</span><span class="n">count</span> <span class="o">+</span> <span class="mi">7</span><span class="p">)</span> <span class="o">/</span> <span class="mi">8</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-42"></a>
+<a name="code--ex23.c-pyg.html-43"></a>        <span class="k">switch</span><span class="p">(</span><span class="n">count</span> <span class="o">%</span> <span class="mi">8</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex23.c-pyg.html-44"></a>            <span class="k">case</span> <span class="mi">0</span>:
+<a name="code--ex23.c-pyg.html-45"></a>            <span class="n">again</span><span class="o">:</span> <span class="o">*</span><span class="n">to</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">from</span><span class="o">++</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-46"></a>
+<a name="code--ex23.c-pyg.html-47"></a>            <span class="k">case</span> <span class="mi">7</span>: <span class="o">*</span><span class="n">to</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">from</span><span class="o">++</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-48"></a>            <span class="k">case</span> <span class="mi">6</span>: <span class="o">*</span><span class="n">to</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">from</span><span class="o">++</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-49"></a>            <span class="k">case</span> <span class="mi">5</span>: <span class="o">*</span><span class="n">to</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">from</span><span class="o">++</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-50"></a>            <span class="k">case</span> <span class="mi">4</span>: <span class="o">*</span><span class="n">to</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">from</span><span class="o">++</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-51"></a>            <span class="k">case</span> <span class="mi">3</span>: <span class="o">*</span><span class="n">to</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">from</span><span class="o">++</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-52"></a>            <span class="k">case</span> <span class="mi">2</span>: <span class="o">*</span><span class="n">to</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">from</span><span class="o">++</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-53"></a>            <span class="k">case</span> <span class="mi">1</span>: <span class="o">*</span><span class="n">to</span><span class="o">++</span> <span class="o">=</span> <span class="o">*</span><span class="n">from</span><span class="o">++</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-54"></a>                    <span class="k">if</span><span class="p">(</span><span class="o">--</span><span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="k">goto</span> <span class="n">again</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-55"></a>        <span class="p">}</span>
+<a name="code--ex23.c-pyg.html-56"></a>    <span class="p">}</span>
+<a name="code--ex23.c-pyg.html-57"></a>
+<a name="code--ex23.c-pyg.html-58"></a>    <span class="k">return</span> <span class="n">count</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-59"></a><span class="p">}</span>
+<a name="code--ex23.c-pyg.html-60"></a>
+<a name="code--ex23.c-pyg.html-61"></a><span class="kt">int</span> <span class="nf">valid_copy</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">data</span><span class="p">,</span> <span class="kt">int</span> <span class="n">count</span><span class="p">,</span> <span class="kt">char</span> <span class="n">expects</span><span class="p">)</span>
+<a name="code--ex23.c-pyg.html-62"></a><span class="p">{</span>
+<a name="code--ex23.c-pyg.html-63"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-64"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">count</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex23.c-pyg.html-65"></a>        <span class="k">if</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">expects</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex23.c-pyg.html-66"></a>            <span class="n">log_err</span><span class="p">(</span><span class="s">&quot;[%d] %c != %c&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">expects</span><span class="p">);</span>
+<a name="code--ex23.c-pyg.html-67"></a>            <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-68"></a>        <span class="p">}</span>
+<a name="code--ex23.c-pyg.html-69"></a>    <span class="p">}</span>
+<a name="code--ex23.c-pyg.html-70"></a>
+<a name="code--ex23.c-pyg.html-71"></a>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-72"></a><span class="p">}</span>
+<a name="code--ex23.c-pyg.html-73"></a>
+<a name="code--ex23.c-pyg.html-74"></a>
+<a name="code--ex23.c-pyg.html-75"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex23.c-pyg.html-76"></a><span class="p">{</span>
+<a name="code--ex23.c-pyg.html-77"></a>    <span class="kt">char</span> <span class="n">from</span><span class="p">[</span><span class="mi">1000</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="sc">&#39;a&#39;</span><span class="p">};</span>
+<a name="code--ex23.c-pyg.html-78"></a>    <span class="kt">char</span> <span class="n">to</span><span class="p">[</span><span class="mi">1000</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="sc">&#39;c&#39;</span><span class="p">};</span>
+<a name="code--ex23.c-pyg.html-79"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-80"></a>
+<a name="code--ex23.c-pyg.html-81"></a>    <span class="c1">// setup the from to have some stuff</span>
+<a name="code--ex23.c-pyg.html-82"></a>    <span class="n">memset</span><span class="p">(</span><span class="n">from</span><span class="p">,</span> <span class="sc">&#39;x&#39;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">);</span>
+<a name="code--ex23.c-pyg.html-83"></a>    <span class="c1">// set it to a failure mode</span>
+<a name="code--ex23.c-pyg.html-84"></a>    <span class="n">memset</span><span class="p">(</span><span class="n">to</span><span class="p">,</span> <span class="sc">&#39;y&#39;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">);</span>
+<a name="code--ex23.c-pyg.html-85"></a>    <span class="n">check</span><span class="p">(</span><span class="n">valid_copy</span><span class="p">(</span><span class="n">to</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="sc">&#39;y&#39;</span><span class="p">),</span> <span class="s">&quot;Not initialized right.&quot;</span><span class="p">);</span>
+<a name="code--ex23.c-pyg.html-86"></a>
+<a name="code--ex23.c-pyg.html-87"></a>    <span class="c1">// use normal copy to </span>
+<a name="code--ex23.c-pyg.html-88"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">normal_copy</span><span class="p">(</span><span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="mi">1000</span><span class="p">);</span>
+<a name="code--ex23.c-pyg.html-89"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">1000</span><span class="p">,</span> <span class="s">&quot;Normal copy failed: %d&quot;</span><span class="p">,</span> <span class="n">rc</span><span class="p">);</span>
+<a name="code--ex23.c-pyg.html-90"></a>    <span class="n">check</span><span class="p">(</span><span class="n">valid_copy</span><span class="p">(</span><span class="n">to</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="sc">&#39;x&#39;</span><span class="p">),</span> <span class="s">&quot;Normal copy failed.&quot;</span><span class="p">);</span>
+<a name="code--ex23.c-pyg.html-91"></a>
+<a name="code--ex23.c-pyg.html-92"></a>    <span class="c1">// reset</span>
+<a name="code--ex23.c-pyg.html-93"></a>    <span class="n">memset</span><span class="p">(</span><span class="n">to</span><span class="p">,</span> <span class="sc">&#39;y&#39;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">);</span>
+<a name="code--ex23.c-pyg.html-94"></a>
+<a name="code--ex23.c-pyg.html-95"></a>    <span class="c1">// duffs version</span>
+<a name="code--ex23.c-pyg.html-96"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">duffs_device</span><span class="p">(</span><span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="mi">1000</span><span class="p">);</span>
+<a name="code--ex23.c-pyg.html-97"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">1000</span><span class="p">,</span> <span class="s">&quot;Duff&#39;s device failed: %d&quot;</span><span class="p">,</span> <span class="n">rc</span><span class="p">);</span>
+<a name="code--ex23.c-pyg.html-98"></a>    <span class="n">check</span><span class="p">(</span><span class="n">valid_copy</span><span class="p">(</span><span class="n">to</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="sc">&#39;x&#39;</span><span class="p">),</span> <span class="s">&quot;Duff&#39;s device failed copy.&quot;</span><span class="p">);</span>
+<a name="code--ex23.c-pyg.html-99"></a>
+<a name="code--ex23.c-pyg.html-100"></a>    <span class="c1">// reset</span>
+<a name="code--ex23.c-pyg.html-101"></a>    <span class="n">memset</span><span class="p">(</span><span class="n">to</span><span class="p">,</span> <span class="sc">&#39;y&#39;</span><span class="p">,</span> <span class="mi">1000</span><span class="p">);</span>
+<a name="code--ex23.c-pyg.html-102"></a>
+<a name="code--ex23.c-pyg.html-103"></a>    <span class="c1">// my version</span>
+<a name="code--ex23.c-pyg.html-104"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">zeds_device</span><span class="p">(</span><span class="n">from</span><span class="p">,</span> <span class="n">to</span><span class="p">,</span> <span class="mi">1000</span><span class="p">);</span>
+<a name="code--ex23.c-pyg.html-105"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">1000</span><span class="p">,</span> <span class="s">&quot;Zed&#39;s device failed: %d&quot;</span><span class="p">,</span> <span class="n">rc</span><span class="p">);</span>
+<a name="code--ex23.c-pyg.html-106"></a>    <span class="n">check</span><span class="p">(</span><span class="n">valid_copy</span><span class="p">(</span><span class="n">to</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="sc">&#39;x&#39;</span><span class="p">),</span> <span class="s">&quot;Zed&#39;s device failed copy.&quot;</span><span class="p">);</span>
+<a name="code--ex23.c-pyg.html-107"></a>
+<a name="code--ex23.c-pyg.html-108"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-109"></a><span class="nl">error:</span>
+<a name="code--ex23.c-pyg.html-110"></a>    <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex23.c-pyg.html-111"></a><span class="p">}</span>
+</pre></div><p>In this code I have three versions of a copy function:</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">normal_copy</tt></dt>
+<dd>Which is just a plain <tt class="docutils literal"><span class="pre">for-loop</span></tt> that copies
+characters from one array to another.</dd>
+<dt><tt class="docutils literal">duffs_device</tt></dt>
+<dd>This is the brain teaser called &quot;Duff's Device&quot;, named
+after Tom Duff, the person to blame for this delicious evil.</dd>
+<dt><tt class="docutils literal">zeds_device</tt></dt>
+<dd>A version of &quot;Duff's Device&quot; that just uses a goto so
+you can get a clue about what's happening with the weird <tt class="docutils literal"><span class="pre">do-while</span></tt>
+placement in <tt class="docutils literal">duffs_device</tt>.</dd>
+</dl>
+<p>Study these three functions before continuing.  Try to explain what's
+going on to yourself before continuing.</p>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>There's no output from this program, it just runs and exits.  You should
+run it under valgrind and make sure there are no errors.</p>
+</div>
+<div class="section" id="solving-the-puzzle">
+<h1>Solving The Puzzle</h1>
+<p>The first thing to understand is that C is rather loose regarding some
+of its syntax.  This is why you can put half of a <tt class="docutils literal"><span class="pre">do-while</span></tt> in
+one part of a <tt class="docutils literal"><span class="pre">switch-statement</span></tt>, then the other half somewhere
+else and it will still work.  If you look at my version with the <tt class="docutils literal">goto again</tt>
+it's actually more clear what's going on, but make sure you understand
+how that part works.</p>
+<p>The second thing is how the default fallthrough semantics of
+<tt class="docutils literal"><span class="pre">switch-statements</span></tt> means you can jump to a particular case, and
+then it will just keep running until the end of the switch.</p>
+<p>The final clue is the <tt class="docutils literal">count % 8</tt> and the calculation of <tt class="docutils literal">n</tt> at
+the top.</p>
+<p>Now, to solve how these functions work, do the following:</p>
+<ul class="simple">
+<li>Print this code out so you can write on some paper.</li>
+<li>On a piece of paper, write each of the variables in a table as they
+are when they get initialized right before the <tt class="docutils literal"><span class="pre">switch-statement</span></tt>.</li>
+<li>Follow the logic to the switch, then do the jump to the right case.</li>
+<li>Update the variables, including the <tt class="docutils literal">to</tt>, <tt class="docutils literal">from</tt>, and the
+arrays they point at.</li>
+<li>When you get to the <tt class="docutils literal">while</tt> part or my <tt class="docutils literal">goto</tt> alternative,
+check your variables and then follow the logic either back to the
+top of the <tt class="docutils literal"><span class="pre">do-while</span></tt> or to where the <tt class="docutils literal">again</tt> label is
+located.</li>
+<li>Follow through this manual tracing, updating the variables, until
+you are sure you see how this flows.</li>
+</ul>
+<div class="section" id="why-bother">
+<h2>Why Bother?</h2>
+<p>When you've figured out how it actually works, the final question is: Why would
+you ever want to do this?  The purpose of this trick is to manually do &quot;loop
+unrolling&quot;.  Large long loops can be slow, so one way to speed them up is to
+find some fixed chunk of the loop, and then just duplicate the code in the loop
+out that many times sequentially.  For example, if you know a loop runs a
+minimum of 20 times, then you can put the contents of the loop 20 times in the
+source code.</p>
+<p>Duff's device is basically doing this automatically by chunking up the loop
+into 8 iteration chunks.  It's clever and actually works, but these days a good
+compiler will do this for you.  You shouldn't need this except in the rare case
+where you have <em>proven</em> it would improve your speed.</p>
+</div>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Never use this again.</li>
+<li>Go look at the Wikipedia entry for &quot;Duff's Device&quot; and see if you can
+spot the error.  Compare it to the version I have here and read the article
+carefully to try to understand why the Wikipedia code won't work for you
+but worked for Tom Duff.</li>
+<li>Create a set of macros that lets you create any length device like this.
+For example, what if you wanted to have 32 case statements and didn't want
+to write out all of them? Can you do a macro that lays down 8 at a time?</li>
+<li>Change the <tt class="docutils literal">main</tt> to conduct some speed tests to see which one is
+really the fastest.</li>
+<li>Read about <tt class="docutils literal">memcpy</tt>, <tt class="docutils literal">memmove</tt>, <tt class="docutils literal">memset</tt>, and also compare
+their speed.</li>
+<li>Never use this again!</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

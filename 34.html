@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 34: Dynamic Array</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 34: Dynamic Array</h1>
+            <p>This is an array that grows on its own and has most of the same features as a
+linked list.  It will usually take up less space, run faster, and has other
+beneficial properties.  This exercise will cover a few of the disadvantages
+like very slow removal from the front, with a solution (just do it at the end).</p>
+<p>A dynamic array is simply an array of <tt class="docutils literal">void **</tt> pointers that is pre-allocated
+in one shot and that point at the data.  In the linked list you had a full struct
+that stored the <tt class="docutils literal">void *value</tt> pointer, but in a dynamic array there's just
+a single array with all of them.  This means you don't need any other pointers
+for next and previous records since you can just index into it directly.</p>
+<p>To start, I'll give you the header file you should type up for the implementation:</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--darray.h-pyg.html-1"></a><span class="cp">#ifndef _DArray_h</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-2"></a><span class="cp">#define _DArray_h</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-3"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-4"></a><span class="cp">#include &lt;assert.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-5"></a><span class="cp">#include &lt;lcthw/dbg.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-6"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-7"></a><span class="k">typedef</span> <span class="k">struct</span> <span class="n">DArray</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-8"></a>    <span class="kt">int</span> <span class="n">end</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-9"></a>    <span class="kt">int</span> <span class="n">max</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-10"></a>    <span class="kt">size_t</span> <span class="n">element_size</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-11"></a>    <span class="kt">size_t</span> <span class="n">expand_rate</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-12"></a>    <span class="kt">void</span> <span class="o">**</span><span class="n">contents</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-13"></a><span class="p">}</span> <span class="n">DArray</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-14"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-15"></a><span class="n">DArray</span> <span class="o">*</span><span class="nf">DArray_create</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">element_size</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">initial_max</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-16"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-17"></a><span class="kt">void</span> <span class="nf">DArray_destroy</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-18"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-19"></a><span class="kt">void</span> <span class="nf">DArray_clear</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-20"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-21"></a><span class="kt">int</span> <span class="nf">DArray_expand</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-22"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-23"></a><span class="kt">int</span> <span class="nf">DArray_contract</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-24"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-25"></a><span class="kt">int</span> <span class="nf">DArray_push</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">el</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-26"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-27"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">DArray_pop</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-28"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-29"></a><span class="kt">void</span> <span class="nf">DArray_clear_destroy</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-30"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-31"></a><span class="cp">#define DArray_last(A) ((A)-&gt;contents[(A)-&gt;end - 1])</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-32"></a><span class="cp">#define DArray_first(A) ((A)-&gt;contents[0])</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-33"></a><span class="cp">#define DArray_end(A) ((A)-&gt;end)</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-34"></a><span class="cp">#define DArray_count(A) DArray_end(A)</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-35"></a><span class="cp">#define DArray_max(A) ((A)-&gt;max)</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-36"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-37"></a><span class="cp">#define DEFAULT_EXPAND_RATE 300</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-38"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-39"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-40"></a><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="nf">DArray_set</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="kt">int</span> <span class="n">i</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">el</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-41"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-42"></a>    <span class="n">check</span><span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">max</span><span class="p">,</span> <span class="s">&quot;darray attempt to set past max&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-43"></a>    <span class="k">if</span><span class="p">(</span><span class="n">i</span> <span class="o">&gt;</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">end</span><span class="p">)</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">=</span> <span class="n">i</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-44"></a>    <span class="n">array</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">el</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-45"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-46"></a>    <span class="k">return</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-47"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-48"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-49"></a><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="o">*</span><span class="nf">DArray_get</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="kt">int</span> <span class="n">i</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-50"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-51"></a>    <span class="n">check</span><span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">max</span><span class="p">,</span> <span class="s">&quot;darray attempt to get past max&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-52"></a>    <span class="k">return</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-53"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-54"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-55"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-56"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-57"></a><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="o">*</span><span class="nf">DArray_remove</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="kt">int</span> <span class="n">i</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-58"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-59"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">el</span> <span class="o">=</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">[</span><span class="n">i</span><span class="p">];</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-60"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-61"></a>    <span class="n">array</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-62"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-63"></a>    <span class="k">return</span> <span class="n">el</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-64"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-65"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-66"></a><span class="k">static</span> <span class="kr">inline</span> <span class="kt">void</span> <span class="o">*</span><span class="nf">DArray_new</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-67"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-68"></a>    <span class="n">check</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">element_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Can&#39;t use DArray_new on 0 size darrays.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-69"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-70"></a>    <span class="k">return</span> <span class="n">calloc</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">element_size</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-71"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-72"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-73"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-74"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-75"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-76"></a><span class="cp">#define DArray_free(E) free((E))</span>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-77"></a>
+<a name="code--liblcthw--src--lcthw--darray.h-pyg.html-78"></a><span class="cp">#endif</span>
+</pre></div><p>This header file is showing you a new technique where I put <tt class="docutils literal">static inline</tt>
+functions right in the header.  These function definitions will work similar to
+the <tt class="docutils literal">#define</tt> macros you've been making, but they're cleaner and easier to
+write.  If you need to create a block of code for a macro and you don't need
+code generation, then use a <tt class="docutils literal">static inline</tt> function.</p>
+<p>Compare this technique to the <tt class="docutils literal">LIST_FOREACH</tt> that <em>generates</em> a
+proper for-loop for a list. This would be impossible to do with a <tt class="docutils literal">static inline</tt> function because it actually has to generate the inner block of code for
+the loop.  The only way to do that is with a callback function, but that's not
+as fast and is harder to use.</p>
+<p>I'll then change things up and have you create the unit test for <tt class="docutils literal">DArray</tt>:</p>
+<div class="highlight"><pre><a name="code--liblcthw--tests--darray_tests.c-pyg.html-1"></a><span class="cp">#include &quot;minunit.h&quot;</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-2"></a><span class="cp">#include &lt;lcthw/darray.h&gt;</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-3"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-4"></a><span class="k">static</span> <span class="n">DArray</span> <span class="o">*</span><span class="n">array</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-5"></a><span class="k">static</span> <span class="kt">int</span> <span class="o">*</span><span class="n">val1</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-6"></a><span class="k">static</span> <span class="kt">int</span> <span class="o">*</span><span class="n">val2</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-7"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-8"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_create</span><span class="p">()</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-9"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-10"></a>    <span class="n">array</span> <span class="o">=</span> <span class="n">DArray_create</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">),</span> <span class="mi">100</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-11"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">array</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;DArray_create failed.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-12"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">contents</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;contents are wrong in darray&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-13"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;end isn&#39;t at the right spot&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-14"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">element_size</span> <span class="o">==</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">),</span> <span class="s">&quot;element size is wrong.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-15"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">==</span> <span class="mi">100</span><span class="p">,</span> <span class="s">&quot;wrong max length on initial size&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-16"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-17"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-18"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-19"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-20"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_destroy</span><span class="p">()</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-21"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-22"></a>    <span class="n">DArray_destroy</span><span class="p">(</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-23"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-24"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-25"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-26"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-27"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_new</span><span class="p">()</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-28"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-29"></a>    <span class="n">val1</span> <span class="o">=</span> <span class="n">DArray_new</span><span class="p">(</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-30"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">val1</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;failed to make a new element&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-31"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-32"></a>    <span class="n">val2</span> <span class="o">=</span> <span class="n">DArray_new</span><span class="p">(</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-33"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">val2</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;failed to make a new element&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-34"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-35"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-36"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-37"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-38"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_set</span><span class="p">()</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-39"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-40"></a>    <span class="n">DArray_set</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">val1</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-41"></a>    <span class="n">DArray_set</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">val2</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-42"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-43"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-44"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-45"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-46"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_get</span><span class="p">()</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-47"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-48"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">DArray_get</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="n">val1</span><span class="p">,</span> <span class="s">&quot;Wrong first value.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-49"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">DArray_get</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">val2</span><span class="p">,</span> <span class="s">&quot;Wrong second value.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-50"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-51"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-52"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-53"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-54"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_remove</span><span class="p">()</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-55"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-56"></a>    <span class="kt">int</span> <span class="o">*</span><span class="n">val_check</span> <span class="o">=</span> <span class="n">DArray_remove</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-57"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">val_check</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Should not get NULL.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-58"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="o">*</span><span class="n">val_check</span> <span class="o">==</span> <span class="o">*</span><span class="n">val1</span><span class="p">,</span> <span class="s">&quot;Should get the first value.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-59"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">DArray_get</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Should be gone.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-60"></a>    <span class="n">DArray_free</span><span class="p">(</span><span class="n">val_check</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-61"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-62"></a>    <span class="n">val_check</span> <span class="o">=</span> <span class="n">DArray_remove</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-63"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">val_check</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Should not get NULL.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-64"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="o">*</span><span class="n">val_check</span> <span class="o">==</span> <span class="o">*</span><span class="n">val2</span><span class="p">,</span> <span class="s">&quot;Should get the first value.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-65"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">DArray_get</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Should be gone.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-66"></a>    <span class="n">DArray_free</span><span class="p">(</span><span class="n">val_check</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-67"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-68"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-69"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-70"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-71"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_expand_contract</span><span class="p">()</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-72"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-73"></a>    <span class="kt">int</span> <span class="n">old_max</span> <span class="o">=</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">max</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-74"></a>    <span class="n">DArray_expand</span><span class="p">(</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-75"></a>    <span class="n">mu_assert</span><span class="p">((</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">==</span> <span class="n">old_max</span> <span class="o">+</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">expand_rate</span><span class="p">,</span> <span class="s">&quot;Wrong size after expand.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-76"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-77"></a>    <span class="n">DArray_contract</span><span class="p">(</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-78"></a>    <span class="n">mu_assert</span><span class="p">((</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">==</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">expand_rate</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&quot;Should stay at the expand_rate at least.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-79"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-80"></a>    <span class="n">DArray_contract</span><span class="p">(</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-81"></a>    <span class="n">mu_assert</span><span class="p">((</span><span class="kt">unsigned</span> <span class="kt">int</span><span class="p">)</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">==</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">expand_rate</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s">&quot;Should stay at the expand_rate at least.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-82"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-83"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-84"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-85"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-86"></a><span class="kt">char</span> <span class="o">*</span><span class="nf">test_push_pop</span><span class="p">()</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-87"></a><span class="p">{</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-88"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-89"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">1000</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-90"></a>        <span class="kt">int</span> <span class="o">*</span><span class="n">val</span> <span class="o">=</span> <span class="n">DArray_new</span><span class="p">(</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-91"></a>        <span class="o">*</span><span class="n">val</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">333</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-92"></a>        <span class="n">DArray_push</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">val</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-93"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-94"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-95"></a>    <span class="n">mu_assert</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">==</span> <span class="mi">1201</span><span class="p">,</span> <span class="s">&quot;Wrong max size.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-96"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-97"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">999</span><span class="p">;</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span><span class="o">--</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-98"></a>        <span class="kt">int</span> <span class="o">*</span><span class="n">val</span> <span class="o">=</span> <span class="n">DArray_pop</span><span class="p">(</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-99"></a>        <span class="n">mu_assert</span><span class="p">(</span><span class="n">val</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Shouldn&#39;t get a NULL.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-100"></a>        <span class="n">mu_assert</span><span class="p">(</span><span class="o">*</span><span class="n">val</span> <span class="o">==</span> <span class="n">i</span> <span class="o">*</span> <span class="mi">333</span><span class="p">,</span> <span class="s">&quot;Wrong value.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-101"></a>        <span class="n">DArray_free</span><span class="p">(</span><span class="n">val</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-102"></a>    <span class="p">}</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-103"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-104"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-105"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-106"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-107"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-108"></a><span class="kt">char</span> <span class="o">*</span> <span class="nf">all_tests</span><span class="p">()</span> <span class="p">{</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-109"></a>    <span class="n">mu_suite_start</span><span class="p">();</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-110"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-111"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_create</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-112"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_new</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-113"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_set</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-114"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_get</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-115"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_remove</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-116"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_expand_contract</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-117"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_push_pop</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-118"></a>    <span class="n">mu_run_test</span><span class="p">(</span><span class="n">test_destroy</span><span class="p">);</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-119"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-120"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-121"></a><span class="p">}</span>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-122"></a>
+<a name="code--liblcthw--tests--darray_tests.c-pyg.html-123"></a><span class="n">RUN_TESTS</span><span class="p">(</span><span class="n">all_tests</span><span class="p">);</span>
+</pre></div><p>This shows you how all of the operations are used, which then makes implementing
+the <tt class="docutils literal">DArray</tt> much easier:</p>
+<div class="highlight"><pre><a name="code--liblcthw--src--lcthw--darray.c-pyg.html-1"></a><span class="cp">#include &lt;lcthw/darray.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-2"></a><span class="cp">#include &lt;assert.h&gt;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-3"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-4"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-5"></a><span class="n">DArray</span> <span class="o">*</span><span class="nf">DArray_create</span><span class="p">(</span><span class="kt">size_t</span> <span class="n">element_size</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">initial_max</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-6"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-7"></a>    <span class="n">DArray</span> <span class="o">*</span><span class="n">array</span> <span class="o">=</span> <span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="n">DArray</span><span class="p">));</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-8"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-9"></a>    <span class="n">array</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">=</span> <span class="n">initial_max</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-10"></a>    <span class="n">check</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;You must set an initial_max &gt; 0.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-11"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-12"></a>    <span class="n">array</span><span class="o">-&gt;</span><span class="n">contents</span> <span class="o">=</span> <span class="n">calloc</span><span class="p">(</span><span class="n">initial_max</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">));</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-13"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-14"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-15"></a>    <span class="n">array</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-16"></a>    <span class="n">array</span><span class="o">-&gt;</span><span class="n">element_size</span> <span class="o">=</span> <span class="n">element_size</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-17"></a>    <span class="n">array</span><span class="o">-&gt;</span><span class="n">expand_rate</span> <span class="o">=</span> <span class="n">DEFAULT_EXPAND_RATE</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-18"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-19"></a>    <span class="k">return</span> <span class="n">array</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-20"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-21"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-22"></a>    <span class="k">if</span><span class="p">(</span><span class="n">array</span><span class="p">)</span> <span class="n">free</span><span class="p">(</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-23"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-24"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-25"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-26"></a><span class="kt">void</span> <span class="nf">DArray_clear</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-27"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-28"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-29"></a>    <span class="k">if</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">element_size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-30"></a>        <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">max</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-31"></a>            <span class="k">if</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-32"></a>                <span class="n">free</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-33"></a>            <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-34"></a>        <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-35"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-36"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-37"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-38"></a><span class="k">static</span> <span class="kr">inline</span> <span class="kt">int</span> <span class="nf">DArray_resize</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">newsize</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-39"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-40"></a>    <span class="n">array</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">=</span> <span class="n">newsize</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-41"></a>    <span class="n">check</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;The newsize must be &gt; 0.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-42"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-43"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">contents</span> <span class="o">=</span> <span class="n">realloc</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">,</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">*</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">));</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-44"></a>    <span class="c1">// check contents and assume realloc doesn&#39;t harm the original on error</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-45"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-46"></a>    <span class="n">check_mem</span><span class="p">(</span><span class="n">contents</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-47"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-48"></a>    <span class="n">array</span><span class="o">-&gt;</span><span class="n">contents</span> <span class="o">=</span> <span class="n">contents</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-49"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-50"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-51"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-52"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-53"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-54"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-55"></a><span class="kt">int</span> <span class="nf">DArray_expand</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-56"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-57"></a>    <span class="kt">size_t</span> <span class="n">old_max</span> <span class="o">=</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">max</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-58"></a>    <span class="n">check</span><span class="p">(</span><span class="n">DArray_resize</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">+</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">expand_rate</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-59"></a>            <span class="s">&quot;Failed to expand array to new size: %d&quot;</span><span class="p">,</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-60"></a>            <span class="n">array</span><span class="o">-&gt;</span><span class="n">max</span> <span class="o">+</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">expand_rate</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-61"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-62"></a>    <span class="n">memset</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">contents</span> <span class="o">+</span> <span class="n">old_max</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">expand_rate</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-63"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-64"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-65"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-66"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-67"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-68"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-69"></a><span class="kt">int</span> <span class="nf">DArray_contract</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-70"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-71"></a>    <span class="kt">int</span> <span class="n">new_size</span> <span class="o">=</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">&lt;</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">expand_rate</span> <span class="o">?</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">expand_rate</span> <span class="o">:</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">end</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-72"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-73"></a>    <span class="k">return</span> <span class="n">DArray_resize</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">new_size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-74"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-75"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-76"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-77"></a><span class="kt">void</span> <span class="nf">DArray_destroy</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-78"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-79"></a>    <span class="k">if</span><span class="p">(</span><span class="n">array</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-80"></a>        <span class="k">if</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">)</span> <span class="n">free</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-81"></a>        <span class="n">free</span><span class="p">(</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-82"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-83"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-84"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-85"></a><span class="kt">void</span> <span class="nf">DArray_clear_destroy</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-86"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-87"></a>    <span class="n">DArray_clear</span><span class="p">(</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-88"></a>    <span class="n">DArray_destroy</span><span class="p">(</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-89"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-90"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-91"></a><span class="kt">int</span> <span class="nf">DArray_push</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">,</span> <span class="kt">void</span> <span class="o">*</span><span class="n">el</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-92"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-93"></a>    <span class="n">array</span><span class="o">-&gt;</span><span class="n">contents</span><span class="p">[</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">end</span><span class="p">]</span> <span class="o">=</span> <span class="n">el</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-94"></a>    <span class="n">array</span><span class="o">-&gt;</span><span class="n">end</span><span class="o">++</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-95"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-96"></a>    <span class="k">if</span><span class="p">(</span><span class="n">DArray_end</span><span class="p">(</span><span class="n">array</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">DArray_max</span><span class="p">(</span><span class="n">array</span><span class="p">))</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-97"></a>        <span class="k">return</span> <span class="n">DArray_expand</span><span class="p">(</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-98"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-99"></a>        <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-100"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-101"></a><span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-102"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-103"></a><span class="kt">void</span> <span class="o">*</span><span class="nf">DArray_pop</span><span class="p">(</span><span class="n">DArray</span> <span class="o">*</span><span class="n">array</span><span class="p">)</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-104"></a><span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-105"></a>    <span class="n">check</span><span class="p">(</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Attempt to pop from empty array.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-106"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-107"></a>    <span class="kt">void</span> <span class="o">*</span><span class="n">el</span> <span class="o">=</span> <span class="n">DArray_remove</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">-</span> <span class="mi">1</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-108"></a>    <span class="n">array</span><span class="o">-&gt;</span><span class="n">end</span><span class="o">--</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-109"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-110"></a>    <span class="k">if</span><span class="p">(</span><span class="n">DArray_end</span><span class="p">(</span><span class="n">array</span><span class="p">)</span> <span class="o">&gt;</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">array</span><span class="o">-&gt;</span><span class="n">expand_rate</span> <span class="o">&amp;&amp;</span> <span class="n">DArray_end</span><span class="p">(</span><span class="n">array</span><span class="p">)</span> <span class="o">%</span> <span class="n">array</span><span class="o">-&gt;</span><span class="n">expand_rate</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-111"></a>        <span class="n">DArray_contract</span><span class="p">(</span><span class="n">array</span><span class="p">);</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-112"></a>    <span class="p">}</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-113"></a>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-114"></a>    <span class="k">return</span> <span class="n">el</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-115"></a><span class="nl">error:</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-116"></a>    <span class="k">return</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--src--lcthw--darray.c-pyg.html-117"></a><span class="p">}</span>
+</pre></div><p>This shows you another way to tackle complex code.  Instead of diving right
+into the <tt class="docutils literal">.c</tt> implementation, look at the header file, then read the
+unit test.  This gives you an &quot;abstract to concrete&quot; understanding how the
+pieces work together and making it easier to remember.</p>
+<div class="section" id="advantages-and-disadvantages">
+<h1>Advantages And Disadvantages</h1>
+<p>A <tt class="docutils literal">DArray</tt> is better when you need to optimize these operations:</p>
+<ul class="simple">
+<li>Iteration.  You can just use a basic for-loop and <tt class="docutils literal">DArray_count</tt>
+with <tt class="docutils literal">DArray_get</tt> and you're done.  No special macros needed, and
+it's faster because you aren't walking pointers.</li>
+<li>Indexing.  You can use <tt class="docutils literal">DArray_get</tt> and <tt class="docutils literal">DArray_set</tt> to
+access any element at random, but with a <tt class="docutils literal">List</tt> you have to go
+through N elements to get to N+1.</li>
+<li>Destroying.  You just free the struct and the <tt class="docutils literal">contents</tt> in
+two operations.  A <tt class="docutils literal">List</tt> requires a series of <tt class="docutils literal">free</tt> calls
+and also walking every element.</li>
+<li>Cloning. You can also clone it in just two operations (plus whatever
+it's storing) by copying the struct and <tt class="docutils literal">contents</tt>.  A list
+again requires walking the whole thing and copying every <tt class="docutils literal">ListNode</tt>
+plus its value.</li>
+<li>Sorting. As you saw, <tt class="docutils literal">List</tt> is horrible if you need to keep the
+data sorted.  A <tt class="docutils literal">DArray</tt> opens up a whole class of great sorting
+algorithms because now you can access elements randomly.</li>
+<li>Large Data. If you need to keep around a lot of data, then a <tt class="docutils literal">DArray</tt>
+wins since it's base <tt class="docutils literal">contents</tt> takes up less memory than the same
+number of <tt class="docutils literal">ListNode</tt> structs.</li>
+</ul>
+<p>The <tt class="docutils literal">List</tt> however wins on these operations:</p>
+<ul class="simple">
+<li>Insert and remove on the front (what I called shift).  A <tt class="docutils literal">DArray</tt>
+needs special treatment to be able to do this efficiently, and usually
+has to do some copying.</li>
+<li>Splitting or joining.  A <tt class="docutils literal">List</tt> can just copy some pointers and
+it's done, but with a <tt class="docutils literal">DArray</tt> you have to do copying of the
+arrays involved.</li>
+<li>Small Data. If you only need to store a few elements, then typically the
+storage will be less in a <tt class="docutils literal">List</tt> than a generic <tt class="docutils literal">DArray</tt> because
+the <tt class="docutils literal">DArray</tt> needs to expand the backing store to accommodate future
+inserts, but a <tt class="docutils literal">List</tt> only makes what it needs.</li>
+</ul>
+<p>With this, I prefer to use a <tt class="docutils literal">DArray</tt> for most of the things you see
+other people use a <tt class="docutils literal">List</tt>.  I reserve using <tt class="docutils literal">List</tt> for any
+data structure that requires small number of nodes that are inserted and
+removed from either end.  I'll show you two similar data structures
+called a <tt class="docutils literal">Stack</tt> and <tt class="docutils literal">Queue</tt> where this is important.</p>
+</div>
+<div class="section" id="how-to-improve-it">
+<h1>How To Improve It</h1>
+<p>As usual, go through each function and operation and add the defensive programming
+checks, pre-conditions, invariants, and anything else you can find to make the
+implementation more bulletproof.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Improve the unit tests to cover more of the operations and test that
+using a for-loop to iterate works.</li>
+<li>Research what it would take to implement bubble sort and merge sort
+for DArray, but don't do it yet.  I'll be implementing DArray algorithms
+next and you'll do this then.</li>
+<li>Write some performance tests for common operations and compare them
+to the same operations in <tt class="docutils literal">List</tt>.  You did some of this, but this
+time, write a unit test that repeatedly does the operation in question,
+then in the main runner do the timing.</li>
+<li>Look at how the <tt class="docutils literal">DArray_expand</tt> is implemented using a constant increase (size + 300).
+Typically dynamic arrays are implemented with a multiplicative increase (size * 2), but I've
+found this to cost needless memory for no real performance gain.  Test my assertion
+and see when you'd want a multiplied increase instead of a constant increase.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

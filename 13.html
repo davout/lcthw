@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 13: Switch Statement</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 13: Switch Statement</h1>
+            <p>In other languages like Ruby you have a <tt class="docutils literal"><span class="pre">switch-statement</span></tt> that can take
+any expression.  Some languages like Python just don't have a
+<tt class="docutils literal"><span class="pre">switch-statement</span></tt> since an <tt class="docutils literal"><span class="pre">if-statement</span></tt> with boolean expressions
+is about the same thing.  For these languages, <tt class="docutils literal"><span class="pre">switch-statements</span></tt> are
+more alternatives to <tt class="docutils literal"><span class="pre">if-statements</span></tt> and work the same internally.</p>
+<p>The <tt class="docutils literal"><span class="pre">switch-statement</span></tt> is actually entirely different and is really a &quot;jump
+table&quot;.  Instead of random boolean expressions, you can only put expressions
+that result in integers, and these integers are used to calculate jumps from
+the top of the <tt class="docutils literal">switch</tt> to the part that matches that value.  Here's some
+code that we'll break down to understand this concept of &quot;jump tables&quot;:</p>
+<div class="highlight"><pre><a name="code--ex13.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex13.c-pyg.html-2"></a>
+<a name="code--ex13.c-pyg.html-3"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex13.c-pyg.html-4"></a><span class="p">{</span>
+<a name="code--ex13.c-pyg.html-5"></a>    <span class="k">if</span><span class="p">(</span><span class="n">argc</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex13.c-pyg.html-6"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;ERROR: You need one argument.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex13.c-pyg.html-7"></a>        <span class="c1">// this is how you abort a program</span>
+<a name="code--ex13.c-pyg.html-8"></a>        <span class="k">return</span> <span class="mi">1</span><span class="p">;</span>
+<a name="code--ex13.c-pyg.html-9"></a>    <span class="p">}</span>
+<a name="code--ex13.c-pyg.html-10"></a>
+<a name="code--ex13.c-pyg.html-11"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex13.c-pyg.html-12"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="sc">&#39;\0&#39;</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex13.c-pyg.html-13"></a>        <span class="kt">char</span> <span class="n">letter</span> <span class="o">=</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">];</span>
+<a name="code--ex13.c-pyg.html-14"></a>
+<a name="code--ex13.c-pyg.html-15"></a>        <span class="k">switch</span><span class="p">(</span><span class="n">letter</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex13.c-pyg.html-16"></a>            <span class="k">case</span> <span class="sc">&#39;a&#39;</span>:
+<a name="code--ex13.c-pyg.html-17"></a>            <span class="k">case</span> <span class="sc">&#39;A&#39;</span>:
+<a name="code--ex13.c-pyg.html-18"></a>                <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d: &#39;A&#39;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+<a name="code--ex13.c-pyg.html-19"></a>                <span class="k">break</span><span class="p">;</span>
+<a name="code--ex13.c-pyg.html-20"></a>
+<a name="code--ex13.c-pyg.html-21"></a>            <span class="k">case</span> <span class="sc">&#39;e&#39;</span>:
+<a name="code--ex13.c-pyg.html-22"></a>            <span class="k">case</span> <span class="sc">&#39;E&#39;</span>:
+<a name="code--ex13.c-pyg.html-23"></a>                <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d: &#39;E&#39;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+<a name="code--ex13.c-pyg.html-24"></a>                <span class="k">break</span><span class="p">;</span>
+<a name="code--ex13.c-pyg.html-25"></a>
+<a name="code--ex13.c-pyg.html-26"></a>            <span class="k">case</span> <span class="sc">&#39;i&#39;</span>:
+<a name="code--ex13.c-pyg.html-27"></a>            <span class="k">case</span> <span class="sc">&#39;I&#39;</span>:
+<a name="code--ex13.c-pyg.html-28"></a>                <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d: &#39;I&#39;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+<a name="code--ex13.c-pyg.html-29"></a>                <span class="k">break</span><span class="p">;</span>
+<a name="code--ex13.c-pyg.html-30"></a>
+<a name="code--ex13.c-pyg.html-31"></a>            <span class="k">case</span> <span class="sc">&#39;o&#39;</span>:
+<a name="code--ex13.c-pyg.html-32"></a>            <span class="k">case</span> <span class="sc">&#39;O&#39;</span>:
+<a name="code--ex13.c-pyg.html-33"></a>                <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d: &#39;O&#39;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+<a name="code--ex13.c-pyg.html-34"></a>                <span class="k">break</span><span class="p">;</span>
+<a name="code--ex13.c-pyg.html-35"></a>
+<a name="code--ex13.c-pyg.html-36"></a>            <span class="k">case</span> <span class="sc">&#39;u&#39;</span>:
+<a name="code--ex13.c-pyg.html-37"></a>            <span class="k">case</span> <span class="sc">&#39;U&#39;</span>:
+<a name="code--ex13.c-pyg.html-38"></a>                <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d: &#39;U&#39;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+<a name="code--ex13.c-pyg.html-39"></a>                <span class="k">break</span><span class="p">;</span>
+<a name="code--ex13.c-pyg.html-40"></a>
+<a name="code--ex13.c-pyg.html-41"></a>            <span class="k">case</span> <span class="sc">&#39;y&#39;</span>:
+<a name="code--ex13.c-pyg.html-42"></a>            <span class="k">case</span> <span class="sc">&#39;Y&#39;</span>:
+<a name="code--ex13.c-pyg.html-43"></a>                <span class="k">if</span><span class="p">(</span><span class="n">i</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex13.c-pyg.html-44"></a>                    <span class="c1">// it&#39;s only sometimes Y</span>
+<a name="code--ex13.c-pyg.html-45"></a>                    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d: &#39;Y&#39;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">);</span>
+<a name="code--ex13.c-pyg.html-46"></a>                <span class="p">}</span>
+<a name="code--ex13.c-pyg.html-47"></a>                <span class="k">break</span><span class="p">;</span>
+<a name="code--ex13.c-pyg.html-48"></a>
+<a name="code--ex13.c-pyg.html-49"></a>            <span class="nl">default:</span>
+<a name="code--ex13.c-pyg.html-50"></a>                <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%d: %c is not a vowel</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">letter</span><span class="p">);</span>
+<a name="code--ex13.c-pyg.html-51"></a>        <span class="p">}</span>
+<a name="code--ex13.c-pyg.html-52"></a>    <span class="p">}</span>
+<a name="code--ex13.c-pyg.html-53"></a>
+<a name="code--ex13.c-pyg.html-54"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex13.c-pyg.html-55"></a><span class="p">}</span>
+</pre></div><p>In this program we take a single command line argument and print out all
+of the vowels in an incredibly tedious way to demonstrate
+a <tt class="docutils literal"><span class="pre">switch-statement</span></tt>.  Here's how the <tt class="docutils literal"><span class="pre">switch-statement</span></tt>
+works:</p>
+<ul class="simple">
+<li>The compiler marks the place in the program where the
+<tt class="docutils literal"><span class="pre">switch-statement</span></tt> starts, let's call this location Y.</li>
+<li>It then evaluates the expression in <tt class="docutils literal">switch(letter)</tt> to
+come up with a number.  In this case the number will be the
+raw ASCII code of the letter in <tt class="docutils literal">argv[1]</tt>.</li>
+<li>The compiler has also translated each of the <tt class="docutils literal">case</tt>
+blocks like <tt class="docutils literal">case 'A':</tt> into a location in the program
+that is that far away.  So the code under <tt class="docutils literal">case 'A'</tt> is
+at Y+'A' in the program.</li>
+<li>It then does the math to figure out where Y+letter is
+located in the <tt class="docutils literal"><span class="pre">switch-statement</span></tt>, and if it's too
+far then it adjusts it to Y+default.</li>
+<li>Once it knows the location, the program &quot;jumps&quot; to that spot
+in the code, and then continues running.  This is why you have
+<tt class="docutils literal">break</tt> on some of the <tt class="docutils literal">case</tt> blocks, but not others.</li>
+<li>If <tt class="docutils literal">'a'</tt> is entered, then it jumps to <tt class="docutils literal">case 'a'</tt>, there's
+no break so it &quot;falls through&quot; to the one right under it <tt class="docutils literal">case 'A'</tt>
+which has code and a <tt class="docutils literal">break</tt>.</li>
+<li>Finally it runs this code, hits the break then exits out of the
+<tt class="docutils literal"><span class="pre">switch-statement</span></tt> entirely.</li>
+</ul>
+<p>This is a deep dive into how the <tt class="docutils literal"><span class="pre">switch-statement</span></tt> works, but
+in practice you just have to remember a few simple rules:</p>
+<ul class="simple">
+<li>Always include a <tt class="docutils literal">default:</tt> branch so that you catch
+any missing inputs.</li>
+<li>Don't allow &quot;fall through&quot; unless you really want it, and
+it's a good idea to add a comment <tt class="docutils literal">//fallthrough</tt> so
+people know it's on purpose.</li>
+<li>Always write the <tt class="docutils literal">case</tt> and the <tt class="docutils literal">break</tt> before
+you write the code that goes in it.</li>
+<li>Try to just use <tt class="docutils literal"><span class="pre">if-statements</span></tt> instead if you can.</li>
+</ul>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>Here's an example of me playing with this, and also demonstrating
+various ways to pass the argument in:</p>
+<div class="highlight"><pre><a name="code--ex13.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex13
+<a name="code--ex13.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g    ex13.c   -o ex13</span>
+<a name="code--ex13.sh-session-pyg.html-3"></a><span class="gp">$</span> ./ex13
+<a name="code--ex13.sh-session-pyg.html-4"></a><span class="go">ERROR: You need one argument.</span>
+<a name="code--ex13.sh-session-pyg.html-5"></a><span class="gp">$</span>
+<a name="code--ex13.sh-session-pyg.html-6"></a><span class="gp">$</span> ./ex13 Zed
+<a name="code--ex13.sh-session-pyg.html-7"></a><span class="go">0: Z is not a vowel</span>
+<a name="code--ex13.sh-session-pyg.html-8"></a><span class="go">1: &#39;E&#39;</span>
+<a name="code--ex13.sh-session-pyg.html-9"></a><span class="go">2: d is not a vowel</span>
+<a name="code--ex13.sh-session-pyg.html-10"></a><span class="gp">$</span>
+<a name="code--ex13.sh-session-pyg.html-11"></a><span class="gp">$</span> ./ex13 Zed Shaw
+<a name="code--ex13.sh-session-pyg.html-12"></a><span class="go">ERROR: You need one argument.</span>
+<a name="code--ex13.sh-session-pyg.html-13"></a><span class="gp">$</span>
+<a name="code--ex13.sh-session-pyg.html-14"></a><span class="gp">$</span> ./ex13 <span class="s2">&quot;Zed Shaw&quot;</span>
+<a name="code--ex13.sh-session-pyg.html-15"></a><span class="go">0: Z is not a vowel</span>
+<a name="code--ex13.sh-session-pyg.html-16"></a><span class="go">1: &#39;E&#39;</span>
+<a name="code--ex13.sh-session-pyg.html-17"></a><span class="go">2: d is not a vowel</span>
+<a name="code--ex13.sh-session-pyg.html-18"></a><span class="go">3:   is not a vowel</span>
+<a name="code--ex13.sh-session-pyg.html-19"></a><span class="go">4: S is not a vowel</span>
+<a name="code--ex13.sh-session-pyg.html-20"></a><span class="go">5: h is not a vowel</span>
+<a name="code--ex13.sh-session-pyg.html-21"></a><span class="go">6: &#39;A&#39;</span>
+<a name="code--ex13.sh-session-pyg.html-22"></a><span class="go">7: w is not a vowel</span>
+<a name="code--ex13.sh-session-pyg.html-23"></a><span class="gp">$</span>
+</pre></div><p>Remember that there's that <tt class="docutils literal"><span class="pre">if-statement</span></tt> at the top that
+exits with a <tt class="docutils literal">return 1;</tt> when you don't give enough arguments.
+Doing a return that's not 0 is how you indicate to the OS that
+the program had an error.  Any value that's greater than 0 can be
+tested for in scripts and other programs to figure out what
+happened.</p>
+</div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<p>It is <em>incredibly</em> easy to break a <tt class="docutils literal"><span class="pre">switch-statement</span></tt>.
+Here's just a few of the ways you can mess one of these up:</p>
+<ul class="simple">
+<li>Forget a <tt class="docutils literal">break</tt> and it'll run two or more
+blocks of code you don't want it to run.</li>
+<li>Forget a <tt class="docutils literal">default</tt> and have it silently
+ignore values you forgot.</li>
+<li>Accidentally put in variable into the <tt class="docutils literal">switch</tt> that
+evaluates to something unexpected, like an <tt class="docutils literal">int</tt>
+that becomes weird values.</li>
+<li>Use uninitialized values in the <tt class="docutils literal">switch</tt>.</li>
+</ul>
+<p>You can also break this program in a few other ways.  See if you
+can bust it yourself.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Write another program that uses math on the letter to
+convert it to lowercase, and then remove all the extraneous
+uppercase letters in the switch.</li>
+<li>Use the <tt class="docutils literal">','</tt> (comma) to initialize <tt class="docutils literal">letter</tt>
+in the <tt class="docutils literal"><span class="pre">for-loop</span></tt>.</li>
+<li>Make it handle all of the arguments you pass it with
+yet another <tt class="docutils literal"><span class="pre">for-loop</span></tt>.</li>
+<li>Convert this <tt class="docutils literal"><span class="pre">switch-statement</span></tt> to an <tt class="docutils literal"><span class="pre">if-statement</span></tt>.
+Which do you like better?</li>
+<li>In the case for 'Y' I have the break outside the <tt class="docutils literal"><span class="pre">if-statement</span></tt>. What's the impact of this
+and what happens if you move it inside the <tt class="docutils literal"><span class="pre">if-statement</span></tt>. Prove to yourself that you're right.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

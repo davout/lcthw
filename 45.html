@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 45: A Simple TCP/IP Client</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 45: A Simple TCP/IP Client</h1>
+            <p>I'm going to use the <tt class="docutils literal">RingBuffer</tt> to create a very simplistic little
+network testing tool called <tt class="docutils literal">netclient</tt>.  To do this I have to
+add some stuff to the <tt class="docutils literal">Makefile</tt> to handle little programs in the
+<tt class="docutils literal">bin/</tt> directory.</p>
+<div class="section" id="augment-the-makefile">
+<h1>Augment The Makefile</h1>
+<p>First, add a variable for the programs just like the unit tests <tt class="docutils literal">TESTS</tt>
+and <tt class="docutils literal">TEST_SRC</tt> variables:</p>
+<pre class="literal-block">
+PROGRAMS_SRC=$(wildcard bin/*.c)
+PROGRAMS=$(patsubst %.c,%,$(PROGRAMS_SRC))
+</pre>
+<p>Then you want to add the <tt class="docutils literal">PROGRAMS</tt> to the all target:</p>
+<pre class="literal-block">
+all: $(TARGET) $(SO_TARGET) tests $(PROGRAMS)
+</pre>
+<p>Then add <tt class="docutils literal">PROGRAMS</tt> to the <tt class="docutils literal">rm</tt> line in the <tt class="docutils literal">clean</tt>
+target:</p>
+<pre class="literal-block">
+rm -rf build $(OBJECTS) $(TESTS) $(PROGRAMS)
+</pre>
+<p>Finally you just need a target at the end to build them all:</p>
+<pre class="literal-block">
+$(PROGRAMS): CFLAGS += $(TARGET)
+</pre>
+<p>With these changes you can drop simple <tt class="docutils literal">.c</tt> files into <tt class="docutils literal">bin</tt>
+and <tt class="docutils literal">make</tt> will build them and link them to the library just
+like the tests are done.</p>
+</div>
+<div class="section" id="the-netclient-code">
+<h1>The netclient Code</h1>
+<p>The code for the little netclient looks like this:</p>
+<div class="highlight"><pre><a name="code--liblcthw--bin--netclient.c-pyg.html-1"></a><span class="cp">#undef NDEBUG</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-2"></a><span class="cp">#include &lt;stdlib.h&gt;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-3"></a><span class="cp">#include &lt;sys/select.h&gt;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-4"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-5"></a><span class="cp">#include &lt;lcthw/ringbuffer.h&gt;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-6"></a><span class="cp">#include &lt;lcthw/dbg.h&gt;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-7"></a><span class="cp">#include &lt;sys/socket.h&gt;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-8"></a><span class="cp">#include &lt;sys/types.h&gt;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-9"></a><span class="cp">#include &lt;sys/uio.h&gt;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-10"></a><span class="cp">#include &lt;arpa/inet.h&gt;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-11"></a><span class="cp">#include &lt;netdb.h&gt;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-12"></a><span class="cp">#include &lt;unistd.h&gt;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-13"></a><span class="cp">#include &lt;fcntl.h&gt;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-14"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-15"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">NL</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-16"></a><span class="k">struct</span> <span class="n">tagbstring</span> <span class="n">CRLF</span> <span class="o">=</span> <span class="n">bsStatic</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\r\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-17"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-18"></a><span class="kt">int</span> <span class="nf">nonblock</span><span class="p">(</span><span class="kt">int</span> <span class="n">fd</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-19"></a>    <span class="kt">int</span> <span class="n">flags</span> <span class="o">=</span> <span class="n">fcntl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">F_GETFL</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-20"></a>    <span class="n">check</span><span class="p">(</span><span class="n">flags</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Invalid flags on nonblock.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-21"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-22"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="n">fcntl</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">F_SETFL</span><span class="p">,</span> <span class="n">flags</span> <span class="o">|</span> <span class="n">O_NONBLOCK</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-23"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Can&#39;t set nonblocking.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-24"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-25"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-26"></a><span class="nl">error:</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-27"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-28"></a><span class="p">}</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-29"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-30"></a><span class="kt">int</span> <span class="nf">client_connect</span><span class="p">(</span><span class="kt">char</span> <span class="o">*</span><span class="n">host</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">port</span><span class="p">)</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-31"></a><span class="p">{</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-32"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-33"></a>    <span class="k">struct</span> <span class="n">addrinfo</span> <span class="o">*</span><span class="n">addr</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-34"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-35"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">getaddrinfo</span><span class="p">(</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">addr</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-36"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to lookup %s:%s&quot;</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-37"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-38"></a>    <span class="kt">int</span> <span class="n">sock</span> <span class="o">=</span> <span class="n">socket</span><span class="p">(</span><span class="n">AF_INET</span><span class="p">,</span> <span class="n">SOCK_STREAM</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-39"></a>    <span class="n">check</span><span class="p">(</span><span class="n">sock</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Cannot create a socket.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-40"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-41"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">connect</span><span class="p">(</span><span class="n">sock</span><span class="p">,</span> <span class="n">addr</span><span class="o">-&gt;</span><span class="n">ai_addr</span><span class="p">,</span> <span class="n">addr</span><span class="o">-&gt;</span><span class="n">ai_addrlen</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-42"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Connect failed.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-43"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-44"></a>    <span class="n">rc</span> <span class="o">=</span> <span class="n">nonblock</span><span class="p">(</span><span class="n">sock</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-45"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Can&#39;t set nonblocking.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-46"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-47"></a>    <span class="n">freeaddrinfo</span><span class="p">(</span><span class="n">addr</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-48"></a>    <span class="k">return</span> <span class="n">sock</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-49"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-50"></a><span class="nl">error:</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-51"></a>    <span class="n">freeaddrinfo</span><span class="p">(</span><span class="n">addr</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-52"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-53"></a><span class="p">}</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-54"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-55"></a><span class="kt">int</span> <span class="nf">read_some</span><span class="p">(</span><span class="n">RingBuffer</span> <span class="o">*</span><span class="n">buffer</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">is_socket</span><span class="p">)</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-56"></a><span class="p">{</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-57"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-58"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-59"></a>    <span class="k">if</span><span class="p">(</span><span class="n">RingBuffer_available_data</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-60"></a>        <span class="n">buffer</span><span class="o">-&gt;</span><span class="n">start</span> <span class="o">=</span> <span class="n">buffer</span><span class="o">-&gt;</span><span class="n">end</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-61"></a>    <span class="p">}</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-62"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-63"></a>    <span class="k">if</span><span class="p">(</span><span class="n">is_socket</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-64"></a>        <span class="n">rc</span> <span class="o">=</span> <span class="n">recv</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">RingBuffer_starts_at</span><span class="p">(</span><span class="n">buffer</span><span class="p">),</span> <span class="n">RingBuffer_available_space</span><span class="p">(</span><span class="n">buffer</span><span class="p">),</span> <span class="mi">0</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-65"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-66"></a>        <span class="n">rc</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">RingBuffer_starts_at</span><span class="p">(</span><span class="n">buffer</span><span class="p">),</span> <span class="n">RingBuffer_available_space</span><span class="p">(</span><span class="n">buffer</span><span class="p">));</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-67"></a>    <span class="p">}</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-68"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-69"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;Failed to read from fd: %d&quot;</span><span class="p">,</span> <span class="n">fd</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-70"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-71"></a>    <span class="n">RingBuffer_commit_write</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="n">rc</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-72"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-73"></a>    <span class="k">return</span> <span class="n">rc</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-74"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-75"></a><span class="nl">error:</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-76"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-77"></a><span class="p">}</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-78"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-79"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-80"></a><span class="kt">int</span> <span class="nf">write_some</span><span class="p">(</span><span class="n">RingBuffer</span> <span class="o">*</span><span class="n">buffer</span><span class="p">,</span> <span class="kt">int</span> <span class="n">fd</span><span class="p">,</span> <span class="kt">int</span> <span class="n">is_socket</span><span class="p">)</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-81"></a><span class="p">{</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-82"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-83"></a>    <span class="n">bstring</span> <span class="n">data</span> <span class="o">=</span> <span class="n">RingBuffer_get_all</span><span class="p">(</span><span class="n">buffer</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-84"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-85"></a>    <span class="n">check</span><span class="p">(</span><span class="n">data</span> <span class="o">!=</span> <span class="nb">NULL</span><span class="p">,</span> <span class="s">&quot;Failed to get from the buffer.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-86"></a>    <span class="n">check</span><span class="p">(</span><span class="n">bfindreplace</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">NL</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">CRLF</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="n">BSTR_OK</span><span class="p">,</span> <span class="s">&quot;Failed to replace NL.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-87"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-88"></a>    <span class="k">if</span><span class="p">(</span><span class="n">is_socket</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-89"></a>        <span class="n">rc</span> <span class="o">=</span> <span class="n">send</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">bdata</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">blength</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="mi">0</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-90"></a>    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-91"></a>        <span class="n">rc</span> <span class="o">=</span> <span class="n">write</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="n">bdata</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">blength</span><span class="p">(</span><span class="n">data</span><span class="p">));</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-92"></a>    <span class="p">}</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-93"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-94"></a>    <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">==</span> <span class="n">blength</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="s">&quot;Failed to write everything to fd: %d.&quot;</span><span class="p">,</span> <span class="n">fd</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-95"></a>    <span class="n">bdestroy</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-96"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-97"></a>    <span class="k">return</span> <span class="n">rc</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-98"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-99"></a><span class="nl">error:</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-100"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-101"></a><span class="p">}</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-102"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-103"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-104"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-105"></a><span class="p">{</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-106"></a>    <span class="n">fd_set</span> <span class="n">allreads</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-107"></a>    <span class="n">fd_set</span> <span class="n">readmask</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-108"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-109"></a>    <span class="kt">int</span> <span class="n">socket</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-110"></a>    <span class="kt">int</span> <span class="n">rc</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-111"></a>    <span class="n">RingBuffer</span> <span class="o">*</span><span class="n">in_rb</span> <span class="o">=</span> <span class="n">RingBuffer_create</span><span class="p">(</span><span class="mi">1024</span> <span class="o">*</span> <span class="mi">10</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-112"></a>    <span class="n">RingBuffer</span> <span class="o">*</span><span class="n">sock_rb</span> <span class="o">=</span> <span class="n">RingBuffer_create</span><span class="p">(</span><span class="mi">1024</span> <span class="o">*</span> <span class="mi">10</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-113"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-114"></a>    <span class="n">check</span><span class="p">(</span><span class="n">argc</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="s">&quot;USAGE: netclient host port&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-115"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-116"></a>    <span class="n">socket</span> <span class="o">=</span> <span class="n">client_connect</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-117"></a>    <span class="n">check</span><span class="p">(</span><span class="n">socket</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;connect to %s:%s failed.&quot;</span><span class="p">,</span> <span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-118"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-119"></a>    <span class="n">FD_ZERO</span><span class="p">(</span><span class="o">&amp;</span><span class="n">allreads</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-120"></a>    <span class="n">FD_SET</span><span class="p">(</span><span class="n">socket</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">allreads</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-121"></a>    <span class="n">FD_SET</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">allreads</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-122"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-123"></a>    <span class="k">while</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-124"></a>        <span class="n">readmask</span> <span class="o">=</span> <span class="n">allreads</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-125"></a>        <span class="n">rc</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="n">socket</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">readmask</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-126"></a>        <span class="n">check</span><span class="p">(</span><span class="n">rc</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;select failed.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-127"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-128"></a>        <span class="k">if</span><span class="p">(</span><span class="n">FD_ISSET</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">readmask</span><span class="p">))</span> <span class="p">{</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-129"></a>            <span class="n">rc</span> <span class="o">=</span> <span class="n">read_some</span><span class="p">(</span><span class="n">in_rb</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-130"></a>            <span class="n">check_debug</span><span class="p">(</span><span class="n">rc</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;Failed to read from stdin.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-131"></a>        <span class="p">}</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-132"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-133"></a>        <span class="k">if</span><span class="p">(</span><span class="n">FD_ISSET</span><span class="p">(</span><span class="n">socket</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">readmask</span><span class="p">))</span> <span class="p">{</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-134"></a>            <span class="n">rc</span> <span class="o">=</span> <span class="n">read_some</span><span class="p">(</span><span class="n">sock_rb</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-135"></a>            <span class="n">check_debug</span><span class="p">(</span><span class="n">rc</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;Failed to read from socket.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-136"></a>        <span class="p">}</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-137"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-138"></a>        <span class="k">while</span><span class="p">(</span><span class="o">!</span><span class="n">RingBuffer_empty</span><span class="p">(</span><span class="n">sock_rb</span><span class="p">))</span> <span class="p">{</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-139"></a>            <span class="n">rc</span> <span class="o">=</span> <span class="n">write_some</span><span class="p">(</span><span class="n">sock_rb</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-140"></a>            <span class="n">check_debug</span><span class="p">(</span><span class="n">rc</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;Failed to write to stdout.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-141"></a>        <span class="p">}</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-142"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-143"></a>        <span class="k">while</span><span class="p">(</span><span class="o">!</span><span class="n">RingBuffer_empty</span><span class="p">(</span><span class="n">in_rb</span><span class="p">))</span> <span class="p">{</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-144"></a>            <span class="n">rc</span> <span class="o">=</span> <span class="n">write_some</span><span class="p">(</span><span class="n">in_rb</span><span class="p">,</span> <span class="n">socket</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-145"></a>            <span class="n">check_debug</span><span class="p">(</span><span class="n">rc</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s">&quot;Failed to write to socket.&quot;</span><span class="p">);</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-146"></a>        <span class="p">}</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-147"></a>    <span class="p">}</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-148"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-149"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-150"></a>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-151"></a><span class="nl">error:</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-152"></a>    <span class="k">return</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+<a name="code--liblcthw--bin--netclient.c-pyg.html-153"></a><span class="p">}</span>
+</pre></div><p>This code uses <tt class="docutils literal">select</tt> to handle events from both <tt class="docutils literal">stdin</tt> (file descriptor
+0) and from the <tt class="docutils literal">socket</tt> it uses to talk to a server.  It uses
+<tt class="docutils literal">RingBuffers</tt> to store the data and copy it around, and you can consider the
+functions <tt class="docutils literal">read_some</tt> and <tt class="docutils literal">write_some</tt> early prototypes for similar
+functions in the <tt class="docutils literal">RingBuffer</tt> library.</p>
+<p>In this little bit of code are quite a few networking functions you may not
+know.  As you hit a function you don't know, look it up in the man pages and
+make sure you understand it.  This one little file could actually get you to
+research all the APIs required to write a little server in C.</p>
+</div>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>If you have everything building then the quickest way to test it is see if you
+can get a special file off learncodethehardway.org:</p>
+<div class="highlight"><pre><a name="code--ex45.1.sh-session-pyg.html-1"></a><span class="gp">$</span>
+<a name="code--ex45.1.sh-session-pyg.html-2"></a><span class="gp">$</span> ./bin/netclient learncodethehardway.org 80
+<a name="code--ex45.1.sh-session-pyg.html-3"></a><span class="go">GET /ex45.txt HTTP/1.1</span>
+<a name="code--ex45.1.sh-session-pyg.html-4"></a><span class="go">Host: learncodethehardway.org</span>
+<a name="code--ex45.1.sh-session-pyg.html-5"></a>
+<a name="code--ex45.1.sh-session-pyg.html-6"></a><span class="go">HTTP/1.1 200 OK</span>
+<a name="code--ex45.1.sh-session-pyg.html-7"></a><span class="go">Date: Fri, 27 Apr 2012 00:41:25 GMT</span>
+<a name="code--ex45.1.sh-session-pyg.html-8"></a><span class="go">Content-Type: text/plain</span>
+<a name="code--ex45.1.sh-session-pyg.html-9"></a><span class="go">Content-Length: 41</span>
+<a name="code--ex45.1.sh-session-pyg.html-10"></a><span class="go">Last-Modified: Fri, 27 Apr 2012 00:42:11 GMT</span>
+<a name="code--ex45.1.sh-session-pyg.html-11"></a><span class="go">ETag: 4f99eb63-29</span>
+<a name="code--ex45.1.sh-session-pyg.html-12"></a><span class="go">Server: Mongrel2/1.7.5</span>
+<a name="code--ex45.1.sh-session-pyg.html-13"></a>
+<a name="code--ex45.1.sh-session-pyg.html-14"></a><span class="go">Learn C The Hard Way, Exercise 45 works.</span>
+<a name="code--ex45.1.sh-session-pyg.html-15"></a><span class="go">^C</span>
+<a name="code--ex45.1.sh-session-pyg.html-16"></a><span class="gp">$</span>
+</pre></div><p>What I did there is I type in the syntax needed to make the HTTP request for
+the file <tt class="docutils literal">/ex45.txt</tt>, then the <tt class="docutils literal">Host:</tt> header line, then hit ENTER to get
+an empty line.  I then get the response, with headers and the content.  After
+that I just hit CTRL-c to exit.</p>
+</div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<p>This code definitely could have bugs, and currently in the draft of the book
+I'm going to have to keep working on this.  In the meantime, try analyzing the
+code I have here and thrashing it against other servers.  There's a tool called
+<tt class="docutils literal">netcat</tt> that is great for setting up these kinds of servers.  Another thing
+to do is use a language like <tt class="docutils literal">Python</tt> or <tt class="docutils literal">Ruby</tt> to create a simple &quot;junk
+server&quot; that spews out junk and bad data, closes connections randomly, and
+other nasty things.</p>
+<p>If you find bugs, report them in the comments and I'll fix them up.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>As I mentioned, there's quite a few functions you may not know, so
+look them up.  In fact, look them all up even if you think you know
+them.</li>
+<li>Run this under <tt class="docutils literal">valgrind</tt> and look for errors.</li>
+<li>Go back through and add various defensive programming checks to
+the functions to improve them.</li>
+<li>Use the <tt class="docutils literal">getopt</tt> function to allow the user to give this
+the option to <em>not</em> translate <tt class="docutils literal">\n</tt> to <tt class="docutils literal">\r\n</tt>. This
+is only needed on protocols that require it for line endings, like HTTP.
+Sometimes you don't want the translation, so give the user an option.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

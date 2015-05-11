@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 6: Types Of Variables</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 6: Types Of Variables</h1>
+            <p>You should be getting a grasp of how a simple C program is structured,
+so let's do the next simplest thing which is making some variables
+of different types:</p>
+<div class="highlight"><pre><a name="code--ex6.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex6.c-pyg.html-2"></a>
+<a name="code--ex6.c-pyg.html-3"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex6.c-pyg.html-4"></a><span class="p">{</span>
+<a name="code--ex6.c-pyg.html-5"></a>    <span class="kt">int</span> <span class="n">distance</span> <span class="o">=</span> <span class="mi">100</span><span class="p">;</span>
+<a name="code--ex6.c-pyg.html-6"></a>    <span class="kt">float</span> <span class="n">power</span> <span class="o">=</span> <span class="mf">2.345f</span><span class="p">;</span>
+<a name="code--ex6.c-pyg.html-7"></a>    <span class="kt">double</span> <span class="n">super_power</span> <span class="o">=</span> <span class="mf">56789.4532</span><span class="p">;</span>
+<a name="code--ex6.c-pyg.html-8"></a>    <span class="kt">char</span> <span class="n">initial</span> <span class="o">=</span> <span class="sc">&#39;A&#39;</span><span class="p">;</span>
+<a name="code--ex6.c-pyg.html-9"></a>    <span class="kt">char</span> <span class="n">first_name</span><span class="p">[]</span> <span class="o">=</span> <span class="s">&quot;Zed&quot;</span><span class="p">;</span>
+<a name="code--ex6.c-pyg.html-10"></a>    <span class="kt">char</span> <span class="n">last_name</span><span class="p">[]</span> <span class="o">=</span> <span class="s">&quot;Shaw&quot;</span><span class="p">;</span>
+<a name="code--ex6.c-pyg.html-11"></a>
+<a name="code--ex6.c-pyg.html-12"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You are %d miles away.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">distance</span><span class="p">);</span>
+<a name="code--ex6.c-pyg.html-13"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You have %f levels of power.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">power</span><span class="p">);</span>
+<a name="code--ex6.c-pyg.html-14"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;You have %f awesome super powers.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">super_power</span><span class="p">);</span>
+<a name="code--ex6.c-pyg.html-15"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;I have an initial %c.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">initial</span><span class="p">);</span>
+<a name="code--ex6.c-pyg.html-16"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;I have a first name %s.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">first_name</span><span class="p">);</span>
+<a name="code--ex6.c-pyg.html-17"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;I have a last name %s.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">last_name</span><span class="p">);</span>
+<a name="code--ex6.c-pyg.html-18"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;My whole name is %s %c. %s.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex6.c-pyg.html-19"></a>            <span class="n">first_name</span><span class="p">,</span> <span class="n">initial</span><span class="p">,</span> <span class="n">last_name</span><span class="p">);</span>
+<a name="code--ex6.c-pyg.html-20"></a>
+<a name="code--ex6.c-pyg.html-21"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex6.c-pyg.html-22"></a><span class="p">}</span>
+</pre></div><p>In this program we're declaring variables of different types
+and then printing them with different <tt class="docutils literal">printf</tt> format
+strings.</p>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>Your output should look like mine, and you can start to see how
+the format strings for C are similar to Python and other languages.
+They've been around for a long time.</p>
+<div class="highlight"><pre><a name="code--ex6.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex6
+<a name="code--ex6.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g    ex6.c   -o ex6</span>
+<a name="code--ex6.sh-session-pyg.html-3"></a><span class="gp">$</span> ./ex6
+<a name="code--ex6.sh-session-pyg.html-4"></a><span class="go">You are 100 miles away.</span>
+<a name="code--ex6.sh-session-pyg.html-5"></a><span class="go">You have 2.345000 levels of power.</span>
+<a name="code--ex6.sh-session-pyg.html-6"></a><span class="go">You have 56789.453200 awesome super powers.</span>
+<a name="code--ex6.sh-session-pyg.html-7"></a><span class="go">I have an initial A.</span>
+<a name="code--ex6.sh-session-pyg.html-8"></a><span class="go">I have a first name Zed.</span>
+<a name="code--ex6.sh-session-pyg.html-9"></a><span class="go">I have a last name Shaw.</span>
+<a name="code--ex6.sh-session-pyg.html-10"></a><span class="go">My whole name is Zed A. Shaw.</span>
+<a name="code--ex6.sh-session-pyg.html-11"></a><span class="gp">$</span>
+</pre></div><p>What you can see is we have a set of &quot;types&quot;, which are ways of
+telling the C compiler what each variable should represent, and then
+format strings to match different types.  Here's the breakdown
+of how they match up:</p>
+<dl class="docutils">
+<dt>Integers</dt>
+<dd>You declare Integers with the <tt class="docutils literal">int</tt> keyword, and
+print them with <tt class="docutils literal">%d</tt>.</dd>
+<dt>Floating Point</dt>
+<dd>Declared with <tt class="docutils literal">float</tt> or <tt class="docutils literal">double</tt> depending
+on how big they need to be (double is bigger), and printed with
+<tt class="docutils literal">%f</tt>.</dd>
+<dt>Character</dt>
+<dd>Declared with <tt class="docutils literal">char</tt>, written with a <tt class="docutils literal">'</tt> (single-quote)
+character around the char, and then printed with <tt class="docutils literal">%c</tt>.</dd>
+<dt>String (Array of Characters)</dt>
+<dd>Declared with <tt class="docutils literal">char name[]</tt>,
+written with <tt class="docutils literal">&quot;</tt> characters, and printed with <tt class="docutils literal">%s</tt>.</dd>
+</dl>
+<p>You'll notice that C makes a distinction between single-quote for <tt class="docutils literal">char</tt>
+and double-quote for <tt class="docutils literal">char[]</tt> or strings.</p>
+<div class="note">
+<p class="first admonition-title">Note</p>
+<p class="last">When talking about C types, I will typically write in English char[] instead of the whole char SOMENAME[].
+This is not valid C code, just a simpler way to talk about types when writing English.</p>
+</div>
+</div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<p>You can easily break this program by passing the wrong thing to the printf
+statements.  For example, if you take the line that prints my name, but put the
+<tt class="docutils literal">initial</tt> variable before the <tt class="docutils literal">first_name</tt> in the arguments, you'll get a
+bug.  Make that change and the compiler will yell at you, then when you run it
+you might get a &quot;Segmentation fault&quot; like I did:</p>
+<div class="highlight"><pre><a name="code--ex6.bad.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex6
+<a name="code--ex6.bad.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g    ex6.c   -o ex6</span>
+<a name="code--ex6.bad.sh-session-pyg.html-3"></a><span class="go">ex6.c: In function &#39;main&#39;:</span>
+<a name="code--ex6.bad.sh-session-pyg.html-4"></a><span class="go">ex6.c:19: warning: format &#39;%s&#39; expects type &#39;char *&#39;, but argument 2 has type &#39;int&#39;</span>
+<a name="code--ex6.bad.sh-session-pyg.html-5"></a><span class="go">ex6.c:19: warning: format &#39;%c&#39; expects type &#39;int&#39;, but argument 3 has type &#39;char *&#39;</span>
+<a name="code--ex6.bad.sh-session-pyg.html-6"></a><span class="gp">$</span> ./ex6
+<a name="code--ex6.bad.sh-session-pyg.html-7"></a><span class="go">You are 100 miles away.</span>
+<a name="code--ex6.bad.sh-session-pyg.html-8"></a><span class="go">You have 2.345000 levels of power.</span>
+<a name="code--ex6.bad.sh-session-pyg.html-9"></a><span class="go">You have 56789.453125 awesome super powers.</span>
+<a name="code--ex6.bad.sh-session-pyg.html-10"></a><span class="go">I have an initial A.</span>
+<a name="code--ex6.bad.sh-session-pyg.html-11"></a><span class="go">I have a first name Zed.</span>
+<a name="code--ex6.bad.sh-session-pyg.html-12"></a><span class="go">I have a last name Shaw.</span>
+<a name="code--ex6.bad.sh-session-pyg.html-13"></a><span class="go">Segmentation fault</span>
+<a name="code--ex6.bad.sh-session-pyg.html-14"></a><span class="gp">$</span>
+</pre></div><p>Run this change under Valgrind too to see what it tells you about the error
+&quot;Invalid read of size 1&quot;.</p>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Come up with other ways to break this C code by changing the
+<tt class="docutils literal">printf</tt>, then fix them.</li>
+<li>Go search for &quot;printf formats&quot; and try using a few of the
+more exotic ones.</li>
+<li>Research how many different ways you can write a number. Try
+octal, hexadecimal, and others you can find.</li>
+<li>Try printing an empty string that's just <tt class="docutils literal">&quot;&quot;</tt>.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>

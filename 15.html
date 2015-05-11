@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html class="no-js" lang="en">
+    <head>
+        <link href='stylesheets/fonts.css' rel='stylesheet' type='text/css'>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="twitter:creator" content="@lzsthw">
+        <title>Learn C The Hard Way</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href='stylesheets/pure.css' rel='stylesheet'>
+        <link href='stylesheets/pygments.css' rel='stylesheet'>
+        <link href='stylesheets/main.css' rel='stylesheet'>
+        <link href='stylesheets/nav.css' rel='stylesheet'>
+        <style>
+        </style>
+ 
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="Docutils 0.11: http://docutils.sourceforge.net/" />
+<title>Exercise 15: Pointers Dreaded Pointers</title>
+    </head>
+    <body id='wrapper'>
+        <div class='master-logo-wrapper clearfix'>
+            <a href='index.html'>
+                <div class='master-logo-sprite'></div>
+            </a>
+                <span class='edition-3'><img src='images/beta-edition-cloud.png' /></span>
+        </div><!-- /.master-logo-wrapper -->
+
+        <div style='clear: both;'>
+
+        <div id="main">
+            <div class='chapters-wrapper'>
+                  <nav id='chapters'>
+                      <div class='masthead-title'></div>
+                      <ul class='masthead'>
+                          <li>
+                              <a href='/book/'>
+                                  <div class='nav-tcontents'>
+                                      <img src='images/nav-contents.png' /></br>
+                                  main
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='prev_link'>
+                                  <div class='nav-previous'>
+                                      <img src='images/nav-previous.png' /></br>
+                                      previous
+                                  </div>
+                              </a>
+                          </li>
+                          <li>
+                              <a href='' id='next_link'>
+                                  <div class='nav-next'>
+                                      <img src='images/nav-next.png' /></br>
+                                      next
+                                  </div>
+                              </a>
+                          </li>
+                          <li><!-- AMBULANCE ICON -->
+                              <a href='help.html' id=''>
+                                  <div class='ambulance'>
+                                      <img src='images/help-ambulance.png' /></br>
+                                      help
+                                  </div>
+                              </a>
+                          </li>
+                          <li id="follow">
+                                <a href="https://twitter.com/lzsthw" class="twitter-follow-button" data-show-count="false" data-show-screen-name="false" data-dnt="true">Follow @lzsthw</a>
+                                <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+                           </li>
+
+                      </ul><!-- /.masthead -->
+                      <!--<img src='images/fa-bullhorn.png' />-->
+                  </nav><!-- /.chapters -->
+            </div><!-- /.chapters-wrapper -->
+
+        <!--- RST STARTS -->
+            <h1 class="title">Exercise 15: Pointers Dreaded Pointers</h1>
+            <p>Pointers are famous mystical creatures in C that I will attempt to
+demystify by teaching you the vocabulary used to deal with them.  They
+actually aren't that complex, it's just they are frequently abused
+in weird ways that make them hard to use.  If you avoid the stupid
+ways to use pointers then they're fairly easy.</p>
+<p>To demonstrate pointers in a way we can talk about them, I've
+written a frivolous program that prints a group of people's
+ages in three different ways:</p>
+<div class="highlight"><pre><a name="code--ex15.c-pyg.html-1"></a><span class="cp">#include &lt;stdio.h&gt;</span>
+<a name="code--ex15.c-pyg.html-2"></a>
+<a name="code--ex15.c-pyg.html-3"></a><span class="kt">int</span> <span class="nf">main</span><span class="p">(</span><span class="kt">int</span> <span class="n">argc</span><span class="p">,</span> <span class="kt">char</span> <span class="o">*</span><span class="n">argv</span><span class="p">[])</span>
+<a name="code--ex15.c-pyg.html-4"></a><span class="p">{</span>
+<a name="code--ex15.c-pyg.html-5"></a>    <span class="c1">// create two arrays we care about</span>
+<a name="code--ex15.c-pyg.html-6"></a>    <span class="kt">int</span> <span class="n">ages</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span><span class="mi">23</span><span class="p">,</span> <span class="mi">43</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">89</span><span class="p">,</span> <span class="mi">2</span><span class="p">};</span>
+<a name="code--ex15.c-pyg.html-7"></a>    <span class="kt">char</span> <span class="o">*</span><span class="n">names</span><span class="p">[]</span> <span class="o">=</span> <span class="p">{</span>
+<a name="code--ex15.c-pyg.html-8"></a>        <span class="s">&quot;Alan&quot;</span><span class="p">,</span> <span class="s">&quot;Frank&quot;</span><span class="p">,</span>
+<a name="code--ex15.c-pyg.html-9"></a>        <span class="s">&quot;Mary&quot;</span><span class="p">,</span> <span class="s">&quot;John&quot;</span><span class="p">,</span> <span class="s">&quot;Lisa&quot;</span>
+<a name="code--ex15.c-pyg.html-10"></a>    <span class="p">};</span>
+<a name="code--ex15.c-pyg.html-11"></a>
+<a name="code--ex15.c-pyg.html-12"></a>    <span class="c1">// safely get the size of ages</span>
+<a name="code--ex15.c-pyg.html-13"></a>    <span class="kt">int</span> <span class="n">count</span> <span class="o">=</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">ages</span><span class="p">)</span> <span class="o">/</span> <span class="k">sizeof</span><span class="p">(</span><span class="kt">int</span><span class="p">);</span>
+<a name="code--ex15.c-pyg.html-14"></a>    <span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex15.c-pyg.html-15"></a>
+<a name="code--ex15.c-pyg.html-16"></a>    <span class="c1">// first way using indexing</span>
+<a name="code--ex15.c-pyg.html-17"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">count</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex15.c-pyg.html-18"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%s has %d years alive.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex15.c-pyg.html-19"></a>                <span class="n">names</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ages</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="code--ex15.c-pyg.html-20"></a>    <span class="p">}</span>
+<a name="code--ex15.c-pyg.html-21"></a>
+<a name="code--ex15.c-pyg.html-22"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;---</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex15.c-pyg.html-23"></a>
+<a name="code--ex15.c-pyg.html-24"></a>    <span class="c1">// setup the pointers to the start of the arrays</span>
+<a name="code--ex15.c-pyg.html-25"></a>    <span class="kt">int</span> <span class="o">*</span><span class="n">cur_age</span> <span class="o">=</span> <span class="n">ages</span><span class="p">;</span>
+<a name="code--ex15.c-pyg.html-26"></a>    <span class="kt">char</span> <span class="o">**</span><span class="n">cur_name</span> <span class="o">=</span> <span class="n">names</span><span class="p">;</span>
+<a name="code--ex15.c-pyg.html-27"></a>
+<a name="code--ex15.c-pyg.html-28"></a>    <span class="c1">// second way using pointers</span>
+<a name="code--ex15.c-pyg.html-29"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">count</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex15.c-pyg.html-30"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%s is %d years old.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex15.c-pyg.html-31"></a>                <span class="o">*</span><span class="p">(</span><span class="n">cur_name</span><span class="o">+</span><span class="n">i</span><span class="p">),</span> <span class="o">*</span><span class="p">(</span><span class="n">cur_age</span><span class="o">+</span><span class="n">i</span><span class="p">));</span>
+<a name="code--ex15.c-pyg.html-32"></a>    <span class="p">}</span>
+<a name="code--ex15.c-pyg.html-33"></a>
+<a name="code--ex15.c-pyg.html-34"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;---</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex15.c-pyg.html-35"></a>
+<a name="code--ex15.c-pyg.html-36"></a>    <span class="c1">// third way, pointers are just arrays</span>
+<a name="code--ex15.c-pyg.html-37"></a>    <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">count</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+<a name="code--ex15.c-pyg.html-38"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%s is %d years old again.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex15.c-pyg.html-39"></a>                <span class="n">cur_name</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">cur_age</span><span class="p">[</span><span class="n">i</span><span class="p">]);</span>
+<a name="code--ex15.c-pyg.html-40"></a>    <span class="p">}</span>
+<a name="code--ex15.c-pyg.html-41"></a>
+<a name="code--ex15.c-pyg.html-42"></a>    <span class="n">printf</span><span class="p">(</span><span class="s">&quot;---</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">);</span>
+<a name="code--ex15.c-pyg.html-43"></a>
+<a name="code--ex15.c-pyg.html-44"></a>    <span class="c1">// fourth way with pointers in a stupid complex way</span>
+<a name="code--ex15.c-pyg.html-45"></a>    <span class="k">for</span><span class="p">(</span><span class="n">cur_name</span> <span class="o">=</span> <span class="n">names</span><span class="p">,</span> <span class="n">cur_age</span> <span class="o">=</span> <span class="n">ages</span><span class="p">;</span>
+<a name="code--ex15.c-pyg.html-46"></a>            <span class="p">(</span><span class="n">cur_age</span> <span class="o">-</span> <span class="n">ages</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">count</span><span class="p">;</span>
+<a name="code--ex15.c-pyg.html-47"></a>            <span class="n">cur_name</span><span class="o">++</span><span class="p">,</span> <span class="n">cur_age</span><span class="o">++</span><span class="p">)</span>
+<a name="code--ex15.c-pyg.html-48"></a>    <span class="p">{</span>
+<a name="code--ex15.c-pyg.html-49"></a>        <span class="n">printf</span><span class="p">(</span><span class="s">&quot;%s lived %d years so far.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">,</span>
+<a name="code--ex15.c-pyg.html-50"></a>                <span class="o">*</span><span class="n">cur_name</span><span class="p">,</span> <span class="o">*</span><span class="n">cur_age</span><span class="p">);</span>
+<a name="code--ex15.c-pyg.html-51"></a>    <span class="p">}</span>
+<a name="code--ex15.c-pyg.html-52"></a>
+<a name="code--ex15.c-pyg.html-53"></a>    <span class="k">return</span> <span class="mi">0</span><span class="p">;</span>
+<a name="code--ex15.c-pyg.html-54"></a><span class="p">}</span>
+</pre></div><p>Before explaining how pointers work, let's break this program down
+line-by-line so you get an idea of what's going on.  As you go
+through this detailed description, try to answer the questions for
+yourself on a piece of paper, then see if what you guessed was
+going on matches my description of pointers later.</p>
+<dl class="docutils">
+<dt>ex15.c:6-10</dt>
+<dd>Create two arrays, <tt class="docutils literal">ages</tt> storing some <tt class="docutils literal">int</tt>
+data, and <tt class="docutils literal">names</tt> storing an array of strings.</dd>
+<dt>ex15.c:12-13</dt>
+<dd>Some variables for our <tt class="docutils literal"><span class="pre">for-loops</span></tt> later.</dd>
+<dt>ex15.c:16-19</dt>
+<dd>You know this is just looping through the two arrays and
+printing how old each person is.  This is using <tt class="docutils literal">i</tt> to
+index into the array.</dd>
+<dt>ex15.c:24</dt>
+<dd>Create a pointer that points at <tt class="docutils literal">ages</tt>.
+Notice the use of <tt class="docutils literal">int *</tt> to create a
+&quot;pointer to integer&quot; type of pointer.  That's similar to
+<tt class="docutils literal">char *</tt>, which is a &quot;pointer to char&quot;, and a string
+is an array of chars.  Seeing the similarity yet?</dd>
+<dt>ex15.c:25</dt>
+<dd>Create a pointer that points at <tt class="docutils literal">names</tt>.
+A <tt class="docutils literal">char *</tt> is already a &quot;pointer to char&quot;, so that's
+just a string.  You however need 2 levels, since <tt class="docutils literal">names</tt>
+is 2-dimensional, that means you need <tt class="docutils literal">char **</tt> for
+a &quot;pointer to (a pointer to char)&quot; type. Study that too, explain
+it to yourself.</dd>
+<dt>ex15.c:28-31</dt>
+<dd>Loop through <tt class="docutils literal">ages</tt> and <tt class="docutils literal">names</tt> but instead
+use the pointers <em>plus an offset of i</em>.  Writing
+<tt class="docutils literal">*(cur_name+i)</tt> is the same as writing <tt class="docutils literal">name[i]</tt>, and
+you read it as &quot;the value of (pointer <tt class="docutils literal">cur_name</tt> plus i)&quot;.</dd>
+<dt>ex15.c:35-39</dt>
+<dd>This shows how the syntax to access an element of an array
+is the same for a pointer and an array.</dd>
+<dt>ex15.c:44-50</dt>
+<dd><p class="first">Another admittedly insane loop that does the same thing
+as the other two, but instead it uses various pointer arithmetic
+methods:</p>
+<dl class="last docutils">
+<dt>ex15.c:44</dt>
+<dd>Initialize our <tt class="docutils literal"><span class="pre">for-loop</span></tt> by setting <tt class="docutils literal">cur_name</tt>
+and <tt class="docutils literal">cur_age</tt> to the beginning of the <tt class="docutils literal">names</tt> and
+<tt class="docutils literal">ages</tt> arrays.</dd>
+<dt>ex15.c:45</dt>
+<dd>The test portion of the <tt class="docutils literal"><span class="pre">for-loop</span></tt> then compares
+the <em>distance</em> of the pointer <tt class="docutils literal">cur_age</tt> from the
+start of <tt class="docutils literal">ages</tt>.  Why does that work?</dd>
+<dt>ex15.c:46</dt>
+<dd>The increment part of the <tt class="docutils literal"><span class="pre">for-loop</span></tt> then increments
+both <tt class="docutils literal">cur_name</tt> and <tt class="docutils literal">cur_age</tt> so that they point
+at the <em>next</em> element of the <tt class="docutils literal">name</tt> and <tt class="docutils literal">age</tt>
+arrays.</dd>
+<dt>ex15.c:48-49</dt>
+<dd>The pointers <tt class="docutils literal">cur_name</tt> and <tt class="docutils literal">cur_age</tt>
+are now pointing at one element of the arrays they work on,
+and we can print them out using just <tt class="docutils literal">*cur_name</tt> and
+<tt class="docutils literal">*cur_age</tt>, which means &quot;the value of wherever <tt class="docutils literal">cur_name</tt>
+is pointing&quot;.</dd>
+</dl>
+</dd>
+</dl>
+<p>This seemingly simple program has a large amount of information, and the
+goal is to get you to attempt figuring pointers out for yourself before
+I explain them.  <em>Don't continue until you've written down what you think a pointer does.</em></p>
+<div class="section" id="what-you-should-see">
+<h1>What You Should See</h1>
+<p>After you run this program try to trace back each line printed out to the
+line in the code that produced it.  If you have to, alter the <tt class="docutils literal">printf</tt>
+calls to make sure you got the right line number.</p>
+<div class="highlight"><pre><a name="code--ex15.sh-session-pyg.html-1"></a><span class="gp">$</span> make ex15
+<a name="code--ex15.sh-session-pyg.html-2"></a><span class="go">cc -Wall -g    ex15.c   -o ex15</span>
+<a name="code--ex15.sh-session-pyg.html-3"></a><span class="gp">$</span> ./ex15
+<a name="code--ex15.sh-session-pyg.html-4"></a><span class="go">Alan has 23 years alive.</span>
+<a name="code--ex15.sh-session-pyg.html-5"></a><span class="go">Frank has 43 years alive.</span>
+<a name="code--ex15.sh-session-pyg.html-6"></a><span class="go">Mary has 12 years alive.</span>
+<a name="code--ex15.sh-session-pyg.html-7"></a><span class="go">John has 89 years alive.</span>
+<a name="code--ex15.sh-session-pyg.html-8"></a><span class="go">Lisa has 2 years alive.</span>
+<a name="code--ex15.sh-session-pyg.html-9"></a><span class="go">---</span>
+<a name="code--ex15.sh-session-pyg.html-10"></a><span class="go">Alan is 23 years old.</span>
+<a name="code--ex15.sh-session-pyg.html-11"></a><span class="go">Frank is 43 years old.</span>
+<a name="code--ex15.sh-session-pyg.html-12"></a><span class="go">Mary is 12 years old.</span>
+<a name="code--ex15.sh-session-pyg.html-13"></a><span class="go">John is 89 years old.</span>
+<a name="code--ex15.sh-session-pyg.html-14"></a><span class="go">Lisa is 2 years old.</span>
+<a name="code--ex15.sh-session-pyg.html-15"></a><span class="go">---</span>
+<a name="code--ex15.sh-session-pyg.html-16"></a><span class="go">Alan is 23 years old again.</span>
+<a name="code--ex15.sh-session-pyg.html-17"></a><span class="go">Frank is 43 years old again.</span>
+<a name="code--ex15.sh-session-pyg.html-18"></a><span class="go">Mary is 12 years old again.</span>
+<a name="code--ex15.sh-session-pyg.html-19"></a><span class="go">John is 89 years old again.</span>
+<a name="code--ex15.sh-session-pyg.html-20"></a><span class="go">Lisa is 2 years old again.</span>
+<a name="code--ex15.sh-session-pyg.html-21"></a><span class="go">---</span>
+<a name="code--ex15.sh-session-pyg.html-22"></a><span class="go">Alan lived 23 years so far.</span>
+<a name="code--ex15.sh-session-pyg.html-23"></a><span class="go">Frank lived 43 years so far.</span>
+<a name="code--ex15.sh-session-pyg.html-24"></a><span class="go">Mary lived 12 years so far.</span>
+<a name="code--ex15.sh-session-pyg.html-25"></a><span class="go">John lived 89 years so far.</span>
+<a name="code--ex15.sh-session-pyg.html-26"></a><span class="go">Lisa lived 2 years so far.</span>
+<a name="code--ex15.sh-session-pyg.html-27"></a><span class="gp">$</span>
+</pre></div></div>
+<div class="section" id="explaining-pointers">
+<h1>Explaining Pointers</h1>
+<p>When you type something like <tt class="docutils literal">ages[i]</tt> you are &quot;indexing&quot; into the array
+<tt class="docutils literal">ages</tt>, and you're using the number that's held in <tt class="docutils literal">i</tt> to do it.
+If <tt class="docutils literal">i</tt> is set to 0 then it's the same as typing <tt class="docutils literal">ages[0]</tt>.  We've
+been calling this number <tt class="docutils literal">i</tt> an &quot;index&quot; since it's a location inside
+<tt class="docutils literal">ages</tt> that we want.  It could also be called an &quot;address&quot;, that's a way
+of saying &quot;I want the integer in <tt class="docutils literal">ages</tt> that is at address <tt class="docutils literal">i</tt>&quot;.</p>
+<p>If <tt class="docutils literal">i</tt> is an index, then what's <tt class="docutils literal">ages</tt>?  To C <tt class="docutils literal">ages</tt> is a
+location in the computer's memory where all of these integers start.  It is
+<em>also</em> an address, and the C compiler will replace anywhere you type
+<tt class="docutils literal">ages</tt> with the address of the very first integer in ages.  Another way
+to think of <tt class="docutils literal">ages</tt> is it's the &quot;address of the first integer in
+ages&quot;.  But, the trick is <tt class="docutils literal">ages</tt> is an address inside the <em>entire
+computer</em>.  It's not like <tt class="docutils literal">i</tt> which was just an address inside
+<tt class="docutils literal">ages</tt>.  The <tt class="docutils literal">ages</tt> array name is actually an address in the
+computer.</p>
+<p>That leads to a certain realization:  C thinks your whole computer is one
+massive array of bytes.  Obviously this isn't very useful, but then C layers on
+top of this massive array of bytes the concept of <em>types</em> and <em>sizes</em>
+of those types.  You already saw how this worked in previous exercises, but now
+you can start to get an idea that C is somehow doing the following with your
+arrays:</p>
+<ul class="simple">
+<li>Creating a block of memory inside your computer.</li>
+<li>&quot;Pointing&quot; the name <tt class="docutils literal">ages</tt> at the beginning of that block.</li>
+<li>&quot;Indexing&quot; into the block by taking the base address of <tt class="docutils literal">ages</tt> and
+getting the element that's <tt class="docutils literal">i</tt> away from there.</li>
+<li>Converting that address at <tt class="docutils literal">ages+i</tt> into a valid <tt class="docutils literal">int</tt> of
+the right size, such that the index works to return what you want: the int at
+index <tt class="docutils literal">i</tt>.</li>
+</ul>
+<p>If you can take a base address, like <tt class="docutils literal">ages</tt>, and then &quot;add&quot; to it with
+another address like <tt class="docutils literal">i</tt> to produce a new address, then can you just make
+something that points right at this location all the time?  Yes, and that thing
+is called a &quot;pointer&quot;.  This is what the pointers <tt class="docutils literal">cur_age</tt> and
+<tt class="docutils literal">cur_name</tt> are doing. They are variables pointing at the location where
+<tt class="docutils literal">ages</tt> and <tt class="docutils literal">names</tt> live in your computer's memory.  The example
+program is then moving them around or doing math on them to get values out of
+the memory.  In one instance, they just add <tt class="docutils literal">i</tt> to <tt class="docutils literal">cur_age</tt>,
+which is the same as what it does with <tt class="docutils literal">array[i]</tt>. In the last
+<tt class="docutils literal"><span class="pre">for-loop</span></tt> though these two pointers are being moved on their own, without
+<tt class="docutils literal">i</tt> to help out.  In that loop, the pointers are treated like a combination
+of array and integer offset rolled into one.</p>
+<p>A pointer is simply an address pointing somewhere inside the computer's memory,
+with a type specifier so you get the right size of data with it.  It is kind of
+like a combined <tt class="docutils literal">ages</tt> and <tt class="docutils literal">i</tt> rolled into one data type.  C knows
+where pointers are pointing, knows the data type they point at, the size of
+those types, and how to get the data for you.  Just like <tt class="docutils literal">i</tt> you can
+increment them, decrement them, subtract or add to them.  But, just like
+<tt class="docutils literal">ages</tt> you can also get values out with them, put new values in, and all
+the array operations.</p>
+<p>The purpose of a pointer is to let you manually index into blocks or memory
+when an array won't do it right.  In almost all other cases you actually
+want to use an array.  But, there are times when you <em>have</em> to work
+with a raw block of memory and that's where a pointer comes in.  A pointer
+gives you raw, direct access to a block of memory so you can work with it.</p>
+<p>The final thing to grasp at this stage is that you can use either syntax
+for most array or pointer operations.  You can take a pointer to something,
+but use the array syntax for accessing it.  You can take an array and do
+pointer arithmetic with it.</p>
+</div>
+<div class="section" id="practical-pointer-usage">
+<h1>Practical Pointer Usage</h1>
+<p>There are four primary useful things you do with pointers in C code:</p>
+<ul class="simple">
+<li>Ask the OS for a chunk of memory and use a pointer
+to work with it.  This includes strings and something you haven't seen
+yet, <tt class="docutils literal">structs</tt>.</li>
+<li>Passing large blocks of memory (like large structs) to functions
+with a pointer so you don't have to pass the whole thing to them.</li>
+<li>Taking the address of a function so you can use it as a dynamic callback.</li>
+<li>Complex scanning of chunks of memory such as converting bytes off a network
+socket into data structures or parsing files.</li>
+</ul>
+<p>For nearly everything else you see people use pointers, they should be using
+arrays.  In the early days of C programming people used pointers to speed
+up their programs because the compilers were really bad at optimizing array
+usage.  These days the syntax to access an array vs. a pointer are translated
+into the same machine code and optimized the same, so it's not as necessary.
+Instead, you go with arrays every time you can, and then only use pointers
+as a performance optimization if you absolutely have to.</p>
+</div>
+<div class="section" id="the-pointer-lexicon">
+<h1>The Pointer Lexicon</h1>
+<p>I'm now going to give you a little lexicon to use for reading and writing
+pointers.  Whenever you run into a complex pointer statement, just refer
+to this and break it down bit by bit (or just don't use that code since it's
+probably not good code):</p>
+<dl class="docutils">
+<dt><tt class="docutils literal">type *ptr</tt></dt>
+<dd>&quot;a pointer of type named ptr&quot;</dd>
+<dt><tt class="docutils literal">*ptr</tt></dt>
+<dd>&quot;the value of whatever ptr is pointed at&quot;</dd>
+<dt><tt class="docutils literal">*(ptr + i)</tt></dt>
+<dd>&quot;the value of (whatever ptr is pointed at plus i)&quot;</dd>
+<dt><tt class="docutils literal">&amp;thing</tt></dt>
+<dd>&quot;the address of thing&quot;</dd>
+<dt><tt class="docutils literal">type *ptr = &amp;thing</tt></dt>
+<dd>&quot;a pointer of type named ptr set to the address of thing&quot;</dd>
+<dt><tt class="docutils literal">ptr++</tt></dt>
+<dd>&quot;increment where ptr points&quot;</dd>
+</dl>
+<p>We'll be using this simple lexicon to break down all of the pointers
+we use from now on in the book.</p>
+</div>
+<div class="section" id="pointers-are-not-arrays">
+<h1>Pointers Are Not Arrays</h1>
+<p>No matter what, you should never think that pointers and arrays are the same thing.
+They are not the same thing, even though C lets you work with them in many of the
+same ways.  For example, if you do <tt class="docutils literal">sizeof(cur_age)</tt> in the code above,
+you would get the size of the <em>pointer</em>, not the size of what it points
+at.  If you want the size of the full array, you have to use the array's name, <tt class="docutils literal">age</tt>
+as I did on line 12.</p>
+<p>TODO: expand on this some more with what doesn't work on both the same.</p>
+</div>
+<div class="section" id="how-to-break-it">
+<h1>How To Break It</h1>
+<p>You can break this program by simply pointing the pointers at the wrong things:</p>
+<ul class="simple">
+<li>Try to make <tt class="docutils literal">cur_age</tt> point at <tt class="docutils literal">names</tt>.  You'll need to
+use a C cast to force it, so go look that up and try to figure it out.</li>
+<li>In the final <tt class="docutils literal"><span class="pre">for-loop</span></tt> try getting the math wrong in weird ways.</li>
+<li>Try rewriting the loops so they start at the end of the arrays and go
+to the beginning.  This is harder than it looks.</li>
+</ul>
+</div>
+<div class="section" id="extra-credit">
+<h1>Extra Credit</h1>
+<ul class="simple">
+<li>Rewrite all the array usage in this program so that it's pointers.</li>
+<li>Rewrite all the pointer usage so they're arrays.</li>
+<li>Go back to some of the other programs that use arrays and
+try to use pointers instead.</li>
+<li>Process command line arguments using just pointers similar to how
+you did <tt class="docutils literal">names</tt> in this one.</li>
+<li>Play with combinations of getting the value of and the address of
+things.</li>
+<li>Add another <tt class="docutils literal"><span class="pre">for-loop</span></tt> at the end that prints out the
+addresses these pointers are using.  You'll need the <tt class="docutils literal">%p</tt> format
+for <tt class="docutils literal">printf</tt>.</li>
+<li>Rewrite this program to use a function for each of the ways you're
+printing out things.  Try to pass pointers to these functions so
+they work on the data.  Remember you can declare a function to accept
+a pointer, but just use it like an array.</li>
+<li>Change the <tt class="docutils literal"><span class="pre">for-loops</span></tt> to <tt class="docutils literal"><span class="pre">while-loops</span></tt> and see what
+works better for which kind of pointer usage.</li>
+</ul>
+</div>
+        <!-- RST ENDS -->
+
+        </div><!-- /#main -->
+
+        <div class='ad-deck gold' id="footer">
+            <ul class='retailers clearfix'>
+                <li>
+                    <a href='http://learnpythonthehardway.org/'>
+                        <div class='retailer-name'>Interested In Python?</div>
+                        <div class='book-type'>Python is also a great language.</div>
+                        <div class='book-price'>Learn Python The Hard Way</div>
+                    </a>
+                </li>
+                <li>
+                    <a href='http://learnrubythehardway.org/book/'>
+                        <div class='retailer-name'>Interested In Ruby?</div>
+                        <div class='book-type'>Ruby is also a great language.</div>
+                        <div class='book-price'>Learn Ruby The Hard Way</div>
+                    </a>
+                </li>
+
+            </ul><!-- /.places -->
+        </div><!-- /#ad-deck -->
+
+        <script src="./javascripts/jquery.js"></script>
+        <script src="./index.js"></script>
+        <script src="https://paydiv.io/static/jzed.js"></script>
+        <script src="./javascripts/app.js"></script>
+        </body>
+</html>
