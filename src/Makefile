@@ -2,7 +2,7 @@ CFLAGS=-Wall -g
 
 all: clean buildall
 
-buildall: ex1 ex3 ex4 ex6 ex7 ex8 ex9 ex10 ex11 ex13 ex14 ex15 ex16 ex17
+buildall: ex1 ex3 ex4 ex6 ex7 ex8 ex9 ex10 ex11 ex13 ex14 ex15 ex16 ex17 ex18
 
 clean:
 	rm -f ex1
@@ -20,4 +20,5 @@ clean:
 	rm -f ex15
 	rm -f ex16
 	rm -f ex17
+	rm -f ex18
 	rm -rf *.dSYM
