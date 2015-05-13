@@ -6,6 +6,8 @@
 
 void Object_destroy(void *self)
 {
+  assert(self != NULL);
+
   Object *obj = self;
 
   if(obj) {

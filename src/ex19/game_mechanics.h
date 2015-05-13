@@ -1,5 +1,5 @@
-#ifndef _ex19_h
-#define _ex19_h
+#ifndef _game_mechanics_h
+#define _game_mechanics_h
 
 #include "object.h"
 
@@ -9,6 +9,7 @@ struct Monster {
 };
 
 typedef struct Monster Monster;
+Object MonsterProto;
 
 int Montster_attack(void *self, int damage);
 int Monster_init(void *self);
@@ -25,8 +26,9 @@ struct Room {
 };
 
 typedef struct Room Room;
+Object RoomProto;
 
-void Room_move(void *self, Direction direction);
+void *Room_move(void *self, Direction direction);
 int Room_attack(void *self, int damage);
 int Room_init(void *self);
 
