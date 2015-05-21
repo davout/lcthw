@@ -1,0 +1,18 @@
+Devpkg
+==========
+
+A development package installation tool.
+
+Usage
+==
+
+$ devpkg -S 
+
+$ devpkg -{I|B} <url> [-c MAKE_OPTS] [-m MAKE_OPTS] [-i INSTALL_OPTS] 
+
+$ devpkg -L
+
+$ devpkg -F <url>
+
+
+
